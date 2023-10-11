@@ -1,18 +1,183 @@
-import socket
-import sys
+# ----------------------- Imports -----------------------
+import pygame as pg
+from threading import *
 
-HOST, PORT = "10.193.35.85", 9990
-USERNAME = "Zyno"
-data = " ".join(sys.argv[1:])
+from socket import *
 
-# Create a socket (SOCK_STREAM means a TCP socket)
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-    # Connect to server and send data
-    sock.connect((HOST, PORT))
-    sock.sendall(bytes(USERNAME + " : " + data + "\n", "utf-16"))
+import time
 
-    # Receive data from the server and shut down
-    received = str(sock.recv(1024), "utf-16")
+from player import Player
 
-print("Sent:     {}".format(data))
-print("Received: {}".format(received))
+# ----------------------- Variables -----------------------
+
+IP_SERVER = "10.193.66.36" #"localhost"
+PORT_SERVER = 9998
+CONNECTED = False
+DISCONNECTION_WAIT = 5
+
+FPS = 60
+
+SIZE = None
+SCREEN = None
+
+USERNAME = "John"
+PLAYERS = []
+
+WAITING_TIME = 0.01
+
+# ----------------------- Threads -----------------------
+
+def display():
+    
+    global SCREEN
+    global PLAYERS
+    
+    clock = pg.time.Clock()
+    
+    while CONNECTED:
+        
+        SCREEN.fill((0, 0, 0))  # May need to be custom
+        
+        for player in PLAYERS:
+            pg.draw.rect(SCREEN, player.color, [player.position, player.size])
+        
+        pg.display.update()
+        
+        clock.tick(FPS)
+
+
+
+def game():
+    
+    global PLAYERS
+    global IP_SERVER
+    global PORT_SERVER
+    
+    while CONNECTED:
+        
+        inputs = getInputs()
+        
+        state = send(inputs)
+        
+        update(state)
+
+
+
+# ----------------------- Functions -----------------------
+
+def connect():
+    
+    global SIZE
+        
+    message = send("CONNECT " + USERNAME + " END")
+    
+    messages = message.split(" ")
+    
+    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "STATE":
+        SIZE = eval(messages[2])
+        if SIZE == None:
+            SIZE = (400, 300)   # Some default size.
+        
+        beginIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 spaces
+        update(message[beginIndex - 1:])
+        
+        return True
+
+    return False
+
+
+
+def getInputs():
+    events = pg.event.get()
+    
+    for event in events:
+        if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+            exit()
+        elif event.type == pg.KEYDOWN:
+            if event.key in [pg.K_LEFT, pg.K_q]:
+                return "INPUT " + USERNAME + " L END"
+            elif event.key in [pg.K_RIGHT, pg.K_d]:
+                return "INPUT " + USERNAME + " R END"
+            elif event.key in [pg.K_UP, pg.K_z]:
+                return "INPUT " + USERNAME + " U END"
+            elif event.key in [pg.K_DOWN, pg.K_s]:
+                return "INPUT " + USERNAME + " D END"
+    
+    return "INPUT " + USERNAME + " . END"
+
+
+
+def send(input="INPUT " + USERNAME + " . END"):
+    
+    with socket(AF_INET, SOCK_STREAM) as sock:
+        # send data
+        sock.connect((IP_SERVER, PORT_SERVER))
+        sock.sendall(bytes(input, "utf-16"))
+        
+        # receive answer
+        return str(sock.recv(1024*2), "utf-16")
+
+
+
+def update(state="STATE [] END"):
+    global PLAYERS
+    
+    playerList = []
+    
+    players = []
+    
+    messages = state.split(" ")
+    if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
+        playerList = eval(messages[1])
+    
+    for player in playerList:
+        players.append(Player("", player[0], player[1], player[2], player[3]))
+
+    PLAYERS = players
+
+
+
+def exit():
+    global CONNECTED
+    
+    t = time.time()
+    while time.time() - t < DISCONNECTION_WAIT:
+        if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
+            break
+    
+    CONNECTED = False
+    #sys.exit()
+
+
+
+def main():
+    global CONNECTED
+    
+    while not CONNECTED:
+        CONNECTED = connect()
+        time.sleep(WAITING_TIME)
+    
+    pg.init()
+    
+    global SCREEN
+    SCREEN = pg.display.set_mode(SIZE)
+    
+    gameUpdater = Thread(target=game)
+    displayer = Thread(target=display)
+    
+    gameUpdater.start()
+    displayer.start()
+
+
+
+# ----------------------- Client Side -----------------------
+
+if __name__ == "__main__":
+    
+    print("Which username do you want to use ? (By default, it is " + USERNAME + ")")
+    username = input()
+    
+    if username != "":
+        USERNAME = username
+    
+    main()
