@@ -5,6 +5,16 @@ class Player:
     BASE_SIZE = (50, 50)
     
     def __init__(self, ip="", username="", color=(0,0,0), position=(0,0), size=[10, 10]):
+        """Create a new player with given parameters.
+
+        Args:
+            - ip (str, optional): Ip address of the player (only defined on the server side). Defaults to "".
+            - username (str): Username of the player. Defaults to "".
+            - color (tuple): Color used by the player. Defaults to (0,0,0).
+            - position (tuple): Position of the player. Defaults to (0,0).
+            - size (list): Size of the player. Defaults to [10, 10].
+        """
+        
         self.ip = ip
         self.username = username
         self.color = color
@@ -14,23 +24,36 @@ class Player:
     
     
     def toString(self):
+        """Generate the string representation of the player.
+
+        Returns:
+            str: description of the player used to send data from the server to the clients.
+        """
         msg = "(" + str(self.username) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
         return msg.replace(" ", "")
 
 
 
     def toPlayers(playersString):
+        """Generate the list of players described by the playersString variable.
+
+        Args:
+            playersString (str): string representation of the list of players.
+
+        Returns:
+            list[Player]: list of players to display on the client side.
+        """
         
         playersList = []
         
         currentExtract = None
         
         onUsername, onColor, onPosition, onSize = False, False, False, False
-        change = False # spot change of field in multiple fields variables
+        change = False # spot changes of fields in multiple fields variables like tuples
         error = False # spot errors in fields
         
         for c in playersString:
-            
+            #? Debug prints :
             #print(currentExtract)
             #print(onUsername, onColor, onPosition, onSize)
             #print(change, error)
@@ -187,6 +210,7 @@ class Player:
             
             
             
+            # --------------- Create new player ---------------
             else:
                 
                 if c == "[":
@@ -199,7 +223,6 @@ class Player:
                     change, error = False, False
                 
                 elif c == "," or c == "]":
-                    print("Players !")
                     playersList.append(Player(username=currentExtract[0],
                                               color=tuple(currentExtract[1]),
                                               position=tuple(currentExtract[2]),
