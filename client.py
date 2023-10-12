@@ -10,7 +10,7 @@ from player import Player
 
 # ----------------------- Variables -----------------------
 
-IP_SERVER = "10.193.66.36" #"localhost"
+IP_SERVER = "10.193.66.61" #"localhost"
 PORT_SERVER = 9998
 CONNECTED = False
 DISCONNECTION_WAIT = 5
@@ -23,7 +23,10 @@ SCREEN = None
 USERNAME = "John"
 PLAYERS = []
 
-WAITING_TIME = 0.01
+WAITING_TIME = 0.01 # in seconds
+TIMEOUT = 10 # in seconds
+
+PING = None # in milliseconds
 
 # ----------------------- Threads -----------------------
 
@@ -78,7 +81,7 @@ def connect():
         if SIZE == None:
             SIZE = (400, 300)   # Some default size.
         
-        beginIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 spaces
+        beginIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
         update(message[beginIndex - 1:])
         
         return True
@@ -109,31 +112,34 @@ def getInputs():
 
 def send(input="INPUT " + USERNAME + " . END"):
     
+    global PING
+    
     with socket(AF_INET, SOCK_STREAM) as sock:
+        t = time.time()
+        
         # send data
         sock.connect((IP_SERVER, PORT_SERVER))
         sock.sendall(bytes(input, "utf-16"))
         
+        
         # receive answer
-        return str(sock.recv(1024*2), "utf-16")
+        answer = str(sock.recv(1024*2), "utf-16")
+        
+        PING = int((time.time() - t) * 1000)
+        print("Ping (ms) = ", PING)
+        
+        return answer
 
 
 
 def update(state="STATE [] END"):
     global PLAYERS
     
-    playerList = []
-    
-    players = []
-    
     messages = state.split(" ")
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        playerList = eval(messages[1])
-    
-    for player in playerList:
-        players.append(Player("", player[0], player[1], player[2], player[3]))
-
-    PLAYERS = players
+        print(messages[1])
+        PLAYERS = Player.toPlayers(messages[1])
+        print(PLAYERS)
 
 
 
