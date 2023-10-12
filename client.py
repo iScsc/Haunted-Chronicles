@@ -10,8 +10,8 @@ from player import Player
 
 # ----------------------- Variables -----------------------
 
-IP_SERVER = "10.193.66.61" #"localhost"
-PORT_SERVER = 9998
+SERVER_IP = "10.188.222.194" #"localhost"
+SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAIT = 5
 
@@ -31,6 +31,8 @@ PING = None # in milliseconds
 # ----------------------- Threads -----------------------
 
 def display():
+    """Thread to display the current state of the game given by the server.
+    """
     
     global SCREEN
     global PLAYERS
@@ -51,10 +53,12 @@ def display():
 
 
 def game():
+    """Thread to send inputs to the server, receive the current state of the game from it, and update the client-side variables.
+    """
     
     global PLAYERS
-    global IP_SERVER
-    global PORT_SERVER
+    global SERVER_IP
+    global SERVER_PORT
     
     while CONNECTED:
         
@@ -69,6 +73,11 @@ def game():
 # ----------------------- Functions -----------------------
 
 def connect():
+    """Try to connect to the given SERVER_IP and SERVER_PORT. When successful, initialize the current state of the game.
+
+    Returns:
+        bool: is the connection successful ?
+    """
     
     global SIZE
         
@@ -91,6 +100,12 @@ def connect():
 
 
 def getInputs():
+    """Get inputs from the keyboard and generate the corresponding request to send to the server.
+
+    Returns:
+        str: the normalized request to send to the server : "INPUT <Username> <Input> END"
+    """
+    
     events = pg.event.get()
     
     for event in events:
@@ -111,6 +126,14 @@ def getInputs():
 
 
 def send(input="INPUT " + USERNAME + " . END"):
+    """Send a normalized request to the server and listen for the normalized answer.
+
+    Args:
+        input (str): Normalized request to send to the server. Defaults to "INPUT <Username> . END".
+
+    Returns:
+        str: the normalized answer from the server.
+    """
     
     global PING
     
@@ -118,7 +141,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         t = time.time()
         
         # send data
-        sock.connect((IP_SERVER, PORT_SERVER))
+        sock.connect((SERVER_IP, SERVER_PORT))
         sock.sendall(bytes(input, "utf-16"))
         
         
@@ -133,6 +156,12 @@ def send(input="INPUT " + USERNAME + " . END"):
 
 
 def update(state="STATE [] END"):
+    """Update the local variables representing the current state of the game from the given state.
+
+    Args:
+        state (str): The normalized state of the game. Defaults to "STATE [] END".
+    """
+    
     global PLAYERS
     
     messages = state.split(" ")
@@ -144,6 +173,9 @@ def update(state="STATE [] END"):
 
 
 def exit():
+    """Send the normalized disconnection request and then exits the game.
+    """
+    
     global CONNECTED
     
     t = time.time()
@@ -157,6 +189,9 @@ def exit():
 
 
 def main():
+    """Main function launching the parallel threads to play the game and communicate with the server.
+    """
+    
     global CONNECTED
     
     while not CONNECTED:
