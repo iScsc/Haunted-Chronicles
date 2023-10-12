@@ -166,9 +166,7 @@ def update(state="STATE [] END"):
     
     messages = state.split(" ")
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        print(messages[1])
         PLAYERS = Player.toPlayers(messages[1])
-        print(PLAYERS)
 
 
 
