@@ -13,7 +13,7 @@ from player import Player
 SERVER_IP = "10.188.222.194" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
-DISCONNECTION_WAIT = 5
+DISCONNECTION_WAITING_TIME = 5
 
 FPS = 60
 
@@ -60,6 +60,8 @@ def game():
     global SERVER_IP
     global SERVER_PORT
     
+    clock = pg.time.Clock()
+    
     while CONNECTED:
         
         inputs = getInputs()
@@ -67,6 +69,8 @@ def game():
         state = send(inputs)
         
         update(state)
+        
+        clock.tick(FPS)
 
 
 
@@ -116,18 +120,20 @@ def getInputs():
     
     events = pg.event.get()
     
+    keys = pg.key.get_pressed()
+    
     for event in events:
         if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
             exit()
-        elif event.type == pg.KEYDOWN:
-            if event.key in [pg.K_LEFT, pg.K_q]:
-                return "INPUT " + USERNAME + " L END"
-            elif event.key in [pg.K_RIGHT, pg.K_d]:
-                return "INPUT " + USERNAME + " R END"
-            elif event.key in [pg.K_UP, pg.K_z]:
-                return "INPUT " + USERNAME + " U END"
-            elif event.key in [pg.K_DOWN, pg.K_s]:
-                return "INPUT " + USERNAME + " D END"
+    
+    if keys[pg.K_LEFT] or keys[pg.K_q]:
+        return "INPUT " + USERNAME + " L END"
+    elif keys[pg.K_RIGHT] or keys[pg.K_d]:
+        return "INPUT " + USERNAME + " R END"
+    elif keys[pg.K_UP] or keys[pg.K_z]:
+        return "INPUT " + USERNAME + " U END"
+    elif keys[pg.K_DOWN] or keys[pg.K_s]:
+        return "INPUT " + USERNAME + " D END"
     
     return "INPUT " + USERNAME + " . END"
 
@@ -185,7 +191,7 @@ def exit():
     global CONNECTED
     
     t = time.time()
-    while time.time() - t < DISCONNECTION_WAIT:
+    while time.time() - t < DISCONNECTION_WAITING_TIME:
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
             break
     
