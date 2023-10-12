@@ -86,8 +86,16 @@ def connect():
     messages = message.split(" ")
     
     if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "STATE":
-        SIZE = eval(messages[2])
-        if SIZE == None:
+        try:
+            sizeStr = "" + messages[2]
+            sizeStr = sizeStr.replace("(", "")
+            sizeStr = sizeStr.replace(")", "")
+            
+            sizeStr = sizeStr.split(",")
+            
+            SIZE = (int(sizeStr[0]), int(sizeStr[1]))
+        except:
+            print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
         beginIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
