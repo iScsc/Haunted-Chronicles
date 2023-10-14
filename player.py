@@ -54,7 +54,7 @@ class Player:
         change = False # spot changes of fields in multiple fields variables like tuples
         error = False # spot errors in fields
         
-        for c in playersString:
+        for i in range(len(playersString)):
             # #? Debug prints :
             # print("------------------------------------")
             # print("Current char = ", c)
@@ -63,12 +63,20 @@ class Player:
             # print("change = ", change, " | error = ", error)
             # print("onUsername = ", onUsername, " | onColor = ", onColor, " | onPosition = ", onPosition, " | OnSize = ", onSize)
             
+            c = playersString[i]
+            
             # --------------- Username ---------------
             if onUsername:
                 
                 if c != ",":
+
                     if len(currentExtract) == 0:
-                        currentExtract.append(c)
+                        if (c == "'" or c == '"'):
+                            currentExtract.append("") # beginning of the username
+                        else:
+                            currentExtract.append(c)
+                    elif (c == "'" or c == '"') and playersString[i + 1] == ",":
+                        pass # end of the username
                     else:
                         currentExtract[0] += c
                 
