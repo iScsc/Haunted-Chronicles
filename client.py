@@ -13,7 +13,7 @@ from player import Player
 SERVER_IP = "10.188.222.194" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
-DISCONNECTION_WAITING_TIME = 5
+DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
 
 FPS = 60
 
@@ -23,10 +23,9 @@ SCREEN = None
 USERNAME = "John"
 PLAYERS = []
 
-WAITING_TIME = 0.01 # in seconds
-TIMEOUT = 10 # in seconds
+WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
 
-PING = None # in milliseconds
+PING = None # in milliseconds - ping with the server, None when disconnected
 
 # ----------------------- Threads -----------------------
 
