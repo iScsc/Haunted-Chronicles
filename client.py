@@ -10,7 +10,7 @@ from player import Player
 
 # ----------------------- Variables -----------------------
 
-SERVER_IP = "10.188.222.194" #"localhost"
+SERVER_IP = "10.188.28.53" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -19,6 +19,10 @@ FPS = 60
 
 SIZE = None
 SCREEN = None
+
+FONT = "Arial" # Font used to display texts
+FONT_SIZE_USERNAME = 25
+FONT_SIZE_PING = 12
 
 USERNAME = "John"
 PLAYERS = []
@@ -39,6 +43,8 @@ def display():
     pg.init()
     
     SCREEN = pg.display.set_mode(SIZE)
+    pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
+    usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     
     clock = pg.time.Clock()
     
@@ -48,9 +54,28 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
         
+        
+        # Players
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color, [player.position, player.size])
+            
+            usernameText = player.username
+            usernameSize = pg.font.Font.size(usernameFont, usernameText)
+            usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color)
+            
+            SCREEN.blit(usernameSurface, (player.position[0] + (player.size[0] - usernameSize[0]) // 2, player.position[1] - usernameSize[1]))
         
+        
+        # Ping
+        pingText = "Ping : " + str(PING) + " ms"
+        pingSize = pg.font.Font.size(pingFont, pingText)
+        
+        pingSurface = pg.font.Font.render(pingFont, pingText, False, (255, 255, 255))
+        
+        SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
+        
+        
+        # End
         pg.display.update()
         
         clock.tick(FPS)
@@ -168,7 +193,6 @@ def send(input="INPUT " + USERNAME + " . END"):
         answer = str(sock.recv(1024*2), "utf-16")
         
         PING = int((time.time() - t) * 1000)
-        print("Ping (ms) = ", PING)
         
         return answer
 
