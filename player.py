@@ -39,6 +39,8 @@ class Player:
 
         Args:
             playersString (str): string representation of the list of players.
+            It shall be of the format : "[player1, player2, player3, ...]
+            where a player is : (username, (color.r, color.g, color.b), (position.x, position.y), (width, height))
 
         Returns:
             list[Player]: list of players to display on the client side.
