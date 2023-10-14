@@ -6,9 +6,6 @@ __pycache__/
 # Local Folders
 BACKUPS
 
-# Tests
-*Test.py
-
 # C extensions
 *.so
 
