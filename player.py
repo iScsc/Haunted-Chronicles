@@ -55,12 +55,13 @@ class Player:
         error = False # spot errors in fields
         
         for c in playersString:
-            #? Debug prints :
-            #print(currentExtract)
-            #print(onUsername, onColor, onPosition, onSize)
-            #print(change, error)
-            
-            
+            # #? Debug prints :
+            # print("------------------------------------")
+            # print("Current char = ", c)
+            # print("currentExtract = ", currentExtract)
+            # print("playersList = ", playersList)
+            # print("change = ", change, " | error = ", error)
+            # print("onUsername = ", onUsername, " | onColor = ", onColor, " | onPosition = ", onPosition, " | OnSize = ", onSize)
             
             # --------------- Username ---------------
             if onUsername:
@@ -135,7 +136,7 @@ class Player:
                     if not change and not error:
                         
                         try:
-                            currentExtract[2][-1] = int(currentExtract[2][-1])
+                            currentExtract[2][-1] = float(currentExtract[2][-1])
                             change = True
                         except:
                             error = True
@@ -152,7 +153,7 @@ class Player:
                     
                     if not error:
                         try:
-                            currentExtract[2][-1] = int(currentExtract[2][-1])
+                            currentExtract[2][-1] = float(currentExtract[2][-1])
                         except:
                             error = True
                             currentExtract[2] = Player.BASE_POSITION
@@ -180,7 +181,7 @@ class Player:
                     if not change and not error:
                         
                         try:
-                            currentExtract[3][-1] = int(currentExtract[3][-1])
+                            currentExtract[3][-1] = float(currentExtract[3][-1])
                             change = True
                         except:
                             error = True
@@ -192,7 +193,7 @@ class Player:
                     
                     if not error and not change:
                         try:
-                            currentExtract[3][-1] = int(currentExtract[3][-1])
+                            currentExtract[3][-1] = float(currentExtract[3][-1])
                         except:
                             error = True
                             currentExtract[3] = Player.BASE_SIZE
