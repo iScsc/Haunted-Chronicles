@@ -36,11 +36,17 @@ def display():
     global SCREEN
     global PLAYERS
     
+    pg.init()
+    
+    SCREEN = pg.display.set_mode(SIZE)
+    
     clock = pg.time.Clock()
     
     while CONNECTED:
         
         SCREEN.fill((0, 0, 0))  # May need to be custom
+        
+        pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
         
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color, [player.position, player.size])
@@ -195,7 +201,6 @@ def exit():
             break
     
     CONNECTED = False
-    #sys.exit()
 
 
 
@@ -209,16 +214,11 @@ def main():
         CONNECTED = connect()
         time.sleep(WAITING_TIME)
     
-    pg.init()
-    
-    global SCREEN
-    SCREEN = pg.display.set_mode(SIZE)
-    
-    gameUpdater = Thread(target=game)
     displayer = Thread(target=display)
+    gameUpdater = Thread(target=game)
     
-    gameUpdater.start()
     displayer.start()
+    gameUpdater.start()
 
 
 
