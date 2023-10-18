@@ -5,6 +5,8 @@ import socketserver
 import socket
 from random import randint
 
+from player import Player
+
 # ----------------------- IP -----------------------
 
 def extractingIP():
@@ -29,44 +31,48 @@ SIZE_MAX_PSEUDO = 10
 
 
 # ----------------------- Variables -----------------------
-dicoJoueur = {} # format : x,y,color,dx,dy
+dicoJoueur = {} # Store players' Player structure
 
 
 
 # -------------------- Processing a Request -----------------------
-def processRequest(s):
+def processRequest(ip, s):
     type = typeOfRequest(s)
     if type == "CONNECT":
-        return(processConnect(s))
+        return(processConnect(ip, s))
     elif type == "INPUT":
-        return(processInput(s))
+        return(processInput(ip, s))
     elif type == "DISCONNECTION":
-        return(processDisconection(s))
+        return(processDisconection(ip, s))
     else :
         return("Invalid Request")
 
-def processConnect(s):
+def processConnect(ip, s):
     pseudo = extractPseudo(s)
     if validPseudo(pseudo):
         return("This Pseudo already exists")
     elif len(pseudo)>SIZE_MAX_PSEUDO:
         return("Your pseudo is too big !")
     elif " " in pseudo:
-        return("Don't use ' ' in your pseudo")
+        return("Don't use ' ' in your pseudo !")
     else :
-        initNewPlayer(pseudo)
+        initNewPlayer(ip, pseudo)
         return(firstConnection(pseudo))
     
-def processInput(s):
+def processInput(ip, s):
     pseudo = extractPseudo(s)
     if not(validPseudo(pseudo)):
         return("No player of that name")
+    if not(validIp(ip, pseudo)):
+        return("You are impersonating someone else !")
     inputLetter = extractLetter(s,pseudo)
     Rules(inputLetter,pseudo)
     return(states())
 
-def processDisconection(s):
+def processDisconection(ip, s):
     pseudo = extractPseudo(s)
+    if not(validIp(ip, pseudo)):
+        return("You are impersonating someone else !")
     dicoJoueur.pop(pseudo)
     return("DISCONNECTED" + s[13:])
 
@@ -110,6 +116,9 @@ def firstConnection(pseudo):
 def validPseudo(pseudo):
     return(pseudo in dicoJoueur.keys())
 
+def validIp(ip, pseudo):
+    return (pseudo in dicoJoueur.keys() and dicoJoueur[pseudo].ip == ip)
+
 
 # ----------------------- Games Rules -----------------------
 
@@ -147,11 +156,11 @@ def correctPosition(x,y,dx,dy):
 # ----------------------- Init of a new Player -----------------------
 
 
-def initNewPlayer(pseudo):
+def initNewPlayer(ip, pseudo):
     x,y = positionNewPlayer()
     color = colorNewPlayer()
     dx,dy = sizeNewPlayer()
-    dicoJoueur[pseudo] = [x,y,color,dx,dy]
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
     
 def positionNewPlayer():
     return(SIZE_X/2,SIZE_Y/2)
@@ -179,11 +188,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # self.request is the TCP socket connected to the client
         self.data = self.request.recv(1024).strip()
         
-        print("{} wrote:".format(self.client_address[0]))
+        in_ip = self.client_address[0]
+        
+        print("{} wrote:".format(in_ip))
         in_data = str(self.data,'utf-16')
         print(in_data)
         
-        out = processRequest(in_data)
+        out = processRequest(in_ip ,in_data)
         print(">>> ",out,"\n")
         self.request.sendall(bytes(out,'utf-16'))
 
