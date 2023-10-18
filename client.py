@@ -10,8 +10,13 @@ import time
 from player import Player
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "".join(sys.argv[1]) #"10.193.49.95" #"localhost"
-SERVER_PORT = int("".join(sys.argv[2])) #9998
+SERVER_IP = "10.193.49.95" #"localhost"
+SERVER_PORT = 9998
+print(len(sys.argv))
+
+if len(sys.argv)==3:
+    SERVER_IP = "".join(sys.argv[1]) #"10.193.49.95" #"localhost"
+    SERVER_PORT = int("".join(sys.argv[2])) #9998
 
 print("Server IP : ",SERVER_IP)
 print("Server Port : ",SERVER_PORT)
