@@ -10,8 +10,8 @@ from player import Player
 
 # ----------------------- Variables -----------------------
 
-SERVER_IP = "10.188.28.53" #"localhost"
-SERVER_PORT = 9998
+SERVER_IP = "10.193.35.85" #"localhost"
+SERVER_PORT = 9999
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
 
