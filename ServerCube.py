@@ -16,16 +16,16 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
-sizeX = 1000
-sizeY = 1000
-size = (sizeX,sizeY)
+SIZE_X = 1000
+SIZE_Y = 1000
+SIZE = (SIZE_X,SIZE_Y)
 
-stepX = 15
-stepY = 15
+STEP_X = 15
+STEP_Y = 15
 
 IP = extractingIP()
 
-SizeMaxPseudo = 10 
+SIZE_MAX_PSEUDO = 10
 
 
 # ----------------------- Variables -----------------------
@@ -49,7 +49,7 @@ def processConnect(s):
     pseudo = extractPseudo(s)
     if validPseudo(pseudo):
         return("This Pseudo already exists")
-    elif len(pseudo)>SizeMaxPseudo:
+    elif len(pseudo)>SIZE_MAX_PSEUDO:
         return("Your pseudo is too big !")
     elif " " in pseudo:
         return("Don't use ' ' in your pseudo")
@@ -104,7 +104,7 @@ def states():
     return(out)
     
 def firstConnection(pseudo):
-    out = "CONNECTED "+pseudo+" "+(str(size)).replace(" ","")+" "+states()
+    out = "CONNECTED "+pseudo+" "+(str(SIZE)).replace(" ","")+" "+states()
     return(out)
 
 def validPseudo(pseudo):
@@ -122,13 +122,13 @@ def Rules(inputLetter,pseudo):
             #y+=randint(-1,1)
             pass
         case "R":
-            x+=stepX
+            x+=STEP_X
         case "L":
-            x-=stepX
+            x-=STEP_X
         case "U":
-            y-=stepY
+            y-=STEP_Y
         case "D":
-            y+=stepY
+            y+=STEP_Y
         case "T":
             x,y = positionNewPlayer()
         case _ :
@@ -138,8 +138,8 @@ def Rules(inputLetter,pseudo):
     return()
 
 def correctPosition(x,y,dx,dy):
-    correctX = (x>=0) and (x+dx <= sizeX)
-    correctY = (y>=0) and (y+dy <= sizeY)
+    correctX = (x>=0) and (x+dx <= SIZE_X)
+    correctY = (y>=0) and (y+dy <= SIZE_Y)
     return correctX and correctY
     
 
@@ -154,13 +154,13 @@ def initNewPlayer(pseudo):
     dicoJoueur[pseudo] = [x,y,color,dx,dy]
     
 def positionNewPlayer():
-    return(sizeX/2,sizeY/2)
+    return(SIZE_X/2,SIZE_Y/2)
 
 def colorNewPlayer():
     return((randint(1,255),randint(1,255),randint(1,255)))
     
 def sizeNewPlayer():
-    return(sizeX/10,sizeY/10)
+    return(SIZE_X/10,SIZE_Y/10)
         
 
 
