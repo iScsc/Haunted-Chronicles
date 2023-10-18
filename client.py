@@ -1,4 +1,5 @@
 # ----------------------- Imports -----------------------
+import sys
 import pygame as pg
 from threading import *
 
@@ -9,9 +10,12 @@ import time
 from player import Player
 
 # ----------------------- Variables -----------------------
+SERVER_IP = "".join(sys.argv[1]) #"10.193.49.95" #"localhost"
+SERVER_PORT = int("".join(sys.argv[2])) #9998
 
-SERVER_IP = "10.193.35.85" #"localhost"
-SERVER_PORT = 9999
+print("Server IP : ",SERVER_IP)
+print("Server Port : ",SERVER_PORT)
+
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
 
