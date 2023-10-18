@@ -12,15 +12,6 @@ from player import Player
 # ----------------------- Variables -----------------------
 SERVER_IP = "10.193.49.95" #"localhost"
 SERVER_PORT = 9998
-print(len(sys.argv))
-
-if len(sys.argv)==3:
-    SERVER_IP = "".join(sys.argv[1]) #"10.193.49.95" #"localhost"
-    SERVER_PORT = int("".join(sys.argv[2])) #9998
-
-print("Server IP : ",SERVER_IP)
-print("Server Port : ",SERVER_PORT)
-
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
 
@@ -258,7 +249,14 @@ def main():
 # ----------------------- Client Side -----------------------
 
 if __name__ == "__main__":
+
+    if len(sys.argv)==3:
+        SERVER_IP = "".join(sys.argv[1]) #"10.193.49.95" #"localhost"
+        SERVER_PORT = int("".join(sys.argv[2])) #9998
     
+    print("Server IP : ",SERVER_IP)
+    print("Server Port : ",SERVER_PORT)
+
     print("Which username do you want to use ? (By default, it is " + USERNAME + ")")
     username = input()
     
