@@ -4,15 +4,15 @@ class Player:
     BASE_POSITION = (0, 0)
     BASE_SIZE = (50, 50)
     
-    def __init__(self, ip="", username="", color=(0,0,0), position=(0,0), size=[10, 10]):
+    def __init__(self, ip="", username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
 
         Args:
-            - ip (str, optional): Ip address of the player (only defined on the server side). Defaults to "".
-            - username (str): Username of the player. Defaults to "".
-            - color (tuple): Color used by the player. Defaults to (0,0,0).
-            - position (tuple): Position of the player. Defaults to (0,0).
-            - size (list): Size of the player. Defaults to [10, 10].
+            - ip (str, optional): Ip address of the player (only defined on the server side).
+            - username (str): Username of the player.
+            - color (tuple): Color used by the player.
+            - position (tuple): Position of the player.
+            - size (list): Size of the player.
         """
         
         self.ip = ip
@@ -20,6 +20,33 @@ class Player:
         self.color = color
         self.position = position
         self.size = size
+    
+    
+    
+    def update(self, color=None, position=None, size=None):
+        """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
+
+        Args:
+            - color (tuple): Color used by the player.
+            - position (tuple): Position of the player.
+            - size (list): Size of the player.
+        """
+        if color != None:
+            self.color = color
+        if position != None:
+            self.position = position
+        if size != None:
+            self.size = size
+    
+    
+    
+    def toList(self):
+        """Generate the list representation of the player with the format [ip, username, color, position, size]
+
+        Returns:
+            list: extraction of the player's attributes.
+        """
+        return self.ip, self.username, self.color, self.position, self.size
     
     
     
