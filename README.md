@@ -20,6 +20,18 @@ A small project to discover online multiplayer games.
 
 ## GAME :
 
+### Launch 
+
+#### Server Launch
+- `python3 ServerCube.py`
+or
+- `make server`
+
+##### Client
+- `python3 client.py <IP_Server> <Port>`
+or
+- `make client SERVER=<IP_Server> PORT=<Port>`
+
 ### Formatted messages :
 
 #### Client sends :
