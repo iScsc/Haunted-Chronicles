@@ -171,20 +171,25 @@ def collision(pseudo, x, y ,dx ,dy):
 
 
 def initNewPlayer(ip, pseudo):
-    x,y = positionNewPlayer()
-    color = colorNewPlayer()
     dx,dy = sizeNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
     
-def positionNewPlayer():
-    return(SIZE_X/2,SIZE_Y/2)
+    x,y = positionNewPlayer(dx, dy)
+    
+    while not correctPosition(pseudo, x, y, dx, dy):
+        x, y = positionNewPlayer(dx, dy)
+    
+    color = colorNewPlayer()
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+
+def sizeNewPlayer():
+    return(SIZE_X/10,SIZE_Y/10)
+
+def positionNewPlayer(dx, dy):
+    return(randint(0, SIZE_X - dx), randint(0, SIZE_Y - dy))
 
 def colorNewPlayer():
     return((randint(1,255),randint(1,255),randint(1,255)))
-    
-def sizeNewPlayer():
-    return(SIZE_X/10,SIZE_Y/10)
-        
+
 
 
 # ----------------------- Handler -----------------------
