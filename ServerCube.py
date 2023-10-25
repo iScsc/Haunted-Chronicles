@@ -157,12 +157,11 @@ def collision(pseudo, x, y ,dx ,dy):
     c = (x + dx/2, y + dy/2)
     
     for key in dicoJoueur.keys():
-        username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
-        
-        if abs(c[0] - px - pdx/2) < (dx + pdx)/2:
-            return True
-        if abs(c[1] - py - pdy/2) < (dy + pdy)/2:
-            return True
+        if key != pseudo:
+            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            
+            if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+                return True
     
     return False
 
