@@ -14,6 +14,7 @@ SERVER_IP = "10.193.49.95" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
+MAX_REQUESTS = 10 # number of requests without proper response before force disconnect
 
 FPS = 60
 
@@ -90,6 +91,8 @@ def game():
     global SERVER_IP
     global SERVER_PORT
     
+    requestNumber=0
+    
     clock = pg.time.Clock()
     
     while CONNECTED:
@@ -98,7 +101,7 @@ def game():
         
         state = send(inputs)
         
-        update(state)
+        requestNumber+=update(state)
         
         clock.tick(FPS)
 
@@ -212,6 +215,9 @@ def update(state="STATE [] END"):
         players = Player.toPlayers(messages[1])
         if (players != None):
             PLAYERS=players
+            return 0
+        else: return 1
+    return 1
 
 
 
@@ -220,9 +226,11 @@ def exit():
     """
     
     global CONNECTED
+    requestNumber=0
     
     t = time.time()
-    while time.time() - t < DISCONNECTION_WAITING_TIME:
+    while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
+        requestNumber+=1
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
             break
     
@@ -235,10 +243,14 @@ def main():
     """
     
     global CONNECTED
+    requestNumber=0
     
-    while not CONNECTED:
+    while not CONNECTED and requestNumber<MAX_REQUESTS:
         CONNECTED = connect()
         time.sleep(WAITING_TIME)
+        requestNumber+=1
+    if requestNumber>=MAX_REQUESTS:
+        exit()
     
     displayer = Thread(target=display)
     gameUpdater = Thread(target=game)
