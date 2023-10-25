@@ -261,6 +261,7 @@ def main():
     global CONNECTED
     requestNumber=0
     
+    
     while not CONNECTED and requestNumber<MAX_REQUESTS:
         CONNECTED = connect()
         time.sleep(WAITING_TIME)
@@ -268,11 +269,13 @@ def main():
     if requestNumber>=MAX_REQUESTS:
         exitError()
     
-    displayer = Thread(target=display)
-    gameUpdater = Thread(target=game)
     
-    displayer.start()
-    gameUpdater.start()
+    if CONNECTED:
+        displayer = Thread(target=display)
+        gameUpdater = Thread(target=game)
+        
+        displayer.start()
+        gameUpdater.start()
 
 
 
