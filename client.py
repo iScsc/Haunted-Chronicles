@@ -95,7 +95,7 @@ def game():
     
     clock = pg.time.Clock()
     
-    while CONNECTED:
+    while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
         
@@ -104,6 +104,9 @@ def game():
         requestNumber+=update(state)
         
         clock.tick(FPS)
+        
+    if requestNumber>=MAX_REQUESTS:
+        exitError()
 
 
 
@@ -234,7 +237,20 @@ def exit():
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
             break
     
+    if requestNumber>=MAX_REQUESTS:
+        exitError()
+    
     CONNECTED = False
+
+def exitError():
+    """Exit the game
+        Called if there has been a problem with the server"""
+        
+    global CONNECTED
+    
+    print("Sorry a problem occured...")
+    
+    CONNECTED=False
 
 
 
@@ -250,7 +266,7 @@ def main():
         time.sleep(WAITING_TIME)
         requestNumber+=1
     if requestNumber>=MAX_REQUESTS:
-        exit()
+        exitError()
     
     displayer = Thread(target=display)
     gameUpdater = Thread(target=game)
