@@ -104,8 +104,8 @@ def extractLetter(s,pseudo):
 def states():
     liste = []
     for key in dicoJoueur:
-        x,y,color,dx,dy = dicoJoueur[key]
-        liste.append((key,color,(x,y),(dx,dy))) 
+        ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
+        liste.append((username,color,(x,y),(dx,dy))) 
     out = "STATE "+(str(liste)).replace(" ","")+" END"
     return(out)
     
@@ -123,7 +123,7 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    x,y,color,dx,dy = dicoJoueur[pseudo]
+    ip, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
 
     match inputLetter:
         case ".": #nothing
@@ -142,35 +142,54 @@ def Rules(inputLetter,pseudo):
             x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
-    if correctPosition(x,y,dx,dy):
-        dicoJoueur[pseudo] = x,y,color,dx,dy
+    if correctPosition(pseudo, x,y,dx,dy):
+        dicoJoueur[pseudo].update(position=(x, y), size=(dx, dy))
     return()
 
-def correctPosition(x,y,dx,dy):
+def correctPosition(pseudo, x,y,dx,dy):
     correctX = (x>=0) and (x+dx <= SIZE_X)
     correctY = (y>=0) and (y+dy <= SIZE_Y)
-    return correctX and correctY
     
+    return correctX and correctY and not collision(pseudo, x, y, dx, dy)
+
+def collision(pseudo, x, y ,dx ,dy):
+    
+    c = (x + dx/2, y + dy/2)
+    
+    for key in dicoJoueur.keys():
+        if key != pseudo:
+            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            
+            if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+                return True
+    
+    return False
+
 
 
 # ----------------------- Init of a new Player -----------------------
 
 
 def initNewPlayer(ip, pseudo):
-    x,y = positionNewPlayer()
-    color = colorNewPlayer()
     dx,dy = sizeNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
     
-def positionNewPlayer():
-    return(SIZE_X/2,SIZE_Y/2)
+    x,y = positionNewPlayer(dx, dy)
+    
+    while not correctPosition(pseudo, x, y, dx, dy):
+        x, y = positionNewPlayer(dx, dy)
+    
+    color = colorNewPlayer()
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+
+def sizeNewPlayer():
+    return(SIZE_X/10,SIZE_Y/10)
+
+def positionNewPlayer(dx, dy):
+    return(randint(0, SIZE_X - dx), randint(0, SIZE_Y - dy))
 
 def colorNewPlayer():
     return((randint(1,255),randint(1,255),randint(1,255)))
-    
-def sizeNewPlayer():
-    return(SIZE_X/10,SIZE_Y/10)
-        
+
 
 
 # ----------------------- Handler -----------------------
@@ -212,12 +231,3 @@ if __name__ == "__main__":
         # Activate the server; this will keep running until you
         # interrupt the program with Ctrl-C
         server.serve_forever()
-
-
-
-
-
-
-
-
-
