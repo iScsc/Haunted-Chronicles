@@ -101,12 +101,17 @@ def game():
         
         state = send(inputs)
         
-        requestNumber+=update(state)
+        if (update(state)) :
+            requestNumber+=1
+        else :
+            requestNumber=0
+        
+        if requestNumber>=MAX_REQUESTS:
+            exitError()
+
         
         clock.tick(FPS)
         
-    if requestNumber>=MAX_REQUESTS:
-        exitError()
 
 
 
@@ -218,9 +223,9 @@ def update(state="STATE [] END"):
         players = Player.toPlayers(messages[1])
         if (players != None):
             PLAYERS=players
-            return 0
-        else: return 1
-    return 1
+            return False
+        else: return True
+    return True
 
 
 
@@ -266,7 +271,7 @@ def main():
         CONNECTED = connect()
         time.sleep(WAITING_TIME)
         requestNumber+=1
-    if requestNumber>=MAX_REQUESTS:
+    if requestNumber>MAX_REQUESTS:
         exitError()
     
     
