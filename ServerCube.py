@@ -34,8 +34,8 @@ SIZE_MAX_PSEUDO = 10
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
-dicoWall = {}
-dicoWall[1] = Wall(1, (30, 30, 30), (750, 300), (10, 500))
+dicoMur = {}
+dicoMur[1] = Wall(1, (30, 30, 30), (750, 300), (10, 500))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -108,11 +108,19 @@ def states():
     for key in dicoJoueur:
         ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
         liste.append((username,color,(x,y),(dx,dy))) 
-    out = "STATE "+(str(liste)).replace(" ","")+" END"
+    out = "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
-    
+
+def walls():
+    liste = []
+    for key in dicoMur:
+        id, color, (x, y), (dx, dy) = dicoMur[key].toList()
+        liste.append((id,color,(x,y),(dx,dy)))
+    out = "WALLS " + (str(liste)).replace(" ","") + " END"
+    return(out)
+
 def firstConnection(pseudo):
-    out = "CONNECTED "+pseudo+" "+(str(SIZE)).replace(" ","")+" "+states()
+    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states()
     return(out)
 
 def validPseudo(pseudo):
@@ -158,8 +166,8 @@ def collision(pseudo, x, y ,dx ,dy):
     
     c = (x + dx/2, y + dy/2)
     
-    for key in dicoWall.keys():
-        id, color, (wx, wy), (wdx, wdy) = dicoWall[key].toList()
+    for key in dicoMur.keys():
+        id, color, (wx, wy), (wdx, wdy) = dicoMur[key].toList()
         
         if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
             return True
@@ -222,6 +230,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(in_data)
         
         out = processRequest(in_ip ,in_data)
+
         print(">>> ",out,"\n")
         self.request.sendall(bytes(out,'utf-16'))
 
