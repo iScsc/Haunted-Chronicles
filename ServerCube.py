@@ -35,7 +35,9 @@ SIZE_MAX_PSEUDO = 10
 dicoJoueur = {} # Store players' Player structure
 
 dicoMur = {}
-dicoMur[1] = Wall(1, (30, 30, 30), (750, 300), (10, 500))
+dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 50))
+dicoMur[1] = Wall(1, (30, 30, 30), (850, 100), (10, 500))
+dicoMur[2] = Wall(2, (30, 30, 30), (450, 100), (400, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
