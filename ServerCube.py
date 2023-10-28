@@ -6,6 +6,7 @@ import socket
 from random import randint
 
 from player import Player
+from wall import Wall
 
 # ----------------------- IP -----------------------
 
@@ -33,7 +34,8 @@ SIZE_MAX_PSEUDO = 10
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
-
+dicoWall = {}
+dicoWall[1] = Wall(1, (30, 30, 30), (750, 300), (10, 500))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -155,6 +157,12 @@ def correctPosition(pseudo, x,y,dx,dy):
 def collision(pseudo, x, y ,dx ,dy):
     
     c = (x + dx/2, y + dy/2)
+    
+    for key in dicoWall.keys():
+        id, color, (wx, wy), (wdx, wdy) = dicoWall[key].toList()
+        
+        if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
+            return True
     
     for key in dicoJoueur.keys():
         if key != pseudo:
