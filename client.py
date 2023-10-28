@@ -8,9 +8,10 @@ from socket import *
 import time
 
 from player import Player
+from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "10.193.49.95" #"localhost"
+SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -26,6 +27,7 @@ FONT_SIZE_PING = 12
 
 USERNAME = "John"
 PLAYERS = []
+WALLS = [Wall(1, (30, 30, 30), (750, 300), (10, 500))]
 
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
 
@@ -54,6 +56,9 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
         
+        # Walls
+        for wall in WALLS:
+            pg.draw.rect(SCREEN, wall.color, [wall.position, wall.size])
         
         # Players
         for player in PLAYERS:
