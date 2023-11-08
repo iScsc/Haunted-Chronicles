@@ -3,7 +3,7 @@ from player import Player
 from light import Light
 from numpy import angle
 from shapely.geometry import Polygon
-
+import time
 
 
 def extractCorner(p):
@@ -199,11 +199,16 @@ if __name__ == "__main__":
     #print(extractPoly(AllSources([l,l2],[p00,p10],100,100)))
 
     print("test 1")
+    t1 = time.time()
     v = Visible(p00,[l,l2],[p00,p10],100,100)
+    avp = allVisiblePlayer(v,[p00,p10,p20])
+    t2 = time.time()
+    print(t2-t1)
+    
     print(v)
     print(str(v))
     print(isVisible(v,p20))
-    print(allVisiblePlayer(v,[p00,p10,p20]))
+    print(avp)
 
     print("test 2")
     v = Visible(p00,[l,l2],[p00,p22,p21,p02],100,100)
