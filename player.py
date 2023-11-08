@@ -3,8 +3,8 @@ import common
 class Player:
     
     BASE_COLOR = common.Color()
-    BASE_POSITION = (0, 0)
-    BASE_SIZE = (50, 50)
+    BASE_POSITION = common.Position()
+    BASE_SIZE = common.Size()
     
     def __init__(self, ip="", username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
