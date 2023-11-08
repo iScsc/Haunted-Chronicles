@@ -11,7 +11,7 @@ from player import Player
 from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "192.168.1.34" #"localhost"
+SERVER_IP = "10.193.66.72" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -30,6 +30,7 @@ USERNAME = "John"
 PLAYERS = []
 WALLS = []
 
+SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
 
 PING = None # in milliseconds - ping with the server, None when disconnected
@@ -116,7 +117,11 @@ def game():
 
         
         clock.tick(FPS)
-        
+    
+    try:
+        SOCKET.close()
+    except:
+        print("The socket has already been closed.")
 
 
 
@@ -199,17 +204,22 @@ def send(input="INPUT " + USERNAME + " . END"):
     """
     
     global PING
+    global SOCKET
     
-    with socket(AF_INET, SOCK_STREAM) as sock:
+    # Initialization
+    if (SOCKET == None and input[0:7] == "CONNECT"):
+        SOCKET = socket(AF_INET, SOCK_STREAM)
+        SOCKET.connect((SERVER_IP, SERVER_PORT))
+    
+    # Usual behavior
+    if SOCKET != None:
         t = time.time()
         
         # send data
-        sock.connect((SERVER_IP, SERVER_PORT))
-        sock.sendall(bytes(input, "utf-16"))
-        
+        SOCKET.sendall(bytes(input, "utf-16"))
         
         # receive answer
-        answer = str(sock.recv(1024*2), "utf-16")
+        answer = str(SOCKET.recv(1024*2), "utf-16")
         
         PING = int((time.time() - t) * 1000)
         
@@ -237,8 +247,8 @@ def update(state="STATE [] END"):
         else: return True
     return True
 
-    elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-        WALLS = Wall.toWalls(messages[1])
+    # elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
+    #     WALLS = Wall.toWalls(messages[1])
 
 
 
@@ -259,6 +269,7 @@ def exit():
         exitError()
     
     CONNECTED = False
+    SOCKET.close()
 
 def exitError():
     """Exit the game
@@ -269,6 +280,7 @@ def exitError():
     print("Sorry a problem occured...")
     
     CONNECTED=False
+    SOCKET.close()
 
 
 
