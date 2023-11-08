@@ -6,6 +6,7 @@ import socket
 from random import randint
 
 from player import Player
+from wall import Wall
 from common import *
 
 # ----------------------- IP -----------------------
@@ -34,7 +35,10 @@ SIZE_MAX_PSEUDO = 10
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
-
+dicoMur = {}
+dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 50))
+dicoMur[1] = Wall(1, (30, 30, 30), (850, 100), (10, 500))
+dicoMur[2] = Wall(2, (30, 30, 30), (450, 100), (400, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -107,11 +111,19 @@ def states():
     for key in dicoJoueur:
         ip, username, color, position, size = dicoJoueur[key].toList()
         liste.append((username,color,position,size)) 
-    out = "STATE "+(str(liste)).replace(" ","")+" END"
+    out = "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
-    
+
+def walls():
+    liste = []
+    for key in dicoMur:
+        id, color, (x, y), (dx, dy) = dicoMur[key].toList()
+        liste.append((id,color,(x,y),(dx,dy)))
+    out = "WALLS " + (str(liste)).replace(" ","") + " END"
+    return(out)
+
 def firstConnection(pseudo):
-    out = "CONNECTED "+pseudo+" "+(str(SIZE)).replace(" ","")+" "+states()
+    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states()
     return(out)
 
 def validPseudo(pseudo):
@@ -157,6 +169,12 @@ def collision(pseudo, x, y ,dx ,dy):
     
     c = (x + dx/2, y + dy/2)
     
+    for key in dicoMur.keys():
+        id, color, (wx, wy), (wdx, wdy) = dicoMur[key].toList()
+        
+        if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
+            return True
+    
     for key in dicoJoueur.keys():
         if key != pseudo:
             ip, username, color, position, size = dicoJoueur[key].toList()
@@ -186,7 +204,7 @@ def sizeNewPlayer():
     return(SIZE_X/10,SIZE_Y/10)
 
 def positionNewPlayer(dx, dy):
-    return(randint(0, SIZE_X - dx), randint(0, SIZE_Y - dy))
+    return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 def colorNewPlayer():
     return Color((randint(1,255),randint(1,255),randint(1,255)))
@@ -215,6 +233,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(in_data)
         
         out = processRequest(in_ip ,in_data)
+
         print(">>> ",out,"\n")
         self.request.sendall(bytes(out,'utf-16'))
 
@@ -232,12 +251,3 @@ if __name__ == "__main__":
         # Activate the server; this will keep running until you
         # interrupt the program with Ctrl-C
         server.serve_forever()
-
-
-
-
-
-
-
-
-

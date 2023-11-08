@@ -8,12 +8,14 @@ from socket import *
 import time
 
 from player import Player
+from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "10.193.49.95" #"localhost"
+SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
+MAX_REQUESTS = 10 # number of requests without proper response before force disconnect
 
 FPS = 60
 
@@ -26,6 +28,7 @@ FONT_SIZE_PING = 12
 
 USERNAME = "John"
 PLAYERS = []
+WALLS = []
 
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
 
@@ -54,6 +57,9 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
         
+        # Walls
+        for wall in WALLS:
+            pg.draw.rect(SCREEN, wall.color, [wall.position, wall.size])
         
         # Players
         for player in PLAYERS:
@@ -90,17 +96,27 @@ def game():
     global SERVER_IP
     global SERVER_PORT
     
+    requestNumber=0
+    
     clock = pg.time.Clock()
     
-    while CONNECTED:
+    while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
         
         state = send(inputs)
         
-        update(state)
+        if (update(state)) :
+            requestNumber+=1
+        else :
+            requestNumber=0
+        
+        if requestNumber>=MAX_REQUESTS:
+            exitError()
+
         
         clock.tick(FPS)
+        
 
 
 
@@ -115,11 +131,11 @@ def connect():
     
     global SIZE
         
-    message = send("CONNECT " + USERNAME + " END")
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
     messages = message.split(" ")
     
-    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "STATE":
+    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END":
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -132,8 +148,11 @@ def connect():
             print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
-        beginIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
-        update(message[beginIndex - 1:])
+        beginWallIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
+        beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
+        
+        update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
+        update(message[beginPlayerIndex:]) # Players
         
         return True
 
@@ -205,11 +224,21 @@ def update(state="STATE [] END"):
         state (str): The normalized state of the game. Defaults to "STATE [] END".
     """
     
+    global WALLS
     global PLAYERS
     
     messages = state.split(" ")
+    
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        PLAYERS = Player.toPlayers(messages[1])
+        players = Player.toPlayers(messages[1])
+        if (players != None):
+            PLAYERS=players
+            return False
+        else: return True
+    return True
+
+    elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
+        WALLS = Wall.toWalls(messages[1])
 
 
 
@@ -218,13 +247,28 @@ def exit():
     """
     
     global CONNECTED
+    requestNumber=0
     
     t = time.time()
-    while time.time() - t < DISCONNECTION_WAITING_TIME:
+    while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
+        requestNumber+=1
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
             break
     
+    if requestNumber>=MAX_REQUESTS:
+        exitError()
+    
     CONNECTED = False
+
+def exitError():
+    """Exit the game
+        Called if there has been a problem with the server"""
+        
+    global CONNECTED
+    
+    print("Sorry a problem occured...")
+    
+    CONNECTED=False
 
 
 
@@ -233,16 +277,23 @@ def main():
     """
     
     global CONNECTED
+    requestNumber=0
     
-    while not CONNECTED:
+    
+    while not CONNECTED and requestNumber<MAX_REQUESTS:
         CONNECTED = connect()
         time.sleep(WAITING_TIME)
+        requestNumber+=1
+    if requestNumber>MAX_REQUESTS:
+        exitError()
     
-    displayer = Thread(target=display)
-    gameUpdater = Thread(target=game)
     
-    displayer.start()
-    gameUpdater.start()
+    if CONNECTED:
+        displayer = Thread(target=display)
+        gameUpdater = Thread(target=game)
+        
+        displayer.start()
+        gameUpdater.start()
 
 
 
