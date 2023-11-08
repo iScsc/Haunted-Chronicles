@@ -75,7 +75,7 @@ def nextCorner(x,y,sizex,sizey):
     if (x,y) == (sizex,0):
         return 0,0
 
-def cornerRigth(x,y,sizex,sizey):
+def cornerRight(x,y,sizex,sizey):
     if x==0:
         return 0,sizey
     if x==sizex:
@@ -93,9 +93,9 @@ def polyInLight(l,p,sizex,sizey):
     bordi = pointBord(l,corners[i],sizex,sizey)
     bordj = pointBord(l,corners[j],sizex,sizey)
     xi,yi = bordi
-    pi = cornerRigth(xi,yi,sizex,sizey)
+    pi = cornerRight(xi,yi,sizex,sizey)
     xj,yj = bordj
-    pj = cornerRigth(xj,yj,sizex,sizey)
+    pj = cornerRight(xj,yj,sizex,sizey)
     coord = [bordi,corners[i],corners[j],bordj]
     #coord.append(pj)
     #pj = nextCorner(pj[0],pj[1],sizex,sizey)
@@ -183,7 +183,14 @@ if __name__ == "__main__":
 
     print(AllSources([l,l2],[p00,p10],100,100))
     print(extractPoly(AllSources([l,l2],[p00,p10],100,100)))
-    print("test")
-    print(Visible(p00,[l,l2],[p00,p10],100,100))
+
+    print("test 1")
+    v = Visible(p00,[l,l2],[p00,p10],100,100)
+    print(v)
+    print(str(v))
+
+    print("test 2")
+    v = Visible(p00,[l,l2],[p00,p22,p21,p02],100,100)
+    print(v)
 
 
