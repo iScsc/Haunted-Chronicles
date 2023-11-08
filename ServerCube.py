@@ -6,6 +6,7 @@ import socket
 from random import randint
 
 from player import Player
+from common import *
 
 # ----------------------- IP -----------------------
 
@@ -104,8 +105,8 @@ def extractLetter(s,pseudo):
 def states():
     liste = []
     for key in dicoJoueur:
-        ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
-        liste.append((username,color,(x,y),(dx,dy))) 
+        ip, username, color, position, size = dicoJoueur[key].toList()
+        liste.append((username,color,position,size)) 
     out = "STATE "+(str(liste)).replace(" ","")+" END"
     return(out)
     
@@ -158,9 +159,9 @@ def collision(pseudo, x, y ,dx ,dy):
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            ip, username, color, position, size = dicoJoueur[key].toList()
             
-            if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+            if abs(c[0] - position.x - size.x/2) < (dx + size.x)/2 and abs(c[1] - position.y - size.y/2) < (dy + size.y)/2:
                 return True
     
     return False
@@ -179,7 +180,7 @@ def initNewPlayer(ip, pseudo):
         x, y = positionNewPlayer(dx, dy)
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(x,y))
 
 def sizeNewPlayer():
     return(SIZE_X/10,SIZE_Y/10)
@@ -188,7 +189,7 @@ def positionNewPlayer(dx, dy):
     return(randint(0, SIZE_X - dx), randint(0, SIZE_Y - dy))
 
 def colorNewPlayer():
-    return((randint(1,255),randint(1,255),randint(1,255)))
+    return Color((randint(1,255),randint(1,255),randint(1,255)))
 
 
 

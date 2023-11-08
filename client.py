@@ -57,13 +57,13 @@ def display():
         
         # Players
         for player in PLAYERS:
-            pg.draw.rect(SCREEN, player.color, [player.position, player.size])
+            pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
             
             usernameText = player.username
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
-            usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color)
+            usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position[0] + (player.size[0] - usernameSize[0]) // 2, player.position[1] - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
         
         
         # Ping

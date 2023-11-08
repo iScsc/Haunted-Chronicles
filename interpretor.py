@@ -1,6 +1,8 @@
 import common
 from player import Player
 
+
+
 def spc(string):
     
     #getting parenthesis index
@@ -39,6 +41,8 @@ def spc(string):
     substr=[s for s in substr if s!='']
     
     return substr
+
+
 
 def interp(playerString, **kwargs):
     values=spc(playerString)
