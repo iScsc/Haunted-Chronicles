@@ -37,7 +37,7 @@ def extremePoint(l,p):
                 
     return(maxphi)
 
-def pointBord(l,point,sizex,sizey):
+def pointBorder(l,point,sizex,sizey):
     lx,ly = l.position
     px,py = point
     wallx = 0
@@ -90,13 +90,13 @@ def polyInLight(l,p,sizex,sizey):
         i,j = j,i
     i,j = j,i # modif to calculate shadow
     corners = extractCorner(p)
-    bordi = pointBord(l,corners[i],sizex,sizey)
-    bordj = pointBord(l,corners[j],sizex,sizey)
-    xi,yi = bordi
+    Borderi = pointBorder(l,corners[i],sizex,sizey)
+    Borderj = pointBorder(l,corners[j],sizex,sizey)
+    xi,yi = Borderi
     pi = cornerRight(xi,yi,sizex,sizey)
-    xj,yj = bordj
+    xj,yj = Borderj
     pj = cornerRight(xj,yj,sizex,sizey)
-    coord = [bordi,corners[i],corners[j],bordj]
+    coord = [Borderi,corners[i],corners[j],Borderj]
     #coord.append(pj)
     #pj = nextCorner(pj[0],pj[1],sizex,sizey)
     while pj != pi:
@@ -129,7 +129,21 @@ def Visible(p,listOfl,listOfp,sizex,sizey):
     #return(poly.intersection(AllSources(listOfl,listOfp,sizex,sizey)))
     return(poly.union(AllSources(listOfl,listOfp,sizex,sizey)))
 
-def extractPoly(geom):
+def isVisible(shadows,p):
+    body = Polygon(extractCorner(p))
+    return not(shadows.contains_properly(body))
+
+def allVisiblePlayer(shadows,listOfp):
+    l = []
+    for p in listOfp:
+        if isVisible(shadows,p):
+            l.append(p.username)
+    return l
+        
+
+
+"""
+def extractPoly(geom): # not use
     tp = type(Polygon([(0,0),(0,1),(1,1)]))
     if type(geom) == tp:
         return geom
@@ -137,20 +151,20 @@ def extractPoly(geom):
         if type(g) == tp:
             return g 
     return None
-
+"""
 
 ### Tests
 
 if __name__ == "__main__":
 
-    p00 = Player(ip="", username="", color=(0,0,0), position=(20,20), size=[10, 10])
+    p00 = Player(ip="", username="p00", color=(0,0,0), position=(20,20), size=[10, 10])
     l = Light((50,50))
     l2 = Light((100,0))
 
     print(extremePoint(l,p00))
 
-    print(pointBord(l,(30,10),200,200))
-    print(pointBord(l,(10,30),200,200))
+    print(pointBorder(l,(30,10),200,200))
+    print(pointBorder(l,(10,30),200,200))
 
     print(nextCorner(100,0,100,100))
 
@@ -159,14 +173,14 @@ if __name__ == "__main__":
     p22 = Player(ip="", username="", color=(0,0,0), position=(80,80), size=[10, 10])
     print(polyInLight(l,p22,100,100))
 
-    p20 = Player(ip="", username="", color=(0,0,0), position=(80,20), size=[10, 10])
+    p20 = Player(ip="", username="p20", color=(0,0,0), position=(80,20), size=[10, 10])
     print(polyInLight(l,p20,100,100))
 
     p02 = Player(ip="", username="", color=(0,0,0), position=(20,80), size=[10, 10])
     print(polyInLight(l,p02,100,100))
     
 
-    p10 = Player(ip="", username="", color=(0,0,0), position=(50,20), size=[10, 10])
+    p10 = Player(ip="", username="p10", color=(0,0,0), position=(50,20), size=[10, 10])
     print(polyInLight(l,p10,100,100))
 
     p12 = Player(ip="", username="", color=(0,0,0), position=(50,80), size=[10, 10])
@@ -182,15 +196,18 @@ if __name__ == "__main__":
     print(OneSource(l2,[p00,p10],100,100))
 
     print(AllSources([l,l2],[p00,p10],100,100))
-    print(extractPoly(AllSources([l,l2],[p00,p10],100,100)))
+    #print(extractPoly(AllSources([l,l2],[p00,p10],100,100)))
 
     print("test 1")
     v = Visible(p00,[l,l2],[p00,p10],100,100)
     print(v)
     print(str(v))
+    print(isVisible(v,p20))
+    print(allVisiblePlayer(v,[p00,p10,p20]))
 
     print("test 2")
     v = Visible(p00,[l,l2],[p00,p22,p21,p02],100,100)
     print(v)
+    print(isVisible(v,p20))
 
 
