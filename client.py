@@ -8,9 +8,10 @@ from socket import *
 import time
 
 from player import Player
+from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "10.193.49.95" #"localhost"
+SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -27,6 +28,7 @@ FONT_SIZE_PING = 12
 
 USERNAME = "John"
 PLAYERS = []
+WALLS = []
 
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
 
@@ -55,6 +57,9 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
         
+        # Walls
+        for wall in WALLS:
+            pg.draw.rect(SCREEN, wall.color, [wall.position, wall.size])
         
         # Players
         for player in PLAYERS:
@@ -126,11 +131,11 @@ def connect():
     
     global SIZE
         
-    message = send("CONNECT " + USERNAME + " END")
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
     messages = message.split(" ")
     
-    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "STATE":
+    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END":
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -143,8 +148,11 @@ def connect():
             print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
-        beginIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
-        update(message[beginIndex - 1:])
+        beginWallIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
+        beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
+        
+        update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
+        update(message[beginPlayerIndex:]) # Players
         
         return True
 
@@ -216,9 +224,11 @@ def update(state="STATE [] END"):
         state (str): The normalized state of the game. Defaults to "STATE [] END".
     """
     
+    global WALLS
     global PLAYERS
     
     messages = state.split(" ")
+    
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         players = Player.toPlayers(messages[1])
         if (players != None):
@@ -226,6 +236,9 @@ def update(state="STATE [] END"):
             return False
         else: return True
     return True
+
+    elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
+        WALLS = Wall.toWalls(messages[1])
 
 
 
