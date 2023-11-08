@@ -1,5 +1,4 @@
 import common
-from player import Player
 
 
 
@@ -35,7 +34,7 @@ def spc(string):
         if (i<len(po)-1):
             substr+=(string[pf[i]+1:po[i+1]]).split(',')
     if (len(pf)>0 and pf[-1]!=len(string)-1):
-        substr+=(string[pf[-1]:]).split(',')
+        substr+=(string[pf[-1]+1:]).split(',')
         
     #epurating from void substring
     substr=[s for s in substr if s!='']
@@ -45,6 +44,7 @@ def spc(string):
 
 
 def interp(playerString, **kwargs):
+    from player import Player
     values=spc(playerString)
     assert(len(values)==len(kwargs))
     i=0
