@@ -1,4 +1,5 @@
 import common
+from player import Player
 
 def spc(string):
     
@@ -12,8 +13,6 @@ def spc(string):
         indexf=string.find(')',indexf)
         if (indexo!=-1 and indexf!=-1):
             if (len(pf)>0 and indexo<pf[-1]):
-                print(pf)
-                print(indexf)
                 pf[-1]=indexf
                 indexf+=1
                 indexo+=1
@@ -22,8 +21,6 @@ def spc(string):
                 indexo+=1
                 pf.append(indexf)
                 indexf+=1
-    print(po)
-    print(pf)
     
     #getting substrings
     substr=[]
@@ -63,6 +60,9 @@ def interp(playerString, **kwargs):
         elif type(kwargs[arg])==common.Size:
             d=interp(values[i],w=0,h=0)
             kwargs[arg]=common.Size(d['w'],d['h'])
+        elif type(kwargs[arg])==Player:
+            d=interp(values[i],username="",color=common.Color(),position=common.Position(),size=common.Size())
+            kwargs[arg]=Player("",d['username'],d['color'],d['position'],d['size'])
         
         i+=1
     return kwargs
