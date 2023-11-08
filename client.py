@@ -14,6 +14,7 @@ SERVER_IP = "10.193.49.95" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
+MAX_REQUESTS = 10 # number of requests without proper response before force disconnect
 
 FPS = 60
 
@@ -90,17 +91,27 @@ def game():
     global SERVER_IP
     global SERVER_PORT
     
+    requestNumber=0
+    
     clock = pg.time.Clock()
     
-    while CONNECTED:
+    while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
         
         state = send(inputs)
         
-        update(state)
+        if (update(state)) :
+            requestNumber+=1
+        else :
+            requestNumber=0
+        
+        if requestNumber>=MAX_REQUESTS:
+            exitError()
+
         
         clock.tick(FPS)
+        
 
 
 
@@ -209,7 +220,12 @@ def update(state="STATE [] END"):
     
     messages = state.split(" ")
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        PLAYERS = Player.toPlayers(messages[1])
+        players = Player.toPlayers(messages[1])
+        if (players != None):
+            PLAYERS=players
+            return False
+        else: return True
+    return True
 
 
 
@@ -218,13 +234,28 @@ def exit():
     """
     
     global CONNECTED
+    requestNumber=0
     
     t = time.time()
-    while time.time() - t < DISCONNECTION_WAITING_TIME:
+    while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
+        requestNumber+=1
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
             break
     
+    if requestNumber>=MAX_REQUESTS:
+        exitError()
+    
     CONNECTED = False
+
+def exitError():
+    """Exit the game
+        Called if there has been a problem with the server"""
+        
+    global CONNECTED
+    
+    print("Sorry a problem occured...")
+    
+    CONNECTED=False
 
 
 
@@ -233,16 +264,23 @@ def main():
     """
     
     global CONNECTED
+    requestNumber=0
     
-    while not CONNECTED:
+    
+    while not CONNECTED and requestNumber<MAX_REQUESTS:
         CONNECTED = connect()
         time.sleep(WAITING_TIME)
+        requestNumber+=1
+    if requestNumber>MAX_REQUESTS:
+        exitError()
     
-    displayer = Thread(target=display)
-    gameUpdater = Thread(target=game)
     
-    displayer.start()
-    gameUpdater.start()
+    if CONNECTED:
+        displayer = Thread(target=display)
+        gameUpdater = Thread(target=game)
+        
+        displayer.start()
+        gameUpdater.start()
 
 
 
