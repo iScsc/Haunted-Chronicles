@@ -15,6 +15,7 @@ class Player:
             - size (list): Size of the player.
         """
         
+        # ip may be deleted from the Player class as it can now be identified using the player's socket
         self.ip = ip
         self.username = username
         self.color = color

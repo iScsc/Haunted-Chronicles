@@ -34,6 +34,7 @@ SIZE_MAX_PSEUDO = 10
 
 
 
+# Maybe not mandatory
 WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
 
 HOST = str(IP)
