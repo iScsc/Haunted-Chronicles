@@ -1,3 +1,5 @@
+import common
+
 def spc(string):
     
     #getting parenthesis index
@@ -52,6 +54,15 @@ def interp(playerString, **kwargs):
             kwargs[arg]=int(values[i])
         elif type(kwargs[arg])==float:
             kwargs[arg]=float(values[i])
+        elif type(kwargs[arg])==common.Color:
+            d=interp(values[i],r=0,g=0,b=0)
+            kwargs[arg]=common.Color(d['r'],d['g'],d['b'])
+        elif type(kwargs[arg])==common.Position:
+            d=interp(values[i],x=0,y=0)
+            kwargs[arg]=common.Position(d['x'],d['y'])
+        elif type(kwargs[arg])==common.Size:
+            d=interp(values[i],w=0,h=0)
+            kwargs[arg]=common.Size(d['w'],d['h'])
         
         i+=1
     return kwargs
