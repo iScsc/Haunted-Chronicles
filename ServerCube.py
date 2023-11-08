@@ -1,9 +1,11 @@
 
 # ----------------------- Imports -----------------------
 
-import socketserver
-import socket
+from socket import *
 from random import randint
+
+from threading import *
+import time
 
 from player import Player
 from wall import Wall
@@ -11,7 +13,7 @@ from wall import Wall
 # ----------------------- IP -----------------------
 
 def extractingIP():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket(AF_INET, SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     IP = s.getsockname()[0]
     s.close()
@@ -30,6 +32,23 @@ IP = extractingIP()
 
 SIZE_MAX_PSEUDO = 10
 
+
+
+WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
+
+HOST = str(IP)
+PORT = 9998
+
+MAINSOCKET = None
+BACKLOG = 1
+dicoSocket = {}
+waitingConnectionList = []
+waitingDisconnectionList = []
+
+
+LISTENING = True
+MANAGING = True
+STOP = False
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
@@ -209,44 +228,149 @@ def colorNewPlayer():
     return((randint(1,255),randint(1,255),randint(1,255)))
 
 
+# ----------------------- Threads -----------------------
+def manage_server():
+    global STOP
+    global LISTENING
+    global MANAGING
+    
+    global MAINSOCKET
+    
+    while not STOP:
+        command = input()
+        match command:
+            case "stop":
+                STOP = True
+                print("STOP = ", STOP)
+                MAINSOCKET.shutdown(SHUT_RDWR)
+                MAINSOCKET.close()
+                
+                print("Socket server closed !")
+                
+                for (username,(sock,addr)) in dicoSocket:
+                    sock.shutdown(SHUT_RDWR)
+                    sock.close()
+                
+                print("Client sockets closed !")
+            case "deaf":
+                LISTENING = False
+                print("LISTENING = ", LISTENING)
+            case "listen":
+                LISTENING = True
+                print("LISTENING = ", LISTENING)
+            case "ignore":
+                MANAGING = False
+                print("MANAGING = ", MANAGING)
+            case "manage":
+                MANAGING = True
+                print("MANAGING = ", MANAGING)
+            case _:
+                print("Wrong command : use either stop, deaf, listen, ignore, manage")
+                print("STOP = ", STOP)
+                print("LISTENING = ", LISTENING)
+                print("MANAGING = ", MANAGING)
+                
+def listen_new():
+    global STOP
+    global LISTENING
+    
+    global waitingConnectionList
+    
+    while not STOP:
+        while LISTENING:
+            sock, addr = MAINSOCKET.accept()
+            data = sock.recv(1024).strip()
+            
+            in_ip = addr[0]
+            
+            print("{} wrote:".format(in_ip))
+            in_data = str(data,'utf-16')
+            print(in_data)
+            
+            out = processRequest(in_ip ,in_data)
+            message = out.split(' ')
+            
+            if message[0]=="CONNECTED":
+                username = message[1]
+                waitingConnectionList.append((username, sock, addr))
 
-# ----------------------- Handler -----------------------
+            print(">>> ",out,"\n")
+            sock.sendall(bytes(out,'utf-16'))
+            
+            time.sleep(WAITING_TIME)
 
-class MyTCPHandler(socketserver.BaseRequestHandler):
-    """
-    The request handler class for our server.
+def listen_old():
+    global STOP
+    global MANAGING
+    
+    global waitingConnectionList
+    global waitingDisconnectionList
+    
+    while not STOP:
+        while MANAGING:
+            coSocketList = waitingConnectionList.copy()
+            waitingConnectionList = []
+            
+            for elt in coSocketList:
+                username, sock, addr = elt[0], elt[1], elt[2]
+                dicoSocket[username] = sock, addr
+            
 
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
+            
+            diSocketList = waitingDisconnectionList.copy()
+            waitingDisconnectionList = []
+            
+            for elt in diSocketList:
+                username, sock, addr = elt[0], elt[1], elt[2]
+                dicoSocket.pop(username)
+                
+                sock.close()
 
-    def handle(self):
-        # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
-        
-        in_ip = self.client_address[0]
-        
-        print("{} wrote:".format(in_ip))
-        in_data = str(self.data,'utf-16')
-        print(in_data)
-        
-        out = processRequest(in_ip ,in_data)
 
-        print(">>> ",out,"\n")
-        self.request.sendall(bytes(out,'utf-16'))
+            
+            for username in dicoSocket:
+                sock = dicoSocket[username][0]
+                addr = dicoSocket[username][1]
 
+                data = sock.recv(1024).strip()
+                
+                in_ip = addr[0]
+                
+                print("{} wrote:".format(in_ip))
+                in_data = str(data,'utf-16')
+                print(in_data)
+                
+                out = processRequest(in_ip ,in_data)
+                message = out.split(" ")
+                        
+                if message[0]=="DISCONNECTED":
+                    username = message[1]
+                    waitingDisconnectionList.append((username, sock, addr))
+                
+                print(">>> ",out,"\n")
+                sock.sendall(bytes(out,'utf-16'))
+                
+            time.sleep(WAITING_TIME)
+    
 
 
 # ----------------------- Main -----------------------
+def main():
+    global MAINSOCKET
+    
+    # Initialization
+    if MAINSOCKET == None:
+        MAINSOCKET = socket(AF_INET, SOCK_STREAM)
+        MAINSOCKET.bind((HOST, PORT))
+        MAINSOCKET.listen(BACKLOG)
+    
+    listener_new = Thread(target=listen_new)
+    manager_server = Thread(target=manage_server)
+    listener_old = Thread(target=listen_old)
+    
+    listener_new.start()
+    manager_server.start()
+    listener_old.start()
 
 if __name__ == "__main__":
-    HOST, PORT = str(IP), 9998
-    #HOST, PORT = "localhost", 9998
-    socketserver.TCPServer.allow_reuse_address = True
-    # Create the server, binding to localhost on port 9999
-    with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
-        print("HOST = ",IP,"\nPORT = ",PORT,"\n")
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C
-        server.serve_forever()
+    main()
