@@ -1,6 +1,8 @@
+import common
+
 class Player:
     
-    BASE_COLOR = (255, 0, 0)
+    BASE_COLOR = common.Color()
     BASE_POSITION = (0, 0)
     BASE_SIZE = (50, 50)
     
@@ -269,3 +271,4 @@ class Player:
         
 
         return playersList
+
