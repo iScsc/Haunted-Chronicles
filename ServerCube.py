@@ -197,7 +197,7 @@ def initNewPlayer(ip, pseudo):
         x, y = positionNewPlayer(dx, dy)
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(x,y))
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(dx,dy))
 
 def sizeNewPlayer():
     return(SIZE_X/10,SIZE_Y/10)
