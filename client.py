@@ -59,7 +59,7 @@ def display():
         
         # Walls
         for wall in WALLS:
-            pg.draw.rect(SCREEN, wall.color, [wall.position, wall.size])
+            pg.draw.rect(SCREEN, wall.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
         
         # Players
         for player in PLAYERS:

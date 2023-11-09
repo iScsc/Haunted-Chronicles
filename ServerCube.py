@@ -36,9 +36,9 @@ SIZE_MAX_PSEUDO = 10
 dicoJoueur = {} # Store players' Player structure
 
 dicoMur = {}
-dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 50))
-dicoMur[1] = Wall(1, (30, 30, 30), (850, 100), (10, 500))
-dicoMur[2] = Wall(2, (30, 30, 30), (450, 100), (400, 10))
+dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 50))
+dicoMur[1] = Wall(1, Color(30, 30, 30), Position(850, 100), Size(10, 500))
+dicoMur[2] = Wall(2, Color(30, 30, 30), Position(450, 100), Size(400, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -117,8 +117,8 @@ def states():
 def walls():
     liste = []
     for key in dicoMur:
-        id, color, (x, y), (dx, dy) = dicoMur[key].toList()
-        liste.append((id,color,(x,y),(dx,dy)))
+        id, color, position, size = dicoMur[key].toList()
+        liste.append((id,color,position,size))
     out = "WALLS " + (str(liste)).replace(" ","") + " END"
     return(out)
 

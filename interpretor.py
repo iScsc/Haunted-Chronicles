@@ -44,11 +44,15 @@ def spc(string):
 
 
 def interp(playerString, **kwargs):
+    
     from player import Player
     from wall import Wall
+    
     values=spc(playerString)
     assert(len(values)==len(kwargs))
+    
     i=0
+    
     for arg in kwargs:
         
         if type(kwargs[arg])==str:
