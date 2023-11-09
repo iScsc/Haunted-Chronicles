@@ -53,7 +53,7 @@ class Player:
     
     
     
-    def toString(self):
+    def __str__(self):
         """Generate the string representation of the player.
 
         Returns:
@@ -79,8 +79,8 @@ class Player:
             playersList = []
             
             string=interpretor.spc(playersString)
-            string.remove('[')
-            string.remove(']')
+            string.remove("['")
+            string.remove("']")
             
             for s in string:
                 s='('+s+')'

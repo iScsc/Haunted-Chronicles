@@ -34,13 +34,13 @@ class Wall:
     
     
     
-    def toString(self):
+    def __str__(self):
         """Generate the string representation of the wall.
 
         Returns:
             str: description of the wall used to send data from the server to the clients.
         """
-        msg = "(" + str(id) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
+        msg = "(" + str(self.id) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
         return msg.replace(" ", "")
     
     
@@ -61,8 +61,8 @@ class Wall:
             wallsList = []
             
             string=interpretor.spc(wallsString)
-            string.remove('[')
-            string.remove(']')
+            string.remove("['")
+            string.remove("']")
             
             for s in string:
                 s='('+s+')'

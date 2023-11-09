@@ -109,16 +109,14 @@ def extractLetter(s,pseudo):
 def states():
     liste = []
     for key in dicoJoueur:
-        ip, username, color, position, size = dicoJoueur[key].toList()
-        liste.append((username,color,position,size)) 
+        liste.append(str(dicoJoueur[key]))
     out = "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
 
 def walls():
     liste = []
     for key in dicoMur:
-        id, color, position, size = dicoMur[key].toList()
-        liste.append((id,color,position,size))
+        liste.append(str(dicoMur[key]))
     out = "WALLS " + (str(liste)).replace(" ","") + " END"
     return(out)
 
@@ -136,7 +134,8 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    ip, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
+    _, _, _, position1, size1 = dicoJoueur[pseudo].toList()
+    x,y=position1.x,position1.y
 
     match inputLetter:
         case ".": #nothing
@@ -155,8 +154,8 @@ def Rules(inputLetter,pseudo):
             x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
-    if correctPosition(pseudo, x,y,dx,dy):
-        dicoJoueur[pseudo].update(position=(x, y), size=(dx, dy))
+    if correctPosition(pseudo, x,y,size1.w,size1.h):
+        dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
     return()
 
 def correctPosition(pseudo, x,y,dx,dy):
@@ -170,16 +169,16 @@ def collision(pseudo, x, y ,dx ,dy):
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
-        id, color, (wx, wy), (wdx, wdy) = dicoMur[key].toList()
+        _, _, position, size = dicoMur[key].toList()
         
-        if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
+        if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
             return True
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            ip, username, color, position, size = dicoJoueur[key].toList()
+            _, _, _, position, size = dicoJoueur[key].toList()
             
-            if abs(c[0] - position.x - size.x/2) < (dx + size.x)/2 and abs(c[1] - position.y - size.y/2) < (dy + size.y)/2:
+            if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
                 return True
     
     return False
@@ -207,7 +206,7 @@ def positionNewPlayer(dx, dy):
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 def colorNewPlayer():
-    return Color((randint(1,255),randint(1,255),randint(1,255)))
+    return Color(randint(1,255),randint(1,255),randint(1,255))
 
 
 

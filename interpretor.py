@@ -36,8 +36,8 @@ def spc(string):
     if (len(pf)>0 and pf[-1]!=len(string)-1):
         substr+=(string[pf[-1]+1:]).split(',')
         
-    #epurating from void substring
-    substr=[s for s in substr if s!='']
+    #epurating from void substring and residual apostrophe
+    substr=[s for s in substr if s not in ['',"'"]]
     
     return substr
 
