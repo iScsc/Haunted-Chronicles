@@ -11,7 +11,7 @@ from player import Player
 from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "10.193.66.72" #"localhost"
+SERVER_IP = "10.188.222.194" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -96,6 +96,7 @@ def game():
     global PLAYERS
     global SERVER_IP
     global SERVER_PORT
+    global SOCKET
     
     requestNumber=0
     
@@ -118,10 +119,9 @@ def game():
         
         clock.tick(FPS)
     
-    try:
+    if SOCKET != None:
         SOCKET.close()
-    except:
-        print("The socket has already been closed.")
+        SOCKET = None
 
 
 
@@ -135,7 +135,7 @@ def connect():
     """
     
     global SIZE
-        
+    
     message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
     messages = message.split(" ")
@@ -160,8 +160,36 @@ def connect():
         update(message[beginPlayerIndex:]) # Players
         
         return True
-
+    # Manage failed connections
+    elif "CONNECTED" not in messages:
+        askNewPseudo(message)
+        
+        global SOCKET
+        
+        SOCKET.close()
+        SOCKET = None
+    
     return False
+
+
+
+def askNewPseudo(errorMessage):
+    """Ask for another username when connection fails to try to connect again.
+
+    Args:
+        errorMessage (str): connection error message sent back by the server when the connection failed.
+    """
+    global USERNAME
+    
+    print("Server sent back : " + errorMessage)
+    print("Please try a new pseudo. (Your previous one was " + USERNAME + ")")
+    
+    username = ""
+    
+    while username == "":
+        username = input()
+    
+    USERNAME = username
 
 
 
@@ -257,6 +285,7 @@ def exit():
     """
     
     global CONNECTED
+    global SOCKET
     requestNumber=0
     
     t = time.time()
@@ -270,17 +299,20 @@ def exit():
     
     CONNECTED = False
     SOCKET.close()
+    SOCKET = None
 
 def exitError():
     """Exit the game
         Called if there has been a problem with the server"""
         
     global CONNECTED
+    global SOCKET
     
     print("Sorry a problem occured...")
     
     CONNECTED=False
     SOCKET.close()
+    SOCKET = None
 
 
 
