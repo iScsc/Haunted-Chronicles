@@ -292,12 +292,12 @@ def listen_new():
             out = processRequest(in_ip ,in_data)
             message = out.split(' ')
             
-            LOCK.acquire()
             if message[0]=="CONNECTED":
+                LOCK.acquire()
                 username = message[1]
                 dicoSocket[username] = (sock, addr)
+                LOCK.release()
             #    waitingConnectionList.append((username, sock, addr))
-            LOCK.release()
 
             print(">>> ",out,"\n")
             sock.sendall(bytes(out,'utf-16'))
