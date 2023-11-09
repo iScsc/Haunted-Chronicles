@@ -23,7 +23,7 @@ A small project to discover online multiplayer games.
 ### Launch 
 
 #### Server Launch
-- `python3 ServerCube.py`
+- `python3 server.py`
 or
 - `make server`
 
