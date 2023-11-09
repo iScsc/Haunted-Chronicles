@@ -41,9 +41,10 @@ HOST = str(IP)
 PORT = 9998
 
 MAINSOCKET = None
+LOCK = None
 BACKLOG = 1
 dicoSocket = {}
-waitingConnectionList = []
+#waitingConnectionList = []
 waitingDisconnectionList = []
 
 
@@ -275,10 +276,10 @@ def listen_new():
     global STOP
     global LISTENING
     
-    global waitingConnectionList
+    #global waitingConnectionList
     
     while not STOP:
-        while LISTENING:
+        while LISTENING and not STOP:
             sock, addr = MAINSOCKET.accept()
             data = sock.recv(1024).strip()
             
@@ -291,44 +292,47 @@ def listen_new():
             out = processRequest(in_ip ,in_data)
             message = out.split(' ')
             
+            LOCK.acquire()
             if message[0]=="CONNECTED":
                 username = message[1]
-                waitingConnectionList.append((username, sock, addr))
+                dicoSocket[username] = (sock, addr)
+            #    waitingConnectionList.append((username, sock, addr))
+            LOCK.release()
 
             print(">>> ",out,"\n")
             sock.sendall(bytes(out,'utf-16'))
             
             time.sleep(WAITING_TIME)
+        
+        time.sleep(WAITING_TIME)
 
 def listen_old():
     global STOP
     global MANAGING
     
-    global waitingConnectionList
+    #global waitingConnectionList
     global waitingDisconnectionList
     
     while not STOP:
-        while MANAGING:
-            coSocketList = waitingConnectionList.copy()
-            waitingConnectionList = []
+        while MANAGING and not STOP:
+            # coSocketList = waitingConnectionList.copy()
+            # waitingConnectionList = []
             
-            for elt in coSocketList:
-                username, sock, addr = elt[0], elt[1], elt[2]
-                dicoSocket[username] = sock, addr
+            # for elt in coSocketList:
+            #     username, sock, addr = elt[0], elt[1], elt[2]
+            #     dicoSocket[username] = sock, addr
             
 
             
-            diSocketList = waitingDisconnectionList.copy()
-            waitingDisconnectionList = []
-            
-            for elt in diSocketList:
+            for elt in waitingDisconnectionList:
                 username, sock, addr = elt[0], elt[1], elt[2]
                 dicoSocket.pop(username)
                 
                 sock.close()
+            waitingDisconnectionList = []
 
 
-            
+            LOCK.acquire()
             for username in dicoSocket:
                 sock = dicoSocket[username][0]
                 addr = dicoSocket[username][1]
@@ -350,20 +354,27 @@ def listen_old():
                 
                 print(">>> ",out,"\n")
                 sock.sendall(bytes(out,'utf-16'))
-                
+            LOCK.release()
+            
             time.sleep(WAITING_TIME)
+        
+        time.sleep(WAITING_TIME)
     
 
 
 # ----------------------- Main -----------------------
 def main():
     global MAINSOCKET
+    global LOCK
     
     # Initialization
     if MAINSOCKET == None:
         MAINSOCKET = socket(AF_INET, SOCK_STREAM)
         MAINSOCKET.bind((HOST, PORT))
         MAINSOCKET.listen(BACKLOG)
+    
+    if LOCK == None:
+        LOCK = Lock()
     
     print("Server opened with :\n    - ip = " + str(IP) + "\n    - port = " + str(PORT))
     
