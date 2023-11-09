@@ -365,6 +365,8 @@ def main():
         MAINSOCKET.bind((HOST, PORT))
         MAINSOCKET.listen(BACKLOG)
     
+    print("Server opened with :\n    - ip = " + str(IP) + "\n    - port = " + str(PORT))
+    
     listener_new = Thread(target=listen_new)
     manager_server = Thread(target=manage_server)
     listener_old = Thread(target=listen_old)
