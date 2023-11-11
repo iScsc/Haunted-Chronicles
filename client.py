@@ -238,10 +238,10 @@ def update(state="STATE [] END"):
     messages = state.split(" ")
 
     if len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-        WALLS = Wall.toWalls(messages[1])
+        WALLS = Wall.toWalls(messages[1],DEBUG)
     
     elif len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        players = Player.toPlayers(messages[1])
+        players = Player.toPlayers(messages[1],DEBUG)
         if (players != None):
             PLAYERS=players
             return False

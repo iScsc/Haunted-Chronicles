@@ -64,7 +64,7 @@ class Player:
 
 
 
-    def toPlayers(playersString):
+    def toPlayers(playersString, DEBUG=False):
         """Generate the list of players described by the playersString variable.
 
         Args:
@@ -89,6 +89,7 @@ class Player:
             return playersList
         
         except Exception as e:
-            print(e)
+            if DEBUG:
+                print(e)
             return None
 

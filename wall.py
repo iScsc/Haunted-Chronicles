@@ -45,7 +45,7 @@ class Wall:
     
     
     
-    def toWalls(wallsString):
+    def toWalls(wallsString, DEBUG=False):
         """Generate the list of walls described by the wallsString variable.
 
         Args:
@@ -71,5 +71,6 @@ class Wall:
             return wallsList
         
         except Exception as e:
-            print(e)
+            if DEBUG:
+                print(e)
             return None
