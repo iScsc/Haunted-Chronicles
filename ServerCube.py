@@ -200,7 +200,7 @@ def initNewPlayer(ip, pseudo):
     dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(dx,dy))
 
 def sizeNewPlayer():
-    return(SIZE_X/10,SIZE_Y/10)
+    return(int(SIZE_X/10),int(SIZE_Y/10))
 
 def positionNewPlayer(dx, dy):
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
