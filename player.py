@@ -88,6 +88,7 @@ class Player:
 
             return playersList
         
-        except :
+        except Exception as e:
+            print(e)
             return None
 

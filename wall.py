@@ -70,5 +70,6 @@ class Wall:
 
             return wallsList
         
-        except :
+        except Exception as e:
+            print(e)
             return None
