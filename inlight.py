@@ -43,6 +43,8 @@ def pointBorder(l,point,sizex,sizey):
     wallx = 0
     wally = 0
     
+    # tx represent the amount of time needed to reach the wall x
+    
     if lx > px: # tx is positive
         tx = px/(lx-px)
     elif lx < px:
@@ -86,9 +88,8 @@ def cornerRight(x,y,sizex,sizey):
 
 def polyInLight(l,p,sizex,sizey):
     phi,i,j = extremePoint(l,p)
-    if p.position[0] >= l.position[0]:
+    if p.position[0] < l.position[0]:
         i,j = j,i
-    i,j = j,i # modif to calculate shadow
     corners = extractCorner(p)
     Borderi = pointBorder(l,corners[i],sizex,sizey)
     Borderj = pointBorder(l,corners[j],sizex,sizey)
@@ -97,36 +98,29 @@ def polyInLight(l,p,sizex,sizey):
     xj,yj = Borderj
     pj = cornerRight(xj,yj,sizex,sizey)
     coord = [Borderi,corners[i],corners[j],Borderj]
-    #coord.append(pj)
-    #pj = nextCorner(pj[0],pj[1],sizex,sizey)
     while pj != pi:
         coord.append(pj)
         pj = nextCorner(pj[0],pj[1],sizex,sizey)
     return coord
 
 def OneSource(l,listOfp,sizex,sizey):
-    #poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     poly = Polygon()
     for p in listOfp:
         polyp = Polygon(polyInLight(l,p,sizex,sizey))
         poly = poly.union(polyp)
-        #poly = poly.intersection(polyp)
     return(poly)
 
 def AllSources(listOfl,listOfp,sizex,sizey):
-    #poly = Polygon()
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     for l in listOfl:
         polyl = OneSource(l,listOfp,sizex,sizey)
         poly = poly.intersection(polyl)
-        #poly = poly.union(polyl)
     return(poly)
 
 def Visible(p,listOfl,listOfp,sizex,sizey):
     l = Light(p.position)
     listOfp2 = [x for x in listOfp if x!=p]
     poly = OneSource(l,listOfp2,sizex,sizey)
-    #return(poly.intersection(AllSources(listOfl,listOfp,sizex,sizey)))
     return(poly.union(AllSources(listOfl,listOfp,sizex,sizey)))
 
 def isVisible(shadows,p):
@@ -142,18 +136,7 @@ def allVisiblePlayer(shadows,listOfp):
         
 
 
-"""
-def extractPoly(geom): # not use
-    tp = type(Polygon([(0,0),(0,1),(1,1)]))
-    if type(geom) == tp:
-        return geom
-    for g in geom.geoms:
-        if type(g) == tp:
-            return g 
-    return None
-"""
-
-### Tests
+### Tests and debug
 
 if __name__ == "__main__":
 
