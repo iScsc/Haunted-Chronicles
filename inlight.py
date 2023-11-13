@@ -2,7 +2,7 @@
 from player import Player
 from light import Light
 from numpy import angle
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 import time
 
 
@@ -106,9 +106,14 @@ def polyInLight(l,p,sizex,sizey):
 def OneSource(l,listOfp,sizex,sizey):
     poly = Polygon()
     for p in listOfp:
-        polyp = Polygon(polyInLight(l,p,sizex,sizey))
-        poly = poly.union(polyp)
+        body = Polygon(extractCorner(p))
+        if not(body.contains(Point(l.position))):           
+            polyp = Polygon(polyInLight(l,p,sizex,sizey))
+            poly = poly.union(polyp)
+        else :
+            print("light in")
     return(poly)
+
 
 def AllSources(listOfl,listOfp,sizex,sizey):
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
@@ -175,6 +180,9 @@ if __name__ == "__main__":
     p21 = Player(ip="", username="", color=(0,0,0), position=(80,50), size=[10, 10])
     print(polyInLight(l,p21,100,100))
     
+    p11 = Player(ip="", username="p11", color=(0,0,0), position=(50,50), size=[10, 10])
+    print(polyInLight(l,p21,100,100))
+    
     print(OneSource(l,[p00,p10],100,100))
     print(OneSource(l2,[p00,p10],100,100))
 
@@ -197,5 +205,7 @@ if __name__ == "__main__":
     v = Visible(p00,[l,l2],[p00,p22,p21,p02],100,100)
     print(v)
     print(isVisible(v,p20))
+    
+    print(OneSource(l,[p11,p10],100,100))
 
 
