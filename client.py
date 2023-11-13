@@ -273,10 +273,14 @@ def update(state="STATE [] END"):
             PLAYERS=players
             return False
         else: return True
+    elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
+        walls = Wall.toWalls(messages[1])
+        if (walls != None):
+            WALLS=walls
+            return False
+        else:
+            return True
     return True
-
-    # elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-    #     WALLS = Wall.toWalls(messages[1])
 
 
 
