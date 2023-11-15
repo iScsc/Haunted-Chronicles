@@ -283,12 +283,13 @@ def update(state="STATE [] END"):
                 return False
             else: return True
         elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-            WALLS = Wall.toWalls(messages[1])
+            walls = Wall.toWalls(messages[1])
+            if (walls != None):
+                WALLS=walls
+                return False
+            else:
+                return True
         return True
-    else:
-        return False
-
-
 
 def exit():
     """Send the normalized disconnection request and then exits the game.

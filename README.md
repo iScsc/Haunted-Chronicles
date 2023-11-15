@@ -20,21 +20,23 @@ A small project to discover online multiplayer games.
 
 ## GAME :
 
+### Python Module Dependencies
+- pygame
+- shapely
+
 ### Launch 
 
 #### Server Launch
-- `python3 server.py`
-or
-- `make server`
+`python3 ServerCube.py` or `make server`
 
 ##### Client
-- `python3 client.py <IP_Server> <Port>`
-or
-- `make client SERVER=<IP_Server> PORT=<Port>`
+`python3 client.py <IP_Server> <Port>` or `make client SERVER=<IP_Server> PORT=<Port>`
 
 ### Formatted messages :
 
-#### Client sends :
-- `CONNECT <Username> END` and receives `CONNECTED <Username> <Screen_Size> STATE <Players_List> END` as a connection confirmation and to setup the state of the game locally.
-- `INPUT <Username> <Input> END` and receives `STATE <Players_List> END` to update the state of the game on the server, and then locally. `<Input>` can be `L`, `R`, `U`, `D` for movements, and `.` for none.
-- `DISCONNECT <Username> END` and receives `DISCONNECTED <Username> END` as a confirmation before quitting the game.
+#### Client connexion :
+* sends `CONNECT <Username> END` and receives `CONNECTED <Username> <Screen_Size> STATE <Players_List> END` as a connection confirmation and to setup the state of the game locally.
+#### Client inputs :
+* sends `INPUT <Username> <Input> END` and receives `STATE <Players_List> END` to update the state of the game on the server, and then locally. `<Input>` can be `L`, `R`, `U`, `D` for movements, and `.` for none.
+#### Client disconnexion :
+* sends `DISCONNECT <Username> END` and receives `DISCONNECTED <Username> END` as a confirmation before quitting the game.
