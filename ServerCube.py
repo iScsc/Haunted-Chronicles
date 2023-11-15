@@ -7,6 +7,7 @@ from random import randint
 
 from player import Player
 from wall import Wall
+from common import *
 
 # ----------------------- IP -----------------------
 
@@ -39,33 +40,34 @@ PLAYER_SIZE = (20, 20)
 dicoJoueur = {} # Store players' Player structure
 
 dicoMur = {}
-dicoMur[-1] = Wall(-1, (50, 50, 50), (350, 575), (225, 10))
-dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 10))
-dicoMur[1] = Wall(1, (50, 50, 50), (350, 500), (10, 310))
-dicoMur[2] = Wall(2, (50, 50, 50), (250, 500), (100, 10))
 
-dicoMur[3] = Wall(3, (30, 30, 30), (850, 100), (10, 450))
-dicoMur[4] = Wall(4, (30, 30, 30), (450, 100), (400, 10))
+dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
+dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
 
-dicoMur[5] = Wall(5, (30, 30, 30), (75, 100), (275, 10))
-dicoMur[6] = Wall(6, (30, 30, 30), (75, 50), (10, 200))
+dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
+dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
 
-dicoMur[7] = Wall(7, (30, 30, 30), (325, 250), (150, 10))
+dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
+dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
 
-dicoMur[8] = Wall(8, (30, 30, 30), (850, 650), (10, 250))
-dicoMur[9] = Wall(9, (30, 30, 30), (650, 800), (550, 10))
-dicoMur[10] = Wall(10, (30, 30, 30), (850, 950), (10, 250))
+dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
 
-dicoMur[11] = Wall(11, (30, 30, 30), (1400, 800), (200, 10))
-dicoMur[12] = Wall(12, (30, 30, 30), (1600, 300), (10, 510))
-dicoMur[13] = Wall(13, (30, 30, 30), (1400, 225), (200, 10))
-dicoMur[14] = Wall(14, (30, 30, 30), (1400, 225), (10, 510))
+dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
+dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
+dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
 
-dicoMur[15] = Wall(15, (30, 30, 30), (1400, 625), (150, 10))
-dicoMur[16] = Wall(16, (30, 30, 30), (1450, 400), (150, 10))
+dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
+dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
+dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
+dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
 
-dicoMur[17] = Wall(17, (30, 30, 30), (1150, 0), (10, 350))
-dicoMur[18] = Wall(18, (30, 30, 30), (1000, 450), (310, 10))
+dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
+dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
+
+dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
+dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -136,16 +138,14 @@ def extractLetter(s,pseudo):
 def states():
     liste = []
     for key in dicoJoueur:
-        ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
-        liste.append((username,color,(x,y),(dx,dy))) 
+        liste.append(str(dicoJoueur[key]))
     out = "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
 
 def walls():
     liste = []
     for key in dicoMur:
-        id, color, (x, y), (dx, dy) = dicoMur[key].toList()
-        liste.append((id,color,(x,y),(dx,dy)))
+        liste.append(str(dicoMur[key]))
     out = "WALLS " + (str(liste)).replace(" ","") + " END"
     return(out)
 
@@ -163,7 +163,8 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    ip, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
+    _, _, _, position1, size1 = dicoJoueur[pseudo].toList()
+    x,y=position1.x,position1.y
 
     match inputLetter:
         case ".": #nothing
@@ -182,8 +183,8 @@ def Rules(inputLetter,pseudo):
             x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
-    if correctPosition(pseudo, x,y,dx,dy):
-        dicoJoueur[pseudo].update(position=(x, y), size=(dx, dy))
+    if correctPosition(pseudo, x,y,size1.w,size1.h):
+        dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
     return()
 
 def correctPosition(pseudo, x,y,dx,dy):
@@ -197,16 +198,16 @@ def collision(pseudo, x, y ,dx ,dy):
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
-        id, color, (wx, wy), (wdx, wdy) = dicoMur[key].toList()
+        _, _, position, size = dicoMur[key].toList()
         
-        if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
+        if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
             return True
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            _, _, _, position, size = dicoJoueur[key].toList()
             
-            if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+            if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
                 return True
     
     return False
@@ -225,7 +226,7 @@ def initNewPlayer(ip, pseudo):
         x, y = positionNewPlayer(dx, dy)
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(dx,dy))
 
 def sizeNewPlayer():
     return PLAYER_SIZE
@@ -234,7 +235,7 @@ def positionNewPlayer(dx, dy):
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 def colorNewPlayer():
-    return((randint(1,255),randint(1,255),randint(1,255)))
+    return Color(randint(1,255),randint(1,255),randint(1,255))
 
 
 
