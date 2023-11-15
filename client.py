@@ -11,7 +11,10 @@ from player import Player
 from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "10.193.70.5" #"localhost"
+
+DEBUG=False
+
+SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -62,17 +65,17 @@ def display():
         
         # Walls
         for wall in WALLS:
-            pg.draw.rect(SCREEN, wall.color, [wall.position, wall.size])
+            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
         
         # Players
         for player in PLAYERS:
-            pg.draw.rect(SCREEN, player.color, [player.position, player.size])
+            pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
             
             usernameText = player.username
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
-            usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color)
+            usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position[0] + (player.size[0] - usernameSize[0]) // 2, player.position[1] - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
         
         
         # Ping
@@ -117,6 +120,10 @@ def game():
             requestNumber=0
         
         if requestNumber>=MAX_REQUESTS:
+            
+            if DEBUG:
+                print("Max number of request has been passed for inputs!")
+                
             exitError()
 
         
@@ -153,7 +160,8 @@ def connect():
             
             SIZE = (int(sizeStr[0]), int(sizeStr[1]))
         except:
-            print("Size Error ! Size format was not correct !")
+            if DEBUG:
+                print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
         beginWallIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
@@ -279,13 +287,14 @@ def update(state="STATE [] END"):
     messages = state.split(" ")
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        players = Player.toPlayers(messages[1])
+        players = Player.toPlayers(messages[1],DEBUG)
         if (players != None):
             PLAYERS=players
             return False
         else: return True
+        
     elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-        walls = Wall.toWalls(messages[1])
+        walls = Wall.toWalls(messages[1],DEBUG)
         if (walls != None):
             WALLS=walls
             return False
@@ -311,6 +320,10 @@ def exit():
             break
     
     if requestNumber>=MAX_REQUESTS:
+        
+        if DEBUG:
+            print("Max number of request has been passed for disconnection!")
+                
         exitError()
     
     CONNECTED = False
@@ -345,6 +358,10 @@ def main():
         time.sleep(WAITING_TIME)
         requestNumber+=1
     if requestNumber>MAX_REQUESTS:
+        
+        if DEBUG:
+            print("Max number of request has been passed for connections!")
+                
         exitError()
     
     
