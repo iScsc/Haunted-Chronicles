@@ -1,97 +1,78 @@
-class Player:
+class Wall:
     
     BASE_COLOR = (255, 0, 0)
     BASE_POSITION = (0, 0)
     BASE_SIZE = (50, 50)
     
-    def __init__(self, ip="", username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
-        """Create a new player with given parameters.
+    def __init__(self, id=0, color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
+        """Create a new wall with given parameters.
 
         Args:
-            - ip (str, optional): Ip address of the player (only defined on the server side).
-            - username (str): Username of the player.
-            - color (tuple): Color used by the player.
-            - position (tuple): Position of the player.
-            - size (list): Size of the player.
+            - id (int): id
+            - color (tuple): Color used by the wall.
+            - position (tuple): Position of the wall.
+            - size (list): Size of the wall.
         """
         
-        self.ip = ip
-        self.username = username
+        self.id = id
         self.color = color
         self.position = position
         self.size = size
     
     
     
-    def update(self, color=None, position=None, size=None):
-        """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
-
-        Args:
-            - color (tuple): Color used by the player.
-            - position (tuple): Position of the player.
-            - size (list): Size of the player.
-        """
-        if color != None:
-            self.color = color
-        if position != None:
-            self.position = position
-        if size != None:
-            self.size = size
-    
-    
-    
     def toList(self):
-        """Generate the list representation of the player with the format [ip, username, color, position, size]
+        """Generate the list representation of the wall with the format [id, color, position, size]
 
         Returns:
-            list: extraction of the player's attributes.
+            list: extraction of the wall's attributes.
         """
-        return self.ip, self.username, self.color, self.position, self.size
+        return self.id, self.color, self.position, self.size
     
     
     
     def toString(self):
-        """Generate the string representation of the player.
+        """Generate the string representation of the wall.
 
         Returns:
-            str: description of the player used to send data from the server to the clients.
+            str: description of the wall used to send data from the server to the clients.
         """
-        msg = "(" + str(self.username) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
+        msg = "(" + str(id) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
         return msg.replace(" ", "")
-
-
-
-    def toPlayers(playersString):
-        """Generate the list of players described by the playersString variable.
+    
+    
+    
+    def toWalls(wallsString):
+        """Generate the list of walls described by the wallsString variable.
 
         Args:
-            playersString (str): string representation of the list of players.
-            It shall be of the format : "[player1, player2, player3, ...]
-            where a player is : (username, (color.r, color.g, color.b), (position.x, position.y), (width, height))
+            wallsString (str): string representation of the list of walls.
+            It shall be of the format : "[wall1, wall2, wall3, ...]
+            where a wall is : (id, (color.r, color.g, color.b), (position.x, position.y), (width, height))
 
         Returns:
-            list[Player]: list of players to display on the client side.
+            list[Wall]: list of walls to display on the client side.
         """
         
-        playersList = []
+        wallsList = []
         
         currentExtract = None
         c=''
         
-        onUsername, onColor, onPosition, onSize = False, False, False, False
+        onId, onColor, onPosition, onSize = False, False, False, False
         change = False # spot changes of fields in multiple fields variables like tuples
         error = False # spot errors in fields
         
-        for i in range(len(playersString)):
+        for i in range(len(wallsString)):
             # #? Debug prints :
             # print("------------------------------------")
             # print("Current char = ", c)
             # print("currentExtract = ", currentExtract)
-            # print("playersList = ", playersList)
+            # print("wallsList = ", wallsList)
             # print("change = ", change, " | error = ", error)
-            # print("onUsername = ", onUsername, " | onColor = ", onColor, " | onPosition = ", onPosition, " | OnSize = ", onSize)
+            # print("onId = ", onId, " | onColor = ", onColor, " | onPosition = ", onPosition, " | OnSize = ", onSize)
             
-            c = playersString[i]
+            c = wallsString[i]
             
             
             try:
@@ -100,23 +81,19 @@ class Player:
                     return None
                 
                 # --------------- Username ---------------
-                elif onUsername:
+                elif onId:
                     
                     if c != ",":
 
                         if len(currentExtract) == 0:
-                            if (c == "'" or c == '"'):
-                                currentExtract.append("") # beginning of the username
-                            else:
-                                currentExtract.append(c)
-                        elif (c == "'" or c == '"') and playersString[i + 1] == ",":
-                            pass # end of the username
+                            currentExtract.append(c)
                         else:
                             currentExtract[0] += c
                     
                     else:
+                        currentExtract[0] = int(currentExtract[0])
                         onColor = True
-                        onUsername, onPosition, onSize = False, False, False
+                        onId, onPosition, onSize = False, False, False
                         change = False
                 
                 
@@ -137,7 +114,7 @@ class Player:
                         elif change:
                             change = False
                             onPosition = True
-                            onUsername, onColor, onSize = False, False, False
+                            onId, onColor, onSize = False, False, False
                             change = False
                     
                     elif c == ")":
@@ -170,7 +147,7 @@ class Player:
                         elif change:
                             change = False
                             onSize = True
-                            onUsername, onColor, onPosition = False, False, False
+                            onId, onColor, onPosition = False, False, False
                             change = False
                     
                     elif c == ")":
@@ -206,7 +183,7 @@ class Player:
                             change = True
                         
                         else:
-                            onUsername, onColor, onPosition, onSize = False, False, False, False
+                            onId, onColor, onPosition, onSize = False, False, False, False
                             change = False
                     
                     else:
@@ -226,12 +203,12 @@ class Player:
                     
                     elif c == "(":
                         currentExtract = []
-                        onUsername = True
+                        onId = True
                         onColor, onPosition, onSize = False, False, False
                         change = False
                     
                     elif c == "," or c == "]":
-                        playersList.append(Player(username=currentExtract[0],
+                        wallsList.append(Wall(id=currentExtract[0],
                                                 color=tuple(currentExtract[1]),
                                                 position=tuple(currentExtract[2]),
                                                 size=tuple(currentExtract[3])))
@@ -242,4 +219,4 @@ class Player:
                 
         
 
-        return playersList
+        return wallsList

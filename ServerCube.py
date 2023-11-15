@@ -6,9 +6,10 @@ import socket
 from random import randint
 
 from player import Player
-from light import Light
 
+from light import Light
 from inlight import *
+from wall import Wall
 
 # ----------------------- IP -----------------------
 
@@ -21,22 +22,53 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
-SIZE_X = 1000
-SIZE_Y = 1000
+# Game map
+SIZE_X = int(1920 * .9)
+SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
-STEP_X = 15
-STEP_Y = 15
+STEP_X = 3
+STEP_Y = 3
 
+# Server
 IP = extractingIP()
 
+# Player
 SIZE_MAX_PSEUDO = 10
 
+PLAYER_SIZE = (20, 20)
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
+dicoMur = {}
+dicoMur[-1] = Wall(-1, (50, 50, 50), (350, 575), (225, 10))
+dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 10))
+dicoMur[1] = Wall(1, (50, 50, 50), (350, 500), (10, 310))
+dicoMur[2] = Wall(2, (50, 50, 50), (250, 500), (100, 10))
 
+dicoMur[3] = Wall(3, (30, 30, 30), (850, 100), (10, 450))
+dicoMur[4] = Wall(4, (30, 30, 30), (450, 100), (400, 10))
+
+dicoMur[5] = Wall(5, (30, 30, 30), (75, 100), (275, 10))
+dicoMur[6] = Wall(6, (30, 30, 30), (75, 50), (10, 200))
+
+dicoMur[7] = Wall(7, (30, 30, 30), (325, 250), (150, 10))
+
+dicoMur[8] = Wall(8, (30, 30, 30), (850, 650), (10, 250))
+dicoMur[9] = Wall(9, (30, 30, 30), (650, 800), (550, 10))
+dicoMur[10] = Wall(10, (30, 30, 30), (850, 950), (10, 250))
+
+dicoMur[11] = Wall(11, (30, 30, 30), (1400, 800), (200, 10))
+dicoMur[12] = Wall(12, (30, 30, 30), (1600, 300), (10, 510))
+dicoMur[13] = Wall(13, (30, 30, 30), (1400, 225), (200, 10))
+dicoMur[14] = Wall(14, (30, 30, 30), (1400, 225), (10, 510))
+
+dicoMur[15] = Wall(15, (30, 30, 30), (1400, 625), (150, 10))
+dicoMur[16] = Wall(16, (30, 30, 30), (1450, 400), (150, 10))
+
+dicoMur[17] = Wall(17, (30, 30, 30), (1150, 0), (10, 350))
+dicoMur[18] = Wall(18, (30, 30, 30), (1000, 450), (310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -130,10 +162,20 @@ def states(pseudo):
         p = dicoJoueur[key]
         liste.append((key,p.color,p.position,p.size)) 
     out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+
     return(out)
-    
+
+def walls():
+    liste = []
+    for key in dicoMur:
+        id, color, (x, y), (dx, dy) = dicoMur[key].toList()
+        liste.append((id,color,(x,y),(dx,dy)))
+    out = "WALLS " + (str(liste)).replace(" ","") + " END"
+    return(out)
+
 def firstConnection(pseudo):
-    out = "CONNECTED "+pseudo+" "+(str(SIZE)).replace(" ","")+" "+states(pseudo)
+
+    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states()
     return(out)
 
 def validPseudo(pseudo):
@@ -146,11 +188,8 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    p = dicoJoueur[pseudo]
-    x,y = p.position
-    color = p.color
-    dx,dy = p.size
-    
+
+    ip, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
 
     match inputLetter:
         case ".": #nothing
@@ -169,38 +208,61 @@ def Rules(inputLetter,pseudo):
             x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
-    if correctPosition(x,y,dx,dy):
-        p = dicoJoueur[pseudo] 
-        p.position = (x,y)
-        p.color = color
-        p.size =[dx,dy]
+
+    if correctPosition(pseudo, x,y,dx,dy):
+        dicoJoueur[pseudo].update(position=(x, y), size=(dx, dy))
     return()
 
-def correctPosition(x,y,dx,dy):
+def correctPosition(pseudo, x,y,dx,dy):
     correctX = (x>=0) and (x+dx <= SIZE_X)
     correctY = (y>=0) and (y+dy <= SIZE_Y)
-    return correctX and correctY
     
+    return correctX and correctY and not collision(pseudo, x, y, dx, dy)
+
+def collision(pseudo, x, y ,dx ,dy):
+    
+    c = (x + dx/2, y + dy/2)
+    
+    for key in dicoMur.keys():
+        id, color, (wx, wy), (wdx, wdy) = dicoMur[key].toList()
+        
+        if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
+            return True
+    
+    for key in dicoJoueur.keys():
+        if key != pseudo:
+            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            
+            if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+                return True
+    
+    return False
+
 
 
 # ----------------------- Init of a new Player -----------------------
 
 
 def initNewPlayer(ip, pseudo):
-    x,y = positionNewPlayer()
-    color = colorNewPlayer()
     dx,dy = sizeNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
     
-def positionNewPlayer():
-    return(SIZE_X/2,SIZE_Y/2)
+    x,y = positionNewPlayer(dx, dy)
+    
+    while not correctPosition(pseudo, x, y, dx, dy):
+        x, y = positionNewPlayer(dx, dy)
+    
+    color = colorNewPlayer()
+    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+
+def sizeNewPlayer():
+    return PLAYER_SIZE
+
+def positionNewPlayer(dx, dy):
+    return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 def colorNewPlayer():
     return((randint(1,255),randint(1,255),randint(1,255)))
-    
-def sizeNewPlayer():
-    return(SIZE_X/10,SIZE_Y/10)
-        
+
 
 
 # ----------------------- Handler -----------------------
@@ -225,6 +287,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(in_data)
         
         out = processRequest(in_ip ,in_data)
+
         print(">>> ",out,"\n")
         self.request.sendall(bytes(out,'utf-16'))
 
@@ -242,12 +305,3 @@ if __name__ == "__main__":
         # Activate the server; this will keep running until you
         # interrupt the program with Ctrl-C
         server.serve_forever()
-
-
-
-
-
-
-
-
-
