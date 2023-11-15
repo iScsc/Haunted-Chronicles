@@ -43,12 +43,12 @@ def spc(string):
 
 
 
-def interp(playerString, **kwargs):
+def interp(string, **kwargs):
     
     from player import Player
     from wall import Wall
     
-    values=spc(playerString)
+    values=spc(string)
     # assert(len(values)==len(kwargs))
     
     i=0
