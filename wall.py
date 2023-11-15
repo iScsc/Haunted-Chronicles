@@ -61,8 +61,6 @@ class Wall:
             wallsList = []
             
             string=interpretor.spc(wallsString)
-            string.remove("['")
-            string.remove("']")
             
             for s in string:
                 s='('+s+')'
