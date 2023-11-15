@@ -12,10 +12,10 @@ from common import *
 def extractCorner(p):
     x,y = p.position.x, p.position.y
     dx,dy = p.size.w, p.size.h
-    BD = (x+dx,y-dy)
-    BG = (x-dx,y-dy)
-    HG = (x-dx,y+dy)
-    HD = (x+dx,y+dy)
+    BD = (x+dx,y+dy)
+    BG = (x,y+dy)
+    HG = (x,y)
+    HD = (x+dx,y)
     return [BD,BG,HG,HD]
 
 def extremePoint(l,p):

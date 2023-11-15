@@ -139,7 +139,7 @@ def extractLetter(s,pseudo):
 
 
 def dummyLights():
-    l00 = Light(Position(10,10))
+    l00 = Light(Position(int(SIZE_X/2),int(SIZE_Y/2)))
     #l10 = Light((SIZE_X,0))
     #l11 = Light((SIZE_X,SIZE_Y))
     #l01 = Light((0,SIZE_Y))
