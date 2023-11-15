@@ -1,8 +1,11 @@
+import common
+import interpretor
+
 class Player:
     
-    BASE_COLOR = (255, 0, 0)
-    BASE_POSITION = (0, 0)
-    BASE_SIZE = (50, 50)
+    BASE_COLOR = common.Color()
+    BASE_POSITION = common.Position()
+    BASE_SIZE = common.Size()
     
     def __init__(self, ip="", username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
@@ -50,7 +53,7 @@ class Player:
     
     
     
-    def toString(self):
+    def __str__(self):
         """Generate the string representation of the player.
 
         Returns:
@@ -61,7 +64,7 @@ class Player:
 
 
 
-    def toPlayers(playersString):
+    def toPlayers(playersString, DEBUG=False):
         """Generate the list of players described by the playersString variable.
 
         Args:
@@ -72,174 +75,19 @@ class Player:
         Returns:
             list[Player]: list of players to display on the client side.
         """
-        
-        playersList = []
-        
-        currentExtract = None
-        c=''
-        
-        onUsername, onColor, onPosition, onSize = False, False, False, False
-        change = False # spot changes of fields in multiple fields variables like tuples
-        error = False # spot errors in fields
-        
-        for i in range(len(playersString)):
-            # #? Debug prints :
-            # print("------------------------------------")
-            # print("Current char = ", c)
-            # print("currentExtract = ", currentExtract)
-            # print("playersList = ", playersList)
-            # print("change = ", change, " | error = ", error)
-            # print("onUsername = ", onUsername, " | onColor = ", onColor, " | onPosition = ", onPosition, " | OnSize = ", onSize)
+        try :
+            playersList = []
             
-            c = playersString[i]
+            string=interpretor.spc(playersString)
             
-            
-            try:
-                # --------------- Error ----------------
-                if error : 
-                    return None
-                
-                # --------------- Username ---------------
-                elif onUsername:
-                    
-                    if c != ",":
+            for s in string:
+                s='('+s+')'
+                playersList.append(interpretor.interp(s,player=Player())['player'])
 
-                        if len(currentExtract) == 0:
-                            if (c == "'" or c == '"'):
-                                currentExtract.append("") # beginning of the username
-                            else:
-                                currentExtract.append(c)
-                        elif (c == "'" or c == '"') and playersString[i + 1] == ",":
-                            pass # end of the username
-                        else:
-                            currentExtract[0] += c
-                    
-                    else:
-                        onColor = True
-                        onUsername, onPosition, onSize = False, False, False
-                        change = False
-                
-                
-                
-                # --------------- Color ---------------
-                elif onColor:
-                    
-                    if c == "(" :
-                        currentExtract.append([])
-                        change = False
-                    
-                    elif c == ",":
-                        
-                        if not change :
-                            currentExtract[1][-1] = int(currentExtract[1][-1])
-                            change = True
-                        
-                        elif change:
-                            change = False
-                            onPosition = True
-                            onUsername, onColor, onSize = False, False, False
-                            change = False
-                    
-                    elif c == ")":
-                        currentExtract[1][-1] = int(currentExtract[1][-1])
-                        change = True
-                        
-                    
-                    else:
-                        if len(currentExtract[1]) == 0 or change:
-                            currentExtract[1].append(c)
-                            change = False
-                        else:
-                            currentExtract[1][-1] += c
-                
-                
-                
-                # --------------- Position ---------------
-                elif onPosition:
-                    
-                    if c == "(" :
-                        currentExtract.append([])
-                        change = False
-                    
-                    elif c == ",":
-                        
-                        if not change :
-                            currentExtract[2][-1] = float(currentExtract[2][-1])
-                            change = True
-                        
-                        elif change:
-                            change = False
-                            onSize = True
-                            onUsername, onColor, onPosition = False, False, False
-                            change = False
-                    
-                    elif c == ")":
-                        currentExtract[2][-1] = float(currentExtract[2][-1])
-                        change = True
-                    
-                    else:
-                        if len(currentExtract[2]) == 0 or change:
-                            currentExtract[2].append(c)
-                            change = False
-                        else:
-                            currentExtract[2][-1] += c
-                
-                
-                
-                # --------------- Size ---------------
-                elif onSize:
-                    
-                    if c == "(" :
-                        currentExtract.append([])
-                        change = False
-                    
-                    elif c == ",":
-                        
-                        if not change :
-                            currentExtract[3][-1] = float(currentExtract[3][-1])
-                            change = True
-                    
-                    elif c == ")":
-                        
-                        if not change:
-                            currentExtract[3][-1] = float(currentExtract[3][-1])
-                            change = True
-                        
-                        else:
-                            onUsername, onColor, onPosition, onSize = False, False, False, False
-                            change = False
-                    
-                    else:
-                        if len(currentExtract[3]) == 0 or change:
-                            currentExtract[3].append(c)
-                            change = False
-                        else:
-                            currentExtract[3][-1] += c
-                            
-                            
-                            
-                # --------------- Create new player ---------------
-                else:
-                    
-                    if c == "[":
-                        pass
-                    
-                    elif c == "(":
-                        currentExtract = []
-                        onUsername = True
-                        onColor, onPosition, onSize = False, False, False
-                        change = False
-                    
-                    elif c == "," or c == "]":
-                        playersList.append(Player(username=currentExtract[0],
-                                                color=tuple(currentExtract[1]),
-                                                position=tuple(currentExtract[2]),
-                                                size=tuple(currentExtract[3])))
-                        
-                        
-            except: # if any error occured
-                error=True
-                
+            return playersList
         
+        except Exception as e:
+            if DEBUG:
+                print(e)
+            return None
 
-        return playersList
