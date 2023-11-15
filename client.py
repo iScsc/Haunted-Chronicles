@@ -273,23 +273,25 @@ def update(state="STATE [] END"):
     global WALLS
     global PLAYERS
     
-    if type(state) == str and state != "":
-        messages = state.split(" ")
-        
-        if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-            players = Player.toPlayers(messages[1])
-            if (players != None):
-                PLAYERS=players
-                return False
-            else: return True
-        elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-            walls = Wall.toWalls(messages[1])
-            if (walls != None):
-                WALLS=walls
-                return False
-            else:
-                return True
-        return True
+    if type(state) != str or state == "":
+        return False
+    
+    messages = state.split(" ")
+    
+    if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
+        players = Player.toPlayers(messages[1])
+        if (players != None):
+            PLAYERS=players
+            return False
+        else: return True
+    elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
+        walls = Wall.toWalls(messages[1])
+        if (walls != None):
+            WALLS=walls
+            return False
+        else:
+            return True
+    return True
 
 def exit():
     """Send the normalized disconnection request and then exits the game.
