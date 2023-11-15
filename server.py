@@ -21,16 +21,19 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
-SIZE_X = 1000
-SIZE_Y = 1000
+# Game map
+SIZE_X = int(1920 * .9)
+SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
-STEP_X = 15
-STEP_Y = 15
+STEP_X = 3
+STEP_Y = 3
 
 IP = extractingIP()
 
 SIZE_MAX_PSEUDO = 10
+
+PLAYER_SIZE = (20, 20)
 
 
 
@@ -56,9 +59,33 @@ STOP = False
 dicoJoueur = {} # Store players' Player structure
 
 dicoMur = {}
-dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 50))
-dicoMur[1] = Wall(1, (30, 30, 30), (850, 100), (10, 500))
-dicoMur[2] = Wall(2, (30, 30, 30), (450, 100), (400, 10))
+dicoMur[-1] = Wall(-1, (50, 50, 50), (350, 575), (225, 10))
+dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 10))
+dicoMur[1] = Wall(1, (50, 50, 50), (350, 500), (10, 310))
+dicoMur[2] = Wall(2, (50, 50, 50), (250, 500), (100, 10))
+
+dicoMur[3] = Wall(3, (30, 30, 30), (850, 100), (10, 450))
+dicoMur[4] = Wall(4, (30, 30, 30), (450, 100), (400, 10))
+
+dicoMur[5] = Wall(5, (30, 30, 30), (75, 100), (275, 10))
+dicoMur[6] = Wall(6, (30, 30, 30), (75, 50), (10, 200))
+
+dicoMur[7] = Wall(7, (30, 30, 30), (325, 250), (150, 10))
+
+dicoMur[8] = Wall(8, (30, 30, 30), (850, 650), (10, 250))
+dicoMur[9] = Wall(9, (30, 30, 30), (650, 800), (550, 10))
+dicoMur[10] = Wall(10, (30, 30, 30), (850, 950), (10, 250))
+
+dicoMur[11] = Wall(11, (30, 30, 30), (1400, 800), (200, 10))
+dicoMur[12] = Wall(12, (30, 30, 30), (1600, 300), (10, 510))
+dicoMur[13] = Wall(13, (30, 30, 30), (1400, 225), (200, 10))
+dicoMur[14] = Wall(14, (30, 30, 30), (1400, 225), (10, 510))
+
+dicoMur[15] = Wall(15, (30, 30, 30), (1400, 625), (150, 10))
+dicoMur[16] = Wall(16, (30, 30, 30), (1450, 400), (150, 10))
+
+dicoMur[17] = Wall(17, (30, 30, 30), (1150, 0), (10, 350))
+dicoMur[18] = Wall(18, (30, 30, 30), (1000, 450), (310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -221,7 +248,7 @@ def initNewPlayer(ip, pseudo):
     dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
 
 def sizeNewPlayer():
-    return(SIZE_X/10,SIZE_Y/10)
+    return PLAYER_SIZE
 
 def positionNewPlayer(dx, dy):
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
@@ -281,26 +308,32 @@ def listen_new():
     while not STOP:
         while LISTENING and not STOP:
             sock, addr = MAINSOCKET.accept()
-            data = sock.recv(1024).strip()
-            
             in_ip = addr[0]
             
-            print("{} wrote:".format(in_ip))
-            in_data = str(data,'utf-16')
-            print(in_data)
-            
-            out = processRequest(in_ip ,in_data)
-            message = out.split(' ')
-            
-            if message[0]=="CONNECTED":
-                LOCK.acquire()
-                username = message[1]
-                dicoSocket[username] = (sock, addr)
-                LOCK.release()
-            #    waitingConnectionList.append((username, sock, addr))
+            if(LISTENING):
+                data = sock.recv(1024).strip()
+                
+                print("{} wrote:".format(in_ip))
+                in_data = str(data,'utf-16')
+                print(in_data)
+                
+                out = processRequest(in_ip ,in_data)
+                message = out.split(' ')
+                
+                if message[0]=="CONNECTED":
+                    LOCK.acquire()
+                    username = message[1]
+                    dicoSocket[username] = (sock, addr)
+                    LOCK.release()
+                #    waitingConnectionList.append((username, sock, addr))
 
-            print(">>> ",out,"\n")
-            sock.sendall(bytes(out,'utf-16'))
+                print(">>> ",out,"\n")
+                try:
+                    sock.sendall(bytes(out,'utf-16'))
+                except:
+                    print("New connection from " + str(in_ip) + " failed!")
+            else:
+                print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
             
             time.sleep(WAITING_TIME)
         
@@ -328,6 +361,12 @@ def listen_old():
                 username, sock, addr = elt[0], elt[1], elt[2]
                 dicoSocket.pop(username)
                 
+                # deco remaining player with same ip if needed.
+                for username in dicoJoueur:
+                    if dicoJoueur[username].ip == addr[0]:
+                        dicoJoueur.pop(username)
+                        break
+                
                 sock.close()
             waitingDisconnectionList = []
 
@@ -353,7 +392,10 @@ def listen_old():
                     waitingDisconnectionList.append((username, sock, addr))
                 
                 print(">>> ",out,"\n")
-                sock.sendall(bytes(out,'utf-16'))
+                try:
+                    sock.sendall(bytes(out,'utf-16'))
+                except:
+                    waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             
             time.sleep(WAITING_TIME)
@@ -370,6 +412,7 @@ def main():
     # Initialization
     if MAINSOCKET == None:
         MAINSOCKET = socket(AF_INET, SOCK_STREAM)
+        MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         MAINSOCKET.bind((HOST, PORT))
         MAINSOCKET.listen(BACKLOG)
     
