@@ -5,6 +5,7 @@ from numpy import angle
 from shapely.geometry import Polygon, Point
 from shapely import get_coordinates
 import time
+import interpretor
 
 
 def extractCorner(p):
@@ -142,6 +143,22 @@ def allVisiblePlayer(shadows,listOfp):
         
 def sendingFormat(shadows):
     return str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")
+
+def toVisible(visibleString,DEBUG):
+    try :
+        visibleList = []
+        
+        string=interpretor.spc(visibleString)
+        
+        for s in string:
+            visibleList.append(interpretor.interp(s,liste=[0.,2])['liste'])
+
+        return visibleList
+        
+    except Exception as e:
+        if DEBUG:
+            print(e)
+        return None
 
 
 
