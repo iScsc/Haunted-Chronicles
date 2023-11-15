@@ -3,6 +3,7 @@ from player import Player
 from light import Light
 from numpy import angle
 from shapely.geometry import Polygon, Point
+from shapely import get_coordinates
 import time
 
 
@@ -139,6 +140,9 @@ def allVisiblePlayer(shadows,listOfp):
             l.append(p.username)
     return l
         
+def sendingFormat(shadows):
+    return str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")")
+
 
 
 ### Tests and debug
@@ -204,8 +208,26 @@ if __name__ == "__main__":
     print("test 2")
     v = Visible(p00,[l,l2],[p00,p22,p21,p02],100,100)
     print(v)
+    print(get_coordinates(v).tolist())
     print(isVisible(v,p20))
     
     print(OneSource(l,[p11,p10],100,100))
 
+    print("--------------- test 3")
+    v = Visible(p00,[l],[p00],100,100)
+    print(v)
+    print(get_coordinates(v).tolist())
+    print(isVisible(v,p20))
+
+    print("--------------- test 4")
+    v = Visible(p00,[l],[p00,p22],100,100)
+    print(v)
+    print(get_coordinates(v).tolist())
+    print(isVisible(v,p20))
+
+    print("--------------- test 5")
+    v = Visible(p00,[l],[p00,p02,p22],100,100)
+    print(v)
+    print(sendingFormat(v))
+    print(isVisible(v,p20))
 
