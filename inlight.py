@@ -121,11 +121,11 @@ def AllSources(listOfl,listOfp,sizex,sizey):
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     for l in listOfl:
         polyl = OneSource(l,listOfp,sizex,sizey)
-        poly = poly.intersection(polyl)
+        poly = poly.intersection(polyl) # TODO error with Self-Intersection
     return(poly)
 
 def Visible(p,listOfl,listOfp,sizex,sizey):
-    l = Light(p.position)
+    l = Light(p.position) # TODO middle rather than top left corner
     listOfp2 = [x for x in listOfp if x!=p]
     poly = OneSource(l,listOfp2,sizex,sizey)
     return(poly.union(AllSources(listOfl,listOfp,sizex,sizey)))
