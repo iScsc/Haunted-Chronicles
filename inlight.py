@@ -141,7 +141,7 @@ def allVisiblePlayer(shadows,listOfp):
     return l
         
 def sendingFormat(shadows):
-    return str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")")
+    return str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")
 
 
 

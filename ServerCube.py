@@ -6,6 +6,9 @@ import socket
 from random import randint
 
 from player import Player
+from light import Light
+
+from inlight import *
 
 # ----------------------- IP -----------------------
 
@@ -67,7 +70,7 @@ def processInput(ip, s):
         return("You are impersonating someone else !")
     inputLetter = extractLetter(s,pseudo)
     Rules(inputLetter,pseudo)
-    return(states())
+    return(states(pseudo))
 
 def processDisconection(ip, s):
     pseudo = extractPseudo(s)
@@ -101,16 +104,36 @@ def extractLetter(s,pseudo):
     return(s[7 + n])
 
 
-def states():
+def dummyLights():
+    l00 = Light((0,0))
+    #l10 = Light((SIZE_X,0))
+    #l11 = Light((SIZE_X,SIZE_Y))
+    #l01 = Light((0,SIZE_Y))
+    return([l00])#,l10,l11,l01])    
+
+def states(pseudo):
+    player = 0
     liste = []
+    listeOfPlayer = []
+    listOfLight = dummyLights()
     for key in dicoJoueur:
-        x,y,color,dx,dy = dicoJoueur[key]
-        liste.append((key,color,(x,y),(dx,dy))) 
-    out = "STATE "+(str(liste)).replace(" ","")+" END"
+        p =  dicoJoueur[key]
+        if key == pseudo:
+            player = p
+        listeOfPlayer.append(p)
+    
+    shadows = Visible(p,listOfLight,listeOfPlayer,SIZE_X,SIZE_Y)
+    visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
+    formatshadows = sendingFormat(shadows)
+    
+    for key in visiblePlayer:
+        p = dicoJoueur[key]
+        liste.append((key,p.color,p.position,p.size)) 
+    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
     return(out)
     
 def firstConnection(pseudo):
-    out = "CONNECTED "+pseudo+" "+(str(SIZE)).replace(" ","")+" "+states()
+    out = "CONNECTED "+pseudo+" "+(str(SIZE)).replace(" ","")+" "+states(pseudo)
     return(out)
 
 def validPseudo(pseudo):
@@ -123,7 +146,11 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    x,y,color,dx,dy = dicoJoueur[pseudo]
+    p = dicoJoueur[pseudo]
+    x,y = p.position
+    color = p.color
+    dx,dy = p.size
+    
 
     match inputLetter:
         case ".": #nothing
@@ -143,7 +170,10 @@ def Rules(inputLetter,pseudo):
         case _ :
             return("Invalid Input")
     if correctPosition(x,y,dx,dy):
-        dicoJoueur[pseudo] = x,y,color,dx,dy
+        p = dicoJoueur[pseudo] 
+        p.position = (x,y)
+        p.color = color
+        p.size =[dx,dy]
     return()
 
 def correctPosition(x,y,dx,dy):
