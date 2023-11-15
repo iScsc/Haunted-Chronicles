@@ -79,8 +79,6 @@ class Player:
             playersList = []
             
             string=interpretor.spc(playersString)
-            string.remove("['")
-            string.remove("']")
             
             for s in string:
                 s='('+s+')'

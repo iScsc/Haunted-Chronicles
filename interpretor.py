@@ -37,7 +37,7 @@ def spc(string):
         substr+=(string[pf[-1]+1:]).split(',')
         
     #epurating from void substring and residual apostrophe
-    substr=[s for s in substr if s not in ['',"'"]]
+    substr=[s for s in substr if s not in ['',"'","['","']",'[',']']]
     
     return substr
 
@@ -49,7 +49,7 @@ def interp(playerString, **kwargs):
     from wall import Wall
     
     values=spc(playerString)
-    assert(len(values)==len(kwargs))
+    # assert(len(values)==len(kwargs))
     
     i=0
     
@@ -84,5 +84,13 @@ def interp(playerString, **kwargs):
             d=interp(values[i],id=0,color=common.Color(),position=common.Position(),size=common.Size())
             kwargs[arg]=Wall(d['id'],d['color'],d['position'],d['size'])
         
+        elif type(kwargs[arg])==list:
+            for j in range(kwargs[arg][1]):
+                d=interp('('+values[i+j]+')',element=kwargs[arg][0])
+                kwargs[arg].append(d['element'])
+            del kwargs[arg][0]
+            del kwargs[arg][0]
+        
         i+=1
+        
     return kwargs
