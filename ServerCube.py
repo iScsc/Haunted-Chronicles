@@ -20,25 +20,54 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
-SIZE_X = 1000
-SIZE_Y = 1000
+# Game map
+SIZE_X = int(1920 * .9)
+SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
-STEP_X = 15
-STEP_Y = 15
+STEP_X = 3
+STEP_Y = 3
 
+# Server
 IP = extractingIP()
 
+# Player
 SIZE_MAX_PSEUDO = 10
 
+PLAYER_SIZE = (20, 20)
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
 dicoMur = {}
-dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 50))
-dicoMur[1] = Wall(1, Color(30, 30, 30), Position(850, 100), Size(10, 500))
-dicoMur[2] = Wall(2, Color(30, 30, 30), Position(450, 100), Size(400, 10))
+
+dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
+dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
+
+dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
+dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
+
+dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
+dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
+
+dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
+
+dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
+dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
+dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
+
+dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
+dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
+dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
+dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
+
+dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
+dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
+
+dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
+dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -200,7 +229,7 @@ def initNewPlayer(ip, pseudo):
     dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(dx,dy))
 
 def sizeNewPlayer():
-    return(int(SIZE_X/10),int(SIZE_Y/10))
+    return PLAYER_SIZE
 
 def positionNewPlayer(dx, dy):
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
