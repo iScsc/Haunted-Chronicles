@@ -9,6 +9,7 @@ import time
 
 from player import Player
 from wall import Wall
+from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
@@ -145,7 +146,7 @@ def connect():
     
     messages = message.split(" ")
     
-    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END":
+    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and message[9] == "END":
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -163,7 +164,7 @@ def connect():
         beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
         
         update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
-        update(message[beginPlayerIndex:]) # Players
+        update(message[beginPlayerIndex:]) #Players and Shades
         
         return True
 
@@ -237,6 +238,7 @@ def update(state="STATE [] END"):
     
     global WALLS
     global PLAYERS
+    global UNVISIBLE
     
     messages = state.split(" ")
     
@@ -252,8 +254,18 @@ def update(state="STATE [] END"):
         if (walls != None):
             WALLS=walls
             return False
-        else:
-            return True
+        else: return True
+        
+    elif len(messages) == 3 and messages[0] == "SHADES" and messages[2] == "END":
+        unvisible = toVisible(messages[1],DEBUG)
+        if (unvisible != None):
+            UNVISIBLE=unvisible
+            return False
+        else: return True
+        
+    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4]=="END":
+        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
+    
     return True
 
 

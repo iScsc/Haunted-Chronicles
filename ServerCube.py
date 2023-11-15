@@ -156,7 +156,7 @@ def states(pseudo):
             player = p
         listeOfPlayer.append(p)
     
-    shadows = Visible(p,listOfLight,listeOfPlayer,SIZE_X,SIZE_Y)
+    shadows = Visible(player,listOfLight,listeOfPlayer,SIZE_X,SIZE_Y)
     visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
     formatshadows = sendingFormat(shadows)
     
