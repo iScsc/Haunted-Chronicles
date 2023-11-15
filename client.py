@@ -11,7 +11,7 @@ from player import Player
 from wall import Wall
 
 # ----------------------- Variables -----------------------
-SERVER_IP = "10.188.222.194" #"localhost"
+SERVER_IP = "10.193.70.5" #"localhost"
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -32,6 +32,8 @@ WALLS = []
 
 SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
+SOCKET_TIMEOUT = 30 # in seconds
+EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 
@@ -105,6 +107,7 @@ def game():
     while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
+        
         
         state = send(inputs)
         
@@ -237,21 +240,26 @@ def send(input="INPUT " + USERNAME + " . END"):
     # Initialization
     if (SOCKET == None and input[0:7] == "CONNECT"):
         SOCKET = socket(AF_INET, SOCK_STREAM)
+        SOCKET.settimeout(SOCKET_TIMEOUT)
         SOCKET.connect((SERVER_IP, SERVER_PORT))
+    
     
     # Usual behavior
     if SOCKET != None:
         t = time.time()
-        
+
         # send data
-        SOCKET.sendall(bytes(input, "utf-16"))
-        
-        # receive answer
-        answer = str(SOCKET.recv(1024*2), "utf-16")
-        
-        PING = int((time.time() - t) * 1000)
-        
-        return answer
+        try:
+            SOCKET.sendall(bytes(input, "utf-16"))
+            
+            # receive answer
+            answer = str(SOCKET.recv(1024*2), "utf-16")
+            
+            PING = int((time.time() - t) * 1000)
+            
+            return answer
+        except:
+            exitError("Loss connection with the remote server.")
 
 
 
@@ -265,18 +273,20 @@ def update(state="STATE [] END"):
     global WALLS
     global PLAYERS
     
-    messages = state.split(" ")
-    
-    if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
-        players = Player.toPlayers(messages[1])
-        if (players != None):
-            PLAYERS=players
-            return False
-        else: return True
-    return True
-
-    # elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-    #     WALLS = Wall.toWalls(messages[1])
+    if type(state) == str and state != "":
+        messages = state.split(" ")
+        
+        if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
+            players = Player.toPlayers(messages[1])
+            if (players != None):
+                PLAYERS=players
+                return False
+            else: return True
+        elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
+            WALLS = Wall.toWalls(messages[1])
+        return True
+    else:
+        return False
 
 
 
@@ -286,6 +296,9 @@ def exit():
     
     global CONNECTED
     global SOCKET
+    
+    SOCKET.settimeout(EXIT_TIMEOUT)
+    
     requestNumber=0
     
     t = time.time()
@@ -301,14 +314,14 @@ def exit():
     SOCKET.close()
     SOCKET = None
 
-def exitError():
+def exitError(errorMessage="Sorry a problem occured..."):
     """Exit the game
         Called if there has been a problem with the server"""
         
     global CONNECTED
     global SOCKET
     
-    print("Sorry a problem occured...")
+    print(errorMessage)
     
     CONNECTED=False
     SOCKET.close()
