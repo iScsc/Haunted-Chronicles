@@ -6,11 +6,12 @@ from shapely.geometry import Polygon, Point
 from shapely import get_coordinates
 import time
 import interpretor
+from common import *
 
 
 def extractCorner(p):
-    x,y = p.position
-    dx,dy = p.size
+    x,y = p.position.x, p.position.y
+    dx,dy = p.size.w, p.size.h
     BD = (x+dx,y-dy)
     BG = (x-dx,y-dy)
     HG = (x-dx,y+dy)
@@ -19,14 +20,13 @@ def extractCorner(p):
 
 def extremePoint(l,p):
     Corners = extractCorner(p)
-    L = l.position
     maxphi = 0,0,0
     for i in range(4):
         for j in range(i,4):
-            x1 = Corners[i][0] - l.position[0]
-            y1 = Corners[i][1] - l.position[1]
-            x2 = Corners[j][0] - l.position[0]
-            y2 = Corners[j][1] - l.position[1]
+            x1 = Corners[i][0] - l.position.x
+            y1 = Corners[i][1] - l.position.y
+            x2 = Corners[j][0] - l.position.x
+            y2 = Corners[j][1] - l.position.y
             
             
             if x1 == 0 and y1 == 0:
@@ -40,7 +40,7 @@ def extremePoint(l,p):
     return(maxphi)
 
 def pointBorder(l,point,sizex,sizey):
-    lx,ly = l.position
+    lx,ly = l.position.x, l.position.y
     px,py = point
     wallx = 0
     wally = 0
@@ -90,7 +90,7 @@ def cornerRight(x,y,sizex,sizey):
 
 def polyInLight(l,p,sizex,sizey):
     phi,i,j = extremePoint(l,p)
-    if p.position[0] < l.position[0]:
+    if p.position.x < l.position.x:
         i,j = j,i
     corners = extractCorner(p)
     Borderi = pointBorder(l,corners[i],sizex,sizey)
@@ -109,7 +109,7 @@ def OneSource(l,listOfp,sizex,sizey):
     poly = Polygon()
     for p in listOfp:
         body = Polygon(extractCorner(p))
-        if not(body.contains(Point(l.position))):           
+        if not(body.contains(Point(l.position.x,l.position.y))):           
             polyp = Polygon(polyInLight(l,p,sizex,sizey))
             poly = poly.union(polyp)
         else :
@@ -142,7 +142,7 @@ def allVisiblePlayer(shadows,listOfp):
     return l
         
 def sendingFormat(shadows):
-    return str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")
+    return "["+str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
 
 def toVisible(visibleString,DEBUG):
     try :
@@ -167,8 +167,8 @@ def toVisible(visibleString,DEBUG):
 if __name__ == "__main__":
 
     p00 = Player(ip="", username="p00", color=(0,0,0), position=(20,20), size=[10, 10])
-    l = Light((50,50))
-    l2 = Light((100,0))
+    l = Light(Position(50,50))
+    l2 = Light(Position(100,0))
 
     print(extremePoint(l,p00))
 

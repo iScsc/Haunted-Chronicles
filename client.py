@@ -13,7 +13,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -146,7 +146,8 @@ def connect():
     
     messages = message.split(" ")
     
-    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and message[9] == "END":
+    if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+        print(1)
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -167,6 +168,16 @@ def connect():
         update(message[beginPlayerIndex:]) #Players and Shades
         
         return True
+    else :
+        if DEBUG:
+            print("Connection message is not properly formatted: "+str(messages)+"\nlength:"+str(len(messages)))
+            print("connected: "+str("CONNECTED"==messages[0]))
+            print("username: "+str(USERNAME==messages[1]))
+            print("walls: "+str("WALLS"==messages[3]))
+            print("state: "+str("STATE"==messages[5]))
+            print("shades: "+str("SHADES"==messages[7]))
+            print("end: "+str("END"==messages[9]))
+            print("total :"+str((messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END")))
 
     return False
 
@@ -221,9 +232,12 @@ def send(input="INPUT " + USERNAME + " . END"):
         
         
         # receive answer
-        answer = str(sock.recv(1024*2), "utf-16")
+        answer = str(sock.recv(1024*4), "utf-16")
         
         PING = int((time.time() - t) * 1000)
+        
+        if DEBUG:
+            print(answer)
         
         return answer
 

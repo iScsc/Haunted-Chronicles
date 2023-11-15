@@ -45,32 +45,32 @@ dicoJoueur = {} # Store players' Player structure
 dicoMur = {}
 
 dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
-dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
-dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
-dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
+# dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+# dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+# dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
 
-dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
-dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
+# dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
+# dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
 
-dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
-dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
+# dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
+# dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
 
-dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
+# dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
 
-dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
-dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
-dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
+# dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
+# dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
+# dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
 
-dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
-dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
-dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
-dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
+# dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
+# dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
+# dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
+# dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
 
-dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
-dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
+# dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
+# dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
 
-dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
-dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
+# dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
+# dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -139,7 +139,7 @@ def extractLetter(s,pseudo):
 
 
 def dummyLights():
-    l00 = Light((0,0))
+    l00 = Light(Position(10,10))
     #l10 = Light((SIZE_X,0))
     #l11 = Light((SIZE_X,SIZE_Y))
     #l01 = Light((0,SIZE_Y))
@@ -162,7 +162,7 @@ def states(pseudo):
     
     for key in visiblePlayer:
         p = dicoJoueur[key]
-        liste.append(str(p)) 
+        liste.append(str(p))
     out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
 
     return(out)
@@ -176,7 +176,7 @@ def walls():
 
 def firstConnection(pseudo):
 
-    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states()
+    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
     return(out)
 
 def validPseudo(pseudo):
