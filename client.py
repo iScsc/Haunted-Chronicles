@@ -32,6 +32,7 @@ FONT_SIZE_PING = 12
 USERNAME = "John"
 PLAYERS = []
 WALLS = []
+UNVISIBLE = []
 
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
 
@@ -64,6 +65,9 @@ def display():
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
         
+        #Unvisible
+        pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
+        
         # Players
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
@@ -73,7 +77,6 @@ def display():
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
             SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
-        
         
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
