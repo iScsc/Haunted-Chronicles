@@ -66,6 +66,7 @@ def display():
     
         if WALL_VISIBLE:
             pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
+            #pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
     
     
         # Walls
@@ -90,8 +91,12 @@ def display():
             
             SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
         
+        #lights
         if DEBUG:
-            pg.draw.rect(SCREEN, (255,255,0), [SIZE[0]/2, SIZE[1]/2, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
+            
             
         
         # Ping
@@ -247,7 +252,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         
         
         # receive answer
-        answer = str(sock.recv(1024*4), "utf-16")
+        answer = str(sock.recv(1024*4*4), "utf-16")
         
         PING = int((time.time() - t) * 1000)
         

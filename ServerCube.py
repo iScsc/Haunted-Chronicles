@@ -140,11 +140,11 @@ def extractLetter(s,pseudo):
 
 
 def dummyLights():
-    l00 = Light(Position(int(SIZE_X/2),int(SIZE_Y/2)))
-    #l10 = Light((SIZE_X,0))
-    #l11 = Light((SIZE_X,SIZE_Y))
-    #l01 = Light((0,SIZE_Y))
-    return([l00])#,l10,l11,l01])    
+    l0 = Light(Position(int(200),int(200)))
+    l1 = Light(Position(int(500),int(800)))
+    l2 = Light(Position(int(1500),int(500)))
+    #l01 = Light(Position(int(100),int(800)))
+    return([l0,l1,l2])    
 
 def states(pseudo):
     player = 0
