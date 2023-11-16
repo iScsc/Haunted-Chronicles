@@ -68,7 +68,7 @@ def display():
         
         #Unvisible
         pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
-        pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
+        #pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
         
         # Players
         for player in PLAYERS:

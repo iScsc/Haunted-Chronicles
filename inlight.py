@@ -158,11 +158,14 @@ def sendingFormat(shadows):
         return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
     l = []
     endl = []
+    startNotFound =True
     for p in shadows.geoms:
         l2 = [[int(i) for i in x ] for x in get_coordinates(p).tolist()]
         l+=l2
-        endl.append(l2[0])
-    endl.reverse()
+        if startNotFound:
+            endl=[l2[0]]
+            startNotFound = False
+        l+= [l2[0]] + endl
     return "["+str(l+endl).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
 
 def toVisible(visibleString,DEBUG):
