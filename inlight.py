@@ -154,11 +154,12 @@ def allVisiblePlayer(shadows,listOfp):
         
 def sendingFormat(shadows):
     if type(shadows)==type(Polygon()):
-        return "["+str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+        listcoord = [[int(i) for i in x ] for x in get_coordinates(shadows).tolist()]
+        return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
     l = []
     endl = []
     for p in shadows.geoms:
-        l2=get_coordinates(p).tolist()
+        l2 = [[int(i) for i in x ] for x in get_coordinates(p).tolist()]
         l+=l2
         endl.append(l2[0])
     endl.reverse()
