@@ -101,14 +101,21 @@ def polyInLight(l,p,sizex,sizey):
     pi = cornerRight(xi,yi,sizex,sizey)
     xj,yj = Borderj
     pj = cornerRight(xj,yj,sizex,sizey)
-    coord = [Borderi,corners[i],corners[j],Borderj]
+    
+    coord = [Borderj,corners[j],corners[i],Borderi]
     if nextCorner(pi[0],pi[1],sizex,sizey) == pj:
         coord.append(pi)
     else :
         while pj != pi:
-            coord.append(pj)
-            pj = nextCorner(pj[0],pj[1],sizex,sizey)
-    return coord
+            coord.append(pi)
+            pi = nextCorner(pi[0],pi[1],sizex,sizey)
+    
+    if not(Polygon(coord).contains(Point(l.position.x,l.position.y))):
+        return coord
+    print("wrong calculation")
+    poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
+    shadows = poly.difference(Polygon(coord))
+    return get_coordinates(shadows).tolist()
 
 def OneSource(l,listOfp,sizex,sizey):
     poly = Polygon()
