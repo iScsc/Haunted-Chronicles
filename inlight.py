@@ -166,6 +166,12 @@ def toVisible(visibleString,DEBUG):
 
 if __name__ == "__main__":
 
+    p = Player("","John",position=Position(600,600),size=Size(20,20))
+    l = Light(Position(864,486))
+    v = Visible(p,[l],[p],864*2,486*2)
+    print(sendingFormat(v))
+
+    """
     p00 = Player(ip="", username="p00", color=(0,0,0), position=(20,20), size=[10, 10])
     l = Light(Position(50,50))
     l2 = Light(Position(100,0))
@@ -247,4 +253,4 @@ if __name__ == "__main__":
     print(v)
     print(sendingFormat(v))
     print(isVisible(v,p20))
-
+"""
