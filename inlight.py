@@ -9,7 +9,6 @@ import interpretor
 from common import *
 
 
-DEBUG = True
 
 def extractCorner(p):
     x,y = p.position.x, p.position.y
@@ -133,8 +132,6 @@ def AllSources(listOfl,listOfp,sizex,sizey):
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     for l in listOfl:
         polyl = OneSource(l,listOfp,sizex,sizey)
-        if DEBUG:
-            print("position light :",l.position,", polygon inlight :",polyl)
         poly = poly.intersection(polyl) 
     return(poly)
 
@@ -156,7 +153,16 @@ def allVisiblePlayer(shadows,listOfp):
     return l
         
 def sendingFormat(shadows):
-    return "["+str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+    if type(shadows)==type(Polygon()):
+        return "["+str(get_coordinates(shadows).tolist()).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+    l = []
+    endl = []
+    for p in shadows.geoms:
+        l2=get_coordinates(p).tolist()
+        l+=l2
+        endl.append(l2[0])
+    endl.reverse()
+    return "["+str(l+endl).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
 
 def toVisible(visibleString,DEBUG):
     try :
@@ -180,10 +186,17 @@ def toVisible(visibleString,DEBUG):
 
 if __name__ == "__main__":
 
-    p = Player("","John",position=Position(600,600),size=Size(20,20))
-    l = Light(Position(864,486))
-    v = Visible(p,[l],[p],864*2,486*2)
+    p00 = Player("","p00",position=Position(10,10),size=Size(20,20))
+    p02 = Player("","p02",position=Position(10,70),size=Size(20,20))
+    p20 = Player("","p20",position=Position(70,10),size=Size(20,20))
+    p11 = Player("","p11",position=Position(50,50),size=Size(20,20))
+
+    l = Light(Position(50,50))
+    v = Visible(p11,[l],[p00,p02,p20],100,100)
+    print(v)
+    print(len(v.geoms))
     print(sendingFormat(v))
+
 
     """
     p00 = Player(ip="", username="p00", color=(0,0,0), position=(20,20), size=[10, 10])

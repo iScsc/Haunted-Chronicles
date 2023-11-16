@@ -46,9 +46,9 @@ dicoJoueur = {} # Store players' Player structure
 dicoMur = {}
 
 dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
-#dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
-#dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
-#dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
+dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
 
 # dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
 # dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
@@ -141,7 +141,6 @@ def extractLetter(s,pseudo):
 
 def dummyLights():
     l00 = Light(Position(int(SIZE_X/2),int(SIZE_Y/2)))
-    print(l00.position)
     #l10 = Light((SIZE_X,0))
     #l11 = Light((SIZE_X,SIZE_Y))
     #l01 = Light((0,SIZE_Y))
