@@ -39,6 +39,8 @@ WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to 
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 
+WALL_VISIBLE = True
+
 # ----------------------- Threads -----------------------
 
 def display():
@@ -61,14 +63,22 @@ def display():
         SCREEN.fill((0, 0, 0))  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
-        
+    
+        if WALL_VISIBLE:
+            pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
+    
+    
         # Walls
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
         
+        
         #Unvisible
-        pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
-        #pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
+        if not(WALL_VISIBLE):
+            pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
+            #pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
+        
+
         
         # Players
         for player in PLAYERS:
