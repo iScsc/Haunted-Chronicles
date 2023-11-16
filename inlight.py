@@ -136,7 +136,7 @@ def AllSources(listOfl,listOfp,sizex,sizey):
     return(poly)
 
 def Visible(p,listOfl,listOfp,sizex,sizey):
-    l = Light(p.position) # TODO middle rather than top left corner
+    l = Light(Position(p.position.x+p.size.h/2,p.position.y+p.size.w/2)) # TODO middle rather than top left corner
     listOfp2 = [x for x in listOfp if x!=p]
     poly = OneSource(l,listOfp2,sizex,sizey)
     return(poly.union(AllSources(listOfl,listOfp,sizex,sizey)))
