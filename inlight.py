@@ -9,6 +9,8 @@ import interpretor
 from common import *
 
 
+DEBUG = True
+
 def extractCorner(p):
     x,y = p.position.x, p.position.y
     dx,dy = p.size.w, p.size.h
@@ -121,6 +123,8 @@ def AllSources(listOfl,listOfp,sizex,sizey):
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     for l in listOfl:
         polyl = OneSource(l,listOfp,sizex,sizey)
+        if DEBUG:
+            print("position light :",l.position,", polygon inlight :",polyl)
         poly = poly.intersection(polyl) # TODO error with Self-Intersection
     return(poly)
 

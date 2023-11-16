@@ -23,6 +23,7 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
+
 # Game map
 SIZE_X = int(1920 * .9)
 SIZE_Y = int(1080 * .9)
@@ -140,6 +141,7 @@ def extractLetter(s,pseudo):
 
 def dummyLights():
     l00 = Light(Position(int(SIZE_X/2),int(SIZE_Y/2)))
+    print(l00.position)
     #l10 = Light((SIZE_X,0))
     #l11 = Light((SIZE_X,SIZE_Y))
     #l01 = Light((0,SIZE_Y))
