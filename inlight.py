@@ -102,9 +102,12 @@ def polyInLight(l,p,sizex,sizey):
     xj,yj = Borderj
     pj = cornerRight(xj,yj,sizex,sizey)
     coord = [Borderi,corners[i],corners[j],Borderj]
-    while pj != pi:
-        coord.append(pj)
-        pj = nextCorner(pj[0],pj[1],sizex,sizey)
+    if nextCorner(pi[0],pi[1],sizex,sizey) == pj:
+        coord.append(pi)
+    else :
+        while pj != pi:
+            coord.append(pj)
+            pj = nextCorner(pj[0],pj[1],sizex,sizey)
     return coord
 
 def OneSource(l,listOfp,sizex,sizey):
@@ -125,7 +128,7 @@ def AllSources(listOfl,listOfp,sizex,sizey):
         polyl = OneSource(l,listOfp,sizex,sizey)
         if DEBUG:
             print("position light :",l.position,", polygon inlight :",polyl)
-        poly = poly.intersection(polyl) # TODO error with Self-Intersection
+        poly = poly.intersection(polyl) 
     return(poly)
 
 def Visible(p,listOfl,listOfp,sizex,sizey):

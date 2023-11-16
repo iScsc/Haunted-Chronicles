@@ -46,9 +46,9 @@ dicoJoueur = {} # Store players' Player structure
 dicoMur = {}
 
 dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
-# dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
-# dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
-# dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
+#dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+#dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+#dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
 
 # dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
 # dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
@@ -151,20 +151,28 @@ def states(pseudo):
     player = 0
     liste = []
     listeOfPlayer = []
+    listeOfWall = []
     listOfLight = dummyLights()
+    
     for key in dicoJoueur:
         p =  dicoJoueur[key]
         if key == pseudo:
             player = p
         listeOfPlayer.append(p)
     
-    shadows = Visible(player,listOfLight,listeOfPlayer,SIZE_X,SIZE_Y)
+    
+    for key in dicoMur:
+        listeOfWall.append(dicoMur[key])
+    
+    shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
     visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
     formatshadows = sendingFormat(shadows)
     
+    liste.append(str(player))
     for key in visiblePlayer:
         p = dicoJoueur[key]
-        liste.append(str(p))
+        if key != pseudo:       
+            liste.append(str(p))
     out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
 
     return(out)
