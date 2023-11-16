@@ -79,6 +79,10 @@ def display():
             
             SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
         
+        if DEBUG:
+            pg.draw.rect(SCREEN, (255,255,0), [SIZE[0]/2, SIZE[1]/2, 10, 10])
+            
+        
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
