@@ -56,7 +56,7 @@ def pointBorder(l,point,sizex,sizey):
         wallx = sizex
     else:
         if py>ly:
-            return (lx,sizex)
+            return (lx,sizey)
         return (lx,0)
     
     if ly > py: # ty is positive
@@ -69,7 +69,7 @@ def pointBorder(l,point,sizex,sizey):
     
     if tx < ty:
         return (wallx,abs(py + (py - ly)*tx))
-    return (abs(px + (px - ly)*ty),wally)
+    return (abs(px + (px - lx)*ty),wally)
     
 def nextCorner(x,y,sizex,sizey):
     if (x,y) == (0,0):
