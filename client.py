@@ -50,6 +50,7 @@ def display():
     global SCREEN
     global PLAYERS
     global SCALE_FACTOR
+    global SIZE
     
     pg.init()
     
@@ -81,7 +82,7 @@ def display():
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
         
         
         # Ping
