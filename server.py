@@ -1,6 +1,7 @@
 
 # ----------------------- Imports -----------------------
 
+
 from socket import *
 from random import randint
 
@@ -16,7 +17,6 @@ from common import *
 # ----------------------- IP -----------------------
 
 def extractingIP():
-
     s = socket(AF_INET, SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     IP = s.getsockname()[0]
@@ -33,8 +33,10 @@ SIZE = (SIZE_X,SIZE_Y)
 STEP_X = 3
 STEP_Y = 3
 
+# Server
 IP = extractingIP()
 
+# Player
 SIZE_MAX_PSEUDO = 10
 
 PLAYER_SIZE = (20, 20)
@@ -77,7 +79,7 @@ dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
 
 dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
 dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
-dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
+#dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
 
 dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
 dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
@@ -157,16 +159,17 @@ def extractLetter(s,pseudo):
 
 
 def dummyLights():
-    l00 = Light(Position(int(SIZE_X/2),int(SIZE_Y/2)))
-    #l10 = Light((SIZE_X,0))
-    #l11 = Light((SIZE_X,SIZE_Y))
-    #l01 = Light((0,SIZE_Y))
-    return([l00])#,l10,l11,l01])    
+    l0 = Light(Position(int(200),int(200)))
+    l1 = Light(Position(int(500),int(800)))
+    l2 = Light(Position(int(1500),int(500)))
+    #l01 = Light(Position(int(100),int(800)))
+    return([l0,l1,l2])    
 
 def states(pseudo):
     player = 0
     liste = []
     listeOfPlayer = []
+    listeOfWall = []
     listOfLight = dummyLights()
     for key in dicoJoueur:
         p =  dicoJoueur[key]
@@ -174,13 +177,20 @@ def states(pseudo):
             player = p
         listeOfPlayer.append(p)
     
-    shadows = Visible(player,listOfLight,listeOfPlayer,SIZE_X,SIZE_Y)
+    
+    for key in dicoMur:
+        listeOfWall.append(dicoMur[key])
+    
+    shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
     visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
     formatshadows = sendingFormat(shadows)
     
+    liste.append(str(player))
     for key in visiblePlayer:
         p = dicoJoueur[key]
-        liste.append(str(p))
+        if key != pseudo:       
+            liste.append(str(p))
+
     out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
 
     return(out)
@@ -193,6 +203,7 @@ def walls():
     return(out)
 
 def firstConnection(pseudo):
+
     out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
     return(out)
 
@@ -279,6 +290,7 @@ def positionNewPlayer(dx, dy):
 
 def colorNewPlayer():
     return Color(randint(1,255),randint(1,255),randint(1,255))
+
 
 
 # ----------------------- Threads -----------------------
@@ -458,3 +470,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
