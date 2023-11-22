@@ -23,8 +23,7 @@ MAX_REQUESTS = 10 # number of requests without proper response before force disc
 FPS = 60
 
 SIZE = None
-SCALE_FACTOR=1.
-SCREEN_SIZE=None
+SCALE_FACTOR = None
 SCREEN = None
 
 FONT = "Arial" # Font used to display texts
@@ -50,8 +49,13 @@ def display():
     
     global SCREEN
     global PLAYERS
+    global SCALE_FACTOR
     
     pg.init()
+    
+    info = pg.display.Info()
+    SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+    SIZE = info.current_w, info.current_h
     
     SCREEN = pg.display.set_mode(SIZE)
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
@@ -67,11 +71,11 @@ def display():
         
         # Walls
         for wall in WALLS:
-            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
+            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
         
         # Players
         for player in PLAYERS:
-            pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
+            pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
             
             usernameText = player.username
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
