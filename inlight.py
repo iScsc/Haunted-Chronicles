@@ -2,7 +2,7 @@
 from player import Player
 from light import Light
 from numpy import angle
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, MultiPolygon
 from shapely import get_coordinates
 import time
 import interpretor
@@ -127,7 +127,6 @@ def OneSource(l,listOfp,sizex,sizey):
             print("light in")
     return(poly)
 
-
 def AllSources(listOfl,listOfp,sizex,sizey):
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     for l in listOfl:
@@ -200,4 +199,15 @@ if __name__ == "__main__":
     print(v)
     print(len(v.geoms))
     print(sendingFormat(v))
+    
+    poly0 = MultiPolygon([(0,0),(0,3),(3,3),(3,0)])
+    poly1 = MultiPolygon([(1,1),(1,2),(2,2),(2,1)])
+
+
+    p = poly0.difference(poly1)
+    print(p)
+    print(get_coordinates(p))
+    print(p)
+    print(sendingFormat(p))
+    
 
