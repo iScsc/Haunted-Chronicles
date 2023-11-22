@@ -193,7 +193,7 @@ def connect():
         SOCKET.close()
         SOCKET = None
         
-     else :
+    else :
         if DEBUG:
             print("Connection message is not properly formatted: "+str(messages)+"\nlength:"+str(len(messages)))
             print("connected: "+str("CONNECTED"==messages[0]))
