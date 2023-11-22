@@ -55,6 +55,13 @@ LISTENING = True
 MANAGING = True
 STOP = False
 
+#Game
+LOBBY = True
+
+TEAMSID = {0 : "Not assigned", 1 : "Seekers", 2 : "Hidders"}
+TEAMS = {0 : [], 1 : [], 2 : []}
+READY = {}
+
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
@@ -125,7 +132,10 @@ def processDisconection(ip, s):
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
+    _, id, _, _, _, _ = dicoJoueur[pseudo].toList()
+    TEAMS[id].remove(dicoJoueur[pseudo])
     dicoJoueur.pop(pseudo)
+    READY.pop(pseudo)
     return("DISCONNECTED" + s[13:])
 
 
@@ -155,10 +165,17 @@ def extractLetter(s,pseudo):
 
 def states():
     liste = []
+    out = ""
+    
     for key in dicoJoueur:
         ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
-        liste.append((username,color,(x,y),(dx,dy))) 
-    out = "STATE " + (str(liste)).replace(" ","") + " END"
+        liste.append((username,color,(x,y),(dx,dy)))
+    if LOBBY:
+        rlist = []
+        for key in READY:
+            rlist.append((key, READY[key]))
+        out += "LOBBY " + str(rlist) + " "
+    out += "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
 
 def walls():
@@ -183,7 +200,7 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    ip, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
+    ip, id, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
 
     match inputLetter:
         case ".": #nothing
@@ -198,12 +215,30 @@ def Rules(inputLetter,pseudo):
             y-=STEP_Y
         case "D":
             y+=STEP_Y
+        case "RED":
+            if LOBBY:
+                TEAMS[1].append(dicoJoueur[pseudo])
+                TEAMS[id].remove(dicoJoueur[pseudo])
+                id = 1
+        case "BLUE":
+            if LOBBY:
+                TEAMS[2].append(dicoJoueur[pseudo])
+                TEAMS[id].remove(dicoJoueur[pseudo])
+                id = 2
+        case "NEUTRAL":
+            if LOBBY:
+                TEAMS[0].append(dicoJoueur[pseudo])
+                TEAMS[id].remove(dicoJoueur[pseudo])
+                id = 0
+        case "READY":
+            if LOBBY:
+                READY[pseudo] = not READY[pseudo]
         case "T":
             x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
     if correctPosition(pseudo, x,y,dx,dy):
-        dicoJoueur[pseudo].update(position=(x, y), size=(dx, dy))
+        dicoJoueur[pseudo].update(teamId=id, position=(x, y), size=(dx, dy))
     return()
 
 def correctPosition(pseudo, x,y,dx,dy):
@@ -245,7 +280,9 @@ def initNewPlayer(ip, pseudo):
         x, y = positionNewPlayer(dx, dy)
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+    dicoJoueur[pseudo] = Player(ip, 0, pseudo, color, (x, y), [dx, dy])
+    TEAMS[0].append(dicoJoueur[pseudo])
+    READY[pseudo] = False
 
 def sizeNewPlayer():
     return PLAYER_SIZE
@@ -367,7 +404,10 @@ def listen_old():
                 # deco remaining player with same ip if needed.
                 for username in dicoJoueur:
                     if dicoJoueur[username].ip == addr[0]:
+                        _, id, _, _, _, _ = dicoJoueur[username].toList()
+                        TEAMS[id].remove(dicoJoueur[username])
                         dicoJoueur.pop(username)
+                        READY.pop(username)
                         break
                 
                 sock.close()
