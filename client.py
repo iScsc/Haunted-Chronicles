@@ -170,7 +170,7 @@ def connect():
     messages = message.split(" ")
     
     if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
-        print(1)
+        
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -282,7 +282,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             SOCKET.sendall(bytes(input, "utf-16"))
             
             # receive answer
-            answer = str(SOCKET.recv(1024*2), "utf-16")
+            answer = str(SOCKET.recv(1024*16), "utf-16")
             
             PING = int((time.time() - t) * 1000)
             

@@ -182,7 +182,6 @@ def states(pseudo):
         listeOfWall.append(dicoMur[key])
     
     shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
-    print(shadows)
     visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
     formatshadows = sendingFormat(shadows)
     
