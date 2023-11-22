@@ -162,7 +162,6 @@ def connect():
     messages = message.split(" ")
     
     if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
-        print(1)
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
