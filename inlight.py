@@ -9,7 +9,6 @@ import interpretor
 from common import *
 
 
-
 def extractCorner(p):
     x,y = p.position.x, p.position.y
     dx,dy = p.size.w, p.size.h
@@ -100,7 +99,6 @@ def polyInLight(l,p,sizex,sizey):
     pi = cornerRight(xi,yi,sizex,sizey)
     xj,yj = Borderj
     pj = cornerRight(xj,yj,sizex,sizey)
-    
     coord = [Borderj,corners[j],corners[i],Borderi]
     if nextCorner(pi[0],pi[1],sizex,sizey) == pj:
         coord.append(pi)
@@ -210,4 +208,3 @@ if __name__ == "__main__":
     print(p)
     print(sendingFormat(p))
     
-

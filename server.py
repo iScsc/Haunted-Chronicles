@@ -1,21 +1,23 @@
 
 # ----------------------- Imports -----------------------
 
-import socketserver
-import socket
+
+from socket import *
 from random import randint
 
-from player import Player
+from threading import *
+import time
 
+from player import Player
+from wall import Wall
 from light import Light
 from inlight import *
-from wall import Wall
 from common import *
 
 # ----------------------- IP -----------------------
 
 def extractingIP():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket(AF_INET, SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     IP = s.getsockname()[0]
     s.close()
@@ -23,7 +25,6 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
-
 # Game map
 SIZE_X = int(1920 * .9)
 SIZE_Y = int(1080 * .9)
@@ -39,6 +40,24 @@ IP = extractingIP()
 SIZE_MAX_PSEUDO = 10
 
 PLAYER_SIZE = (20, 20)
+
+# Maybe not mandatory
+WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
+
+HOST = str(IP)
+PORT = 9998
+
+MAINSOCKET = None
+LOCK = None
+BACKLOG = 1
+dicoSocket = {}
+#waitingConnectionList = []
+waitingDisconnectionList = []
+
+
+LISTENING = True
+MANAGING = True
+STOP = False
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
@@ -152,7 +171,6 @@ def states(pseudo):
     listeOfPlayer = []
     listeOfWall = []
     listOfLight = dummyLights()
-    
     for key in dicoJoueur:
         p =  dicoJoueur[key]
         if key == pseudo:
@@ -173,6 +191,7 @@ def states(pseudo):
         p = dicoJoueur[key]
         if key != pseudo:       
             liste.append(str(p))
+
     out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
 
     return(out)
@@ -275,43 +294,181 @@ def colorNewPlayer():
 
 
 
-# ----------------------- Handler -----------------------
+# ----------------------- Threads -----------------------
+def manage_server():
+    global STOP
+    global LISTENING
+    global MANAGING
+    
+    global MAINSOCKET
+    
+    while not STOP:
+        command = input()
+        match command:
+            case "stop":
+                STOP = True
+                print("STOP = ", STOP)
+                MAINSOCKET.shutdown(SHUT_RDWR)
+                MAINSOCKET.close()
+                
+                print("Socket server closed !")
+                
+                for (username,(sock,addr)) in dicoSocket:
+                    sock.shutdown(SHUT_RDWR)
+                    sock.close()
+                
+                print("Client sockets closed !")
+            case "deaf":
+                LISTENING = False
+                print("LISTENING = ", LISTENING)
+            case "listen":
+                LISTENING = True
+                print("LISTENING = ", LISTENING)
+            case "ignore":
+                MANAGING = False
+                print("MANAGING = ", MANAGING)
+            case "manage":
+                MANAGING = True
+                print("MANAGING = ", MANAGING)
+            case _:
+                print("Wrong command : use either stop, deaf, listen, ignore, manage")
+                print("STOP = ", STOP)
+                print("LISTENING = ", LISTENING)
+                print("MANAGING = ", MANAGING)
+                
+def listen_new():
+    global STOP
+    global LISTENING
+    
+    #global waitingConnectionList
+    
+    while not STOP:
+        while LISTENING and not STOP:
+            try:
+                sock, addr = MAINSOCKET.accept()
+                in_ip = addr[0]
+                
+                if(LISTENING):
+                    data = sock.recv(1024).strip()
+                    
+                    print("{} wrote:".format(in_ip))
+                    in_data = str(data,'utf-16')
+                    print(in_data)
+                    
+                    out = processRequest(in_ip ,in_data)
+                    message = out.split(' ')
+                    
+                    if message[0]=="CONNECTED":
+                        LOCK.acquire()
+                        username = message[1]
+                        dicoSocket[username] = (sock, addr)
+                        LOCK.release()
+                    #    waitingConnectionList.append((username, sock, addr))
 
-class MyTCPHandler(socketserver.BaseRequestHandler):
-    """
-    The request handler class for our server.
-
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
-
-    def handle(self):
-        # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
+                    print(">>> ",out,"\n")
+                    try:
+                        sock.sendall(bytes(out,'utf-16'))
+                    except:
+                        print("New connection from " + str(in_ip) + " failed!")
+                else:
+                    print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
+            except:
+                print("The main socket was closed. LISTENING = " + str(LISTENING) + " STOP = " + str(STOP))
+            
+            time.sleep(WAITING_TIME)
         
-        in_ip = self.client_address[0]
-        
-        print("{} wrote:".format(in_ip))
-        in_data = str(self.data,'utf-16')
-        print(in_data)
-        
-        out = processRequest(in_ip ,in_data)
+        time.sleep(WAITING_TIME)
 
-        print(">>> ",out,"\n")
-        self.request.sendall(bytes(out,'utf-16'))
+def listen_old():
+    global STOP
+    global MANAGING
+    
+    #global waitingConnectionList
+    global waitingDisconnectionList
+    
+    while not STOP:
+        while MANAGING and not STOP:
+            # coSocketList = waitingConnectionList.copy()
+            # waitingConnectionList = []
+            
+            # for elt in coSocketList:
+            #     username, sock, addr = elt[0], elt[1], elt[2]
+            #     dicoSocket[username] = sock, addr
+            
 
+            
+            for elt in waitingDisconnectionList:
+                username, sock, addr = elt[0], elt[1], elt[2]
+                dicoSocket.pop(username)
+                
+                # deco remaining player with same ip if needed.
+                for username in dicoJoueur:
+                    if dicoJoueur[username].ip == addr[0]:
+                        dicoJoueur.pop(username)
+                        break
+                
+                sock.close()
+            waitingDisconnectionList = []
+
+
+            LOCK.acquire()
+            for username in dicoSocket:
+                sock = dicoSocket[username][0]
+                addr = dicoSocket[username][1]
+
+                data = sock.recv(1024).strip()
+                
+                in_ip = addr[0]
+                
+                print("{} wrote:".format(in_ip))
+                in_data = str(data,'utf-16')
+                print(in_data)
+                
+                out = processRequest(in_ip ,in_data)
+                message = out.split(" ")
+                        
+                if message[0]=="DISCONNECTED":
+                    username = message[1]
+                    waitingDisconnectionList.append((username, sock, addr))
+                
+                print(">>> ",out,"\n")
+                try:
+                    sock.sendall(bytes(out,'utf-16'))
+                except:
+                    waitingDisconnectionList.append((username, sock, addr))
+            LOCK.release()
+            
+            time.sleep(WAITING_TIME)
+        
+        time.sleep(WAITING_TIME)
+    
 
 
 # ----------------------- Main -----------------------
+def main():
+    global MAINSOCKET
+    global LOCK
+    
+    # Initialization
+    if MAINSOCKET == None:
+        MAINSOCKET = socket(AF_INET, SOCK_STREAM)
+        MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        MAINSOCKET.bind((HOST, PORT))
+        MAINSOCKET.listen(BACKLOG)
+    
+    if LOCK == None:
+        LOCK = Lock()
+    
+    print("Server opened with :\n    - ip = " + str(IP) + "\n    - port = " + str(PORT))
+    
+    listener_new = Thread(target=listen_new)
+    manager_server = Thread(target=manage_server)
+    listener_old = Thread(target=listen_old)
+    
+    listener_new.start()
+    manager_server.start()
+    listener_old.start()
 
 if __name__ == "__main__":
-    HOST, PORT = str(IP), 9998
-    #HOST, PORT = "localhost", 9998
-    socketserver.TCPServer.allow_reuse_address = True
-    # Create the server, binding to localhost on port 9999
-    with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
-        print("HOST = ",IP,"\nPORT = ",PORT,"\n")
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C
-        server.serve_forever()
+    main()
+

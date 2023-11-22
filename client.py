@@ -35,7 +35,10 @@ PLAYERS = []
 WALLS = []
 UNVISIBLE = []
 
+SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
+SOCKET_TIMEOUT = 30 # in seconds
+EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 
@@ -77,7 +80,6 @@ def display():
         if not(WALL_VISIBLE):
             pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
         
-
         
         # Players
         for player in PLAYERS:
@@ -94,9 +96,7 @@ def display():
             pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
-            
-            
-        
+ 
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
@@ -120,6 +120,7 @@ def game():
     global PLAYERS
     global SERVER_IP
     global SERVER_PORT
+    global SOCKET
     
     requestNumber=0
     
@@ -128,6 +129,7 @@ def game():
     while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
+        
         
         state = send(inputs)
         
@@ -145,7 +147,10 @@ def game():
 
         
         clock.tick(FPS)
-        
+    
+    if SOCKET != None:
+        SOCKET.close()
+        SOCKET = None
 
 
 
@@ -159,7 +164,7 @@ def connect():
     """
     
     global SIZE
-        
+    
     message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
     messages = message.split(" ")
@@ -186,18 +191,36 @@ def connect():
         update(message[beginPlayerIndex:]) #Players and Shades
         
         return True
-    else :
-        if DEBUG:
-            print("Connection message is not properly formatted: "+str(messages)+"\nlength:"+str(len(messages)))
-            print("connected: "+str("CONNECTED"==messages[0]))
-            print("username: "+str(USERNAME==messages[1]))
-            print("walls: "+str("WALLS"==messages[3]))
-            print("state: "+str("STATE"==messages[5]))
-            print("shades: "+str("SHADES"==messages[7]))
-            print("end: "+str("END"==messages[9]))
-            print("total :"+str((messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END")))
+    # Manage failed connections
+    elif "CONNECTED" not in messages:
+        askNewPseudo(message)
+        
+        global SOCKET
+        
+        SOCKET.close()
+        SOCKET = None
 
     return False
+
+
+
+def askNewPseudo(errorMessage):
+    """Ask for another username when connection fails to try to connect again.
+
+    Args:
+        errorMessage (str): connection error message sent back by the server when the connection failed.
+    """
+    global USERNAME
+    
+    print("Server sent back : " + errorMessage)
+    print("Please try a new pseudo. (Your previous one was " + USERNAME + ")")
+    
+    username = ""
+    
+    while username == "":
+        username = input()
+    
+    USERNAME = username
 
 
 
@@ -240,24 +263,32 @@ def send(input="INPUT " + USERNAME + " . END"):
     """
     
     global PING
+    global SOCKET
     
-    with socket(AF_INET, SOCK_STREAM) as sock:
+    # Initialization
+    if (SOCKET == None and input[0:7] == "CONNECT"):
+        SOCKET = socket(AF_INET, SOCK_STREAM)
+        SOCKET.settimeout(SOCKET_TIMEOUT)
+        SOCKET.connect((SERVER_IP, SERVER_PORT))
+    
+    
+    # Usual behavior
+    if SOCKET != None:
         t = time.time()
-        
+
         # send data
-        sock.connect((SERVER_IP, SERVER_PORT))
-        sock.sendall(bytes(input, "utf-16"))
-        
-        
-        # receive answer
-        answer = str(sock.recv(1024*4*4), "utf-16")
-        
-        PING = int((time.time() - t) * 1000)
-        
-        if DEBUG:
-            print(answer)
-        
-        return answer
+
+        try:
+            SOCKET.sendall(bytes(input, "utf-16"))
+            
+            # receive answer
+            answer = str(SOCKET.recv(1024*2), "utf-16")
+            
+            PING = int((time.time() - t) * 1000)
+            
+            return answer
+        except:
+            exitError("Loss connection with the remote server.")
 
 
 
@@ -271,6 +302,10 @@ def update(state="STATE [] END"):
     global WALLS
     global PLAYERS
     global UNVISIBLE
+
+    
+    if type(state) != str or state == "":
+        return False
     
     messages = state.split(" ")
     
@@ -300,13 +335,15 @@ def update(state="STATE [] END"):
     
     return True
 
-
-
 def exit():
     """Send the normalized disconnection request and then exits the game.
     """
     
     global CONNECTED
+    global SOCKET
+    
+    SOCKET.settimeout(EXIT_TIMEOUT)
+    
     requestNumber=0
     
     t = time.time()
@@ -323,16 +360,21 @@ def exit():
         exitError()
     
     CONNECTED = False
+    SOCKET.close()
+    SOCKET = None
 
-def exitError():
+def exitError(errorMessage="Sorry a problem occured..."):
     """Exit the game
         Called if there has been a problem with the server"""
         
     global CONNECTED
+    global SOCKET
     
-    print("Sorry a problem occured...")
+    print(errorMessage)
     
     CONNECTED=False
+    SOCKET.close()
+    SOCKET = None
 
 
 
