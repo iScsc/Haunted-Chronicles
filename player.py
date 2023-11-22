@@ -7,7 +7,7 @@ class Player:
     BASE_POSITION = common.Position()
     BASE_SIZE = common.Size()
     
-    def __init__(self, ip="", username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
+    def __init__(self, ip="", teamId=0, username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
 
         Args:
@@ -20,6 +20,7 @@ class Player:
         
         # ip may be deleted from the Player class as it can now be identified using the player's socket
         self.ip = ip
+        self.teamId = teamId
         self.username = username
         self.color = color
         self.position = position
