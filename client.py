@@ -60,13 +60,12 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill((0, 0, 0))  # May need to be custom
+        SCREEN.fill((100, 100, 100))  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
         if WALL_VISIBLE:
-            pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
-            #pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
+            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
     
     
         # Walls
@@ -76,8 +75,7 @@ def display():
         
         #Unvisible
         if not(WALL_VISIBLE):
-            pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
-            #pg.draw.lines(SCREEN, (255,255,0),True, UNVISIBLE)
+            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
         
 
         
