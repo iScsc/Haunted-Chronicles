@@ -9,10 +9,11 @@ import time
 
 from player import Player
 from wall import Wall
+from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -32,6 +33,7 @@ FONT_SIZE_PING = 12
 USERNAME = "John"
 PLAYERS = []
 WALLS = []
+UNVISIBLE = []
 
 SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
@@ -67,6 +69,9 @@ def display():
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
         
+        #Unvisible
+        pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
+        
         # Players
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
@@ -76,7 +81,6 @@ def display():
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
             SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
-        
         
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
@@ -150,7 +154,8 @@ def connect():
     
     messages = message.split(" ")
     
-    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END":
+    if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+        print(1)
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -168,9 +173,10 @@ def connect():
         beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
         
         update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
-        update(message[beginPlayerIndex:]) # Players
+        update(message[beginPlayerIndex:]) #Players and Shades
         
         return True
+      
     # Manage failed connections
     elif "CONNECTED" not in messages:
         askNewPseudo(message)
@@ -179,7 +185,18 @@ def connect():
         
         SOCKET.close()
         SOCKET = None
-    
+        
+     else :
+        if DEBUG:
+            print("Connection message is not properly formatted: "+str(messages)+"\nlength:"+str(len(messages)))
+            print("connected: "+str("CONNECTED"==messages[0]))
+            print("username: "+str(USERNAME==messages[1]))
+            print("walls: "+str("WALLS"==messages[3]))
+            print("state: "+str("STATE"==messages[5]))
+            print("shades: "+str("SHADES"==messages[7]))
+            print("end: "+str("END"==messages[9]))
+            print("total :"+str((messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END")))
+
     return False
 
 
@@ -280,6 +297,7 @@ def update(state="STATE [] END"):
     
     global WALLS
     global PLAYERS
+    global UNVISIBLE
     
     if type(state) != str or state == "":
         return False
@@ -298,8 +316,18 @@ def update(state="STATE [] END"):
         if (walls != None):
             WALLS=walls
             return False
-        else:
-            return True
+        else: return True
+        
+    elif len(messages) == 3 and messages[0] == "SHADES" and messages[2] == "END":
+        unvisible = toVisible(messages[1],DEBUG)
+        if (unvisible != None):
+            UNVISIBLE=unvisible
+            return False
+        else: return True
+        
+    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4]=="END":
+        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
+    
     return True
 
 def exit():
