@@ -43,6 +43,8 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 
+WALL_VISIBLE = True
+
 # ----------------------- Threads -----------------------
 
 def display():
@@ -68,16 +70,24 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill((0, 0, 0))  # May need to be custom
+        SCREEN.fill((100, 100, 100))  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
-        
+    
+        if WALL_VISIBLE:
+            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
+    
+    
         # Walls
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
         
+        
+        
         #Unvisible
-        pg.draw.polygon(SCREEN, (255,0,0), UNVISIBLE)
+        if not(WALL_VISIBLE):
+            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
+        
         
         # Players
         for player in PLAYERS:
@@ -89,6 +99,12 @@ def display():
             
             SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
         
+        #lights
+        if DEBUG:
+            pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
+ 
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
@@ -162,6 +178,7 @@ def connect():
     messages = message.split(" ")
     
     if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+        
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -182,7 +199,6 @@ def connect():
         update(message[beginPlayerIndex:]) #Players and Shades
         
         return True
-      
     # Manage failed connections
     elif "CONNECTED" not in messages:
         askNewPseudo(message)
@@ -191,17 +207,6 @@ def connect():
         
         SOCKET.close()
         SOCKET = None
-        
-    else :
-        if DEBUG:
-            print("Connection message is not properly formatted: "+str(messages)+"\nlength:"+str(len(messages)))
-            print("connected: "+str("CONNECTED"==messages[0]))
-            print("username: "+str(USERNAME==messages[1]))
-            print("walls: "+str("WALLS"==messages[3]))
-            print("state: "+str("STATE"==messages[5]))
-            print("shades: "+str("SHADES"==messages[7]))
-            print("end: "+str("END"==messages[9]))
-            print("total :"+str((messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END")))
 
     return False
 
@@ -280,11 +285,12 @@ def send(input="INPUT " + USERNAME + " . END"):
         t = time.time()
 
         # send data
+
         try:
             SOCKET.sendall(bytes(input, "utf-16"))
             
             # receive answer
-            answer = str(SOCKET.recv(1024*2), "utf-16")
+            answer = str(SOCKET.recv(1024*16), "utf-16")
             
             PING = int((time.time() - t) * 1000)
             
@@ -304,6 +310,7 @@ def update(state="STATE [] END"):
     global WALLS
     global PLAYERS
     global UNVISIBLE
+
     
     if type(state) != str or state == "":
         return False
