@@ -23,6 +23,8 @@ MAX_REQUESTS = 10 # number of requests without proper response before force disc
 FPS = 60
 
 SIZE = None
+SCALE_FACTOR=1.
+SCREEN_SIZE=None
 SCREEN = None
 
 FONT = "Arial" # Font used to display texts
