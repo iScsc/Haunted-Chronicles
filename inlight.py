@@ -109,7 +109,6 @@ def polyInLight(l,p,sizex,sizey):
     
     if not(Polygon(coord).contains(Point(l.position.x,l.position.y))):
         return coord
-    print("wrong calculation")
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
     shadows = poly.difference(Polygon(coord))
     return get_coordinates(shadows).tolist()
@@ -198,13 +197,13 @@ if __name__ == "__main__":
     print(len(v.geoms))
     print(sendingFormat(v))
     
-    poly0 = MultiPolygon([(0,0),(0,3),(3,3),(3,0)])
-    poly1 = MultiPolygon([(1,1),(1,2),(2,2),(2,1)])
+    poly0 = Polygon([(0,0),(0,3),(3,3),(3,0)])
+    poly1 = Polygon([(1,1),(1,2),(2,2),(2,1)])
 
 
     p = poly0.difference(poly1)
     print(p)
     print(get_coordinates(p))
-    print(p)
+    print(str(p))
     print(sendingFormat(p))
     
