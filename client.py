@@ -13,7 +13,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=True
+DEBUG=False
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -75,7 +75,7 @@ def display():
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
         if WALL_VISIBLE:
-            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
+            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
         # Walls
@@ -86,7 +86,7 @@ def display():
         
         #Unvisible
         if not(WALL_VISIBLE):
-            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
+            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
         # Players
@@ -176,6 +176,9 @@ def connect():
     message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
     messages = message.split(" ")
+    
+    if DEBUG:
+        print(message)
     
     if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
         
