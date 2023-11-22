@@ -307,33 +307,36 @@ def listen_new():
     
     while not STOP:
         while LISTENING and not STOP:
-            sock, addr = MAINSOCKET.accept()
-            in_ip = addr[0]
-            
-            if(LISTENING):
-                data = sock.recv(1024).strip()
+            try:
+                sock, addr = MAINSOCKET.accept()
+                in_ip = addr[0]
                 
-                print("{} wrote:".format(in_ip))
-                in_data = str(data,'utf-16')
-                print(in_data)
-                
-                out = processRequest(in_ip ,in_data)
-                message = out.split(' ')
-                
-                if message[0]=="CONNECTED":
-                    LOCK.acquire()
-                    username = message[1]
-                    dicoSocket[username] = (sock, addr)
-                    LOCK.release()
-                #    waitingConnectionList.append((username, sock, addr))
+                if(LISTENING):
+                    data = sock.recv(1024).strip()
+                    
+                    print("{} wrote:".format(in_ip))
+                    in_data = str(data,'utf-16')
+                    print(in_data)
+                    
+                    out = processRequest(in_ip ,in_data)
+                    message = out.split(' ')
+                    
+                    if message[0]=="CONNECTED":
+                        LOCK.acquire()
+                        username = message[1]
+                        dicoSocket[username] = (sock, addr)
+                        LOCK.release()
+                    #    waitingConnectionList.append((username, sock, addr))
 
-                print(">>> ",out,"\n")
-                try:
-                    sock.sendall(bytes(out,'utf-16'))
-                except:
-                    print("New connection from " + str(in_ip) + " failed!")
-            else:
-                print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
+                    print(">>> ",out,"\n")
+                    try:
+                        sock.sendall(bytes(out,'utf-16'))
+                    except:
+                        print("New connection from " + str(in_ip) + " failed!")
+                else:
+                    print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
+            except:
+                print("The main socket was closed. LISTENING = " + str(LISTENING) + " STOP = " + str(STOP))
             
             time.sleep(WAITING_TIME)
         
