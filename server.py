@@ -1,21 +1,23 @@
 
 # ----------------------- Imports -----------------------
 
-import socketserver
-import socket
+from socket import *
 from random import randint
 
-from player import Player
+from threading import *
+import time
 
+from player import Player
+from wall import Wall
 from light import Light
 from inlight import *
-from wall import Wall
 from common import *
 
 # ----------------------- IP -----------------------
 
 def extractingIP():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    s = socket(AF_INET, SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     IP = s.getsockname()[0]
     s.close()
@@ -31,13 +33,29 @@ SIZE = (SIZE_X,SIZE_Y)
 STEP_X = 3
 STEP_Y = 3
 
-# Server
 IP = extractingIP()
 
-# Player
 SIZE_MAX_PSEUDO = 10
 
 PLAYER_SIZE = (20, 20)
+
+# Maybe not mandatory
+WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
+
+HOST = str(IP)
+PORT = 9998
+
+MAINSOCKET = None
+LOCK = None
+BACKLOG = 1
+dicoSocket = {}
+#waitingConnectionList = []
+waitingDisconnectionList = []
+
+
+LISTENING = True
+MANAGING = True
+STOP = False
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
@@ -45,32 +63,32 @@ dicoJoueur = {} # Store players' Player structure
 dicoMur = {}
 
 dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
-# dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
-# dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
-# dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
+dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
 
-# dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
-# dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
+dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
+dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
 
-# dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
-# dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
+dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
+dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
 
-# dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
+dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
 
-# dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
-# dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
-# dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
+dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
+dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
+dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
 
-# dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
-# dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
-# dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
-# dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
+dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
+dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
+dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
+dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
 
-# dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
-# dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
+dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
+dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
 
-# dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
-# dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
+dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
+dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -175,7 +193,6 @@ def walls():
     return(out)
 
 def firstConnection(pseudo):
-
     out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
     return(out)
 
@@ -264,44 +281,180 @@ def colorNewPlayer():
     return Color(randint(1,255),randint(1,255),randint(1,255))
 
 
+# ----------------------- Threads -----------------------
+def manage_server():
+    global STOP
+    global LISTENING
+    global MANAGING
+    
+    global MAINSOCKET
+    
+    while not STOP:
+        command = input()
+        match command:
+            case "stop":
+                STOP = True
+                print("STOP = ", STOP)
+                MAINSOCKET.shutdown(SHUT_RDWR)
+                MAINSOCKET.close()
+                
+                print("Socket server closed !")
+                
+                for (username,(sock,addr)) in dicoSocket:
+                    sock.shutdown(SHUT_RDWR)
+                    sock.close()
+                
+                print("Client sockets closed !")
+            case "deaf":
+                LISTENING = False
+                print("LISTENING = ", LISTENING)
+            case "listen":
+                LISTENING = True
+                print("LISTENING = ", LISTENING)
+            case "ignore":
+                MANAGING = False
+                print("MANAGING = ", MANAGING)
+            case "manage":
+                MANAGING = True
+                print("MANAGING = ", MANAGING)
+            case _:
+                print("Wrong command : use either stop, deaf, listen, ignore, manage")
+                print("STOP = ", STOP)
+                print("LISTENING = ", LISTENING)
+                print("MANAGING = ", MANAGING)
+                
+def listen_new():
+    global STOP
+    global LISTENING
+    
+    #global waitingConnectionList
+    
+    while not STOP:
+        while LISTENING and not STOP:
+            try:
+                sock, addr = MAINSOCKET.accept()
+                in_ip = addr[0]
+                
+                if(LISTENING):
+                    data = sock.recv(1024).strip()
+                    
+                    print("{} wrote:".format(in_ip))
+                    in_data = str(data,'utf-16')
+                    print(in_data)
+                    
+                    out = processRequest(in_ip ,in_data)
+                    message = out.split(' ')
+                    
+                    if message[0]=="CONNECTED":
+                        LOCK.acquire()
+                        username = message[1]
+                        dicoSocket[username] = (sock, addr)
+                        LOCK.release()
+                    #    waitingConnectionList.append((username, sock, addr))
 
-# ----------------------- Handler -----------------------
-
-class MyTCPHandler(socketserver.BaseRequestHandler):
-    """
-    The request handler class for our server.
-
-    It is instantiated once per connection to the server, and must
-    override the handle() method to implement communication to the
-    client.
-    """
-
-    def handle(self):
-        # self.request is the TCP socket connected to the client
-        self.data = self.request.recv(1024).strip()
+                    print(">>> ",out,"\n")
+                    try:
+                        sock.sendall(bytes(out,'utf-16'))
+                    except:
+                        print("New connection from " + str(in_ip) + " failed!")
+                else:
+                    print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
+            except:
+                print("The main socket was closed. LISTENING = " + str(LISTENING) + " STOP = " + str(STOP))
+            
+            time.sleep(WAITING_TIME)
         
-        in_ip = self.client_address[0]
-        
-        print("{} wrote:".format(in_ip))
-        in_data = str(self.data,'utf-16')
-        print(in_data)
-        
-        out = processRequest(in_ip ,in_data)
+        time.sleep(WAITING_TIME)
 
-        print(">>> ",out,"\n")
-        self.request.sendall(bytes(out,'utf-16'))
+def listen_old():
+    global STOP
+    global MANAGING
+    
+    #global waitingConnectionList
+    global waitingDisconnectionList
+    
+    while not STOP:
+        while MANAGING and not STOP:
+            # coSocketList = waitingConnectionList.copy()
+            # waitingConnectionList = []
+            
+            # for elt in coSocketList:
+            #     username, sock, addr = elt[0], elt[1], elt[2]
+            #     dicoSocket[username] = sock, addr
+            
 
+            
+            for elt in waitingDisconnectionList:
+                username, sock, addr = elt[0], elt[1], elt[2]
+                dicoSocket.pop(username)
+                
+                # deco remaining player with same ip if needed.
+                for username in dicoJoueur:
+                    if dicoJoueur[username].ip == addr[0]:
+                        dicoJoueur.pop(username)
+                        break
+                
+                sock.close()
+            waitingDisconnectionList = []
+
+
+            LOCK.acquire()
+            for username in dicoSocket:
+                sock = dicoSocket[username][0]
+                addr = dicoSocket[username][1]
+
+                data = sock.recv(1024).strip()
+                
+                in_ip = addr[0]
+                
+                print("{} wrote:".format(in_ip))
+                in_data = str(data,'utf-16')
+                print(in_data)
+                
+                out = processRequest(in_ip ,in_data)
+                message = out.split(" ")
+                        
+                if message[0]=="DISCONNECTED":
+                    username = message[1]
+                    waitingDisconnectionList.append((username, sock, addr))
+                
+                print(">>> ",out,"\n")
+                try:
+                    sock.sendall(bytes(out,'utf-16'))
+                except:
+                    waitingDisconnectionList.append((username, sock, addr))
+            LOCK.release()
+            
+            time.sleep(WAITING_TIME)
+        
+        time.sleep(WAITING_TIME)
+    
 
 
 # ----------------------- Main -----------------------
+def main():
+    global MAINSOCKET
+    global LOCK
+    
+    # Initialization
+    if MAINSOCKET == None:
+        MAINSOCKET = socket(AF_INET, SOCK_STREAM)
+        MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        MAINSOCKET.bind((HOST, PORT))
+        MAINSOCKET.listen(BACKLOG)
+    
+    if LOCK == None:
+        LOCK = Lock()
+    
+    print("Server opened with :\n    - ip = " + str(IP) + "\n    - port = " + str(PORT))
+    
+    listener_new = Thread(target=listen_new)
+    manager_server = Thread(target=manage_server)
+    listener_old = Thread(target=listen_old)
+    
+    listener_new.start()
+    manager_server.start()
+    listener_old.start()
 
 if __name__ == "__main__":
-    HOST, PORT = str(IP), 9998
-    #HOST, PORT = "localhost", 9998
-    socketserver.TCPServer.allow_reuse_address = True
-    # Create the server, binding to localhost on port 9999
-    with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
-        print("HOST = ",IP,"\nPORT = ",PORT,"\n")
-        # Activate the server; this will keep running until you
-        # interrupt the program with Ctrl-C
-        server.serve_forever()
+    main()
