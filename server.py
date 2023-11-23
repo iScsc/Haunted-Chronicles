@@ -173,7 +173,7 @@ def states():
     if LOBBY:
         rlist = []
         for key in READY:
-            rlist.append((key, READY[key]))
+            rlist.append((key, READY[key])) # may be changed to a simple list of ready names only if tuples can not be managed by interpreter
         out += "LOBBY " + str(rlist) + " "
     out += "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
