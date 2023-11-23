@@ -7,6 +7,8 @@ from socket import *
 
 import time
 
+from platform import system
+
 from player import Player
 from wall import Wall
 from inlight import toVisible
@@ -58,11 +60,19 @@ def display():
     
     pg.init()
     
-    info = pg.display.Info()
-    SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
-    SIZE = info.current_w, info.current_h
-    
-    SCREEN = pg.display.set_mode(SIZE)
+    PLATEFORM = system() # system name (Windows or Linux ... )
+
+    if PLATEFORM=="Linux":
+        info = pg.display.Info()
+        SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+        SCREEN = pg.display.set_mode((0,0),pg.FULLSCREEN)
+    elif PLATEFORM=="Windows":
+        info = pg.display.Info()
+        SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+        SIZE = info.current_w, info.current_h
+        SCREEN = pg.display.set_mode(SIZE)
+    else :
+        SCALE_FACTOR=1,1
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     
