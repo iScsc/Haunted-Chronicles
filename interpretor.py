@@ -73,6 +73,8 @@ def interp(string, **kwargs):
     Special cases:
     
         list: interp("[...]", list=[a,i]) where a matches the type of the list elements and i is the number of elements to look for.
+            or list=[a,0] when all substrings match the a structure, should be the last kwarg
+            or list=[None,-1,...] where ... matches the type of elements one by one
         
         tuples: 
 
@@ -126,11 +128,23 @@ def interp(string, **kwargs):
         
         # list, uses recursivity, usually len(kwargs)!=len(values)
         elif type(kwargs[arg])==list:
-            # kwargs[arg]=[a,k] with a matching the type of the desired elements, k the number of such elements to fetch
-            for j in range(kwargs[arg][1]): # in range(k)
-                d=interp('('+values[i+j]+')',element=kwargs[arg][0])
-                kwargs[arg].append(d['element'])
-            i+=kwargs[arg][1] # shift current index
+            # kwargs[arg]=[a,k...]
+            k=kwargs[arg][1]
+            if k==-1:
+                k=len(kwargs[arg])-2
+                for j in range(k):
+                    d=interp('('+values[i+j]+')',element=kwargs[arg][2+j])
+                    kwargs[arg][2+j]=d['element']
+            elif k==0:
+                k=len(values)-i
+                for j in range(k):
+                    d=interp('('+values[i+j]+')',element=kwargs[arg][0])
+                    kwargs[arg].append(d['element'])
+            else :
+                for j in range(k):
+                    d=interp('('+values[i+j]+')',element=kwargs[arg][0])
+                    kwargs[arg].append(d['element'])
+            i+=k # shift current index
             del kwargs[arg][0] # removes a from the list
             del kwargs[arg][0] # removes k from the list
         
