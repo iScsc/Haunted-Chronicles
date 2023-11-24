@@ -63,7 +63,7 @@ def interp(string, **kwargs):
     """Interprets a given string according to the specification in **kwargs
     
     Supported types are:
-        int, float, str, Color, Position, Size, Player, Wall and list
+        int, float, str, Color, Position, Size, Player, Wall, list and tuple
 
     Args:
         string (str): The string to interpret.
@@ -75,8 +75,9 @@ def interp(string, **kwargs):
         list: interp("[...]", list=[a,i]) where a matches the type of the list elements and i is the number of elements to look for.
             or list=[a,0] when all substrings match the a structure, should be the last kwarg
             or list=[None,-1,...] where ... matches the type of elements one by one
+            edge effect
         
-        tuples: 
+        tuple: interp("(...)", tuple=(a,i)) see list (no edge effect)
 
     Returns:
         dict[str|Any]: updated kwargs
@@ -126,7 +127,7 @@ def interp(string, **kwargs):
             d=interp(values[i],id=0,color=common.Color(),position=common.Position(),size=common.Size())
             kwargs[arg]=Wall(d['id'],d['color'],d['position'],d['size'])
         
-        # list, uses recursivity, usually len(kwargs)!=len(values)
+        # list, uses recursivity, shifts index
         elif type(kwargs[arg])==list:
             # kwargs[arg]=[a,k...]
             k=kwargs[arg][1]
@@ -147,6 +148,11 @@ def interp(string, **kwargs):
             i+=k # shift current index
             del kwargs[arg][0] # removes a from the list
             del kwargs[arg][0] # removes k from the list
+            
+        # tuple, uses recursivity
+        elif type(kwargs[arg])==tuple:
+            d=interp(values[i],list=list(kwargs[arg]))
+            kwargs[arg]=tuple(d['list'])
         
         i+=1
         
