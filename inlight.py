@@ -3,7 +3,7 @@ from player import Player
 from light import Light
 from numpy import angle
 from shapely.geometry import Polygon, Point, MultiPolygon
-from shapely import get_coordinates
+from shapely import get_coordinates, get_interior_ring,get_exterior_ring
 import time
 import interpretor
 from common import *
@@ -149,13 +149,23 @@ def allVisiblePlayer(shadows,listOfp):
     return l
         
 def sendingFormat(shadows):
-    if type(shadows)==type(Polygon()):
-        listcoord = [[int(i) for i in x ] for x in get_coordinates(shadows).tolist()]
-        return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+    
+#    if type(shadows)==type(Polygon()):
+#        listcoord = [[int(i) for i in x ] for x in get_coordinates(shadows).tolist()]
+#        return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
     l = []
     endl = []
     startNotFound =True
-    for p in shadows.geoms:
+
+    Geoms = []
+    if type(shadows)==type(Polygon()):
+        Geoms = extractGeoms(shadows)
+    else :
+        for p in shadows.geoms:
+            Geoms += extractGeoms(p)
+            
+
+    for p in Geoms:
         l2 = [[int(i) for i in x ] for x in get_coordinates(p).tolist()]
         l+=l2
         if startNotFound:
@@ -163,6 +173,23 @@ def sendingFormat(shadows):
             startNotFound = False
         l+= [l2[0]] + endl
     return "["+str(l+endl).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+
+def extractGeoms(poly):
+    Geoms = []
+    if type(poly)==type(Polygon()):
+        Geoms.append(get_exterior_ring(poly))
+        i = 0
+        while i!=-1:
+            p = get_interior_ring(poly,i) 
+            if p!=None:
+                i+=1
+                Geoms.append(p)
+            else:
+                i= -1
+    else:
+        print("warning : wrong type of argument")
+    return Geoms
+
 
 def toVisible(visibleString,DEBUG):
     try :
