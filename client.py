@@ -283,6 +283,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         except:
             exitError("Loss connection with the remote server while sending data.")
             print("in ", time.time() - t)
+            return
             
         # receive answer
         try:
@@ -296,6 +297,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             exitError("Loss connection with the remote server while receiving data.")
             print("in ", time.time() - t)
             print(e)
+            return
 
 
 
