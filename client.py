@@ -157,11 +157,7 @@ def game():
             requestNumber=0
         
         if requestNumber>=MAX_REQUESTS:
-            
-            if DEBUG:
-                print("Max number of request has been passed for inputs!")
-                
-            exitError()
+            exitError("Max number of request has been passed for inputs!")
 
         
         clock.tick(FPS)
@@ -380,11 +376,7 @@ def exit():
             break
     
     if requestNumber>=MAX_REQUESTS:
-        
-        if DEBUG:
-            print("Max number of request has been passed for disconnection!")
-                
-        exitError()
+        exitError("Max number of request has been passed for disconnection!")
     
     CONNECTED = False
     SOCKET.close()
@@ -418,11 +410,7 @@ def main():
         time.sleep(WAITING_TIME)
         requestNumber+=1
     if requestNumber>MAX_REQUESTS:
-        
-        if DEBUG:
-            print("Max number of request has been passed for connections!")
-                
-        exitError()
+        exitError("Max number of request has been passed for connections!")
     
     
     if CONNECTED:
