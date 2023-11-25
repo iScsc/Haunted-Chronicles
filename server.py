@@ -421,27 +421,30 @@ def listen_old():
                 sock = dicoSocket[username][0]
                 addr = dicoSocket[username][1]
 
-                data = sock.recv(1024).strip()
-                
-                in_ip = addr[0]
-                
-                in_data = str(data,'utf-16')
-                
-                if DEBUG:
-                    print("{} wrote:".format(in_ip))
-                    print(in_data)
-                
-                out = processRequest(in_ip ,in_data)
-                message = out.split(" ")
-                        
-                if message[0]=="DISCONNECTED":
-                    username = message[1]
-                    waitingDisconnectionList.append((username, sock, addr))
-                
-                if DEBUG:
-                    print(">>> ",out,"\n")
                 try:
-                    sock.sendall(bytes(out,'utf-16'))
+                    data = sock.recv(1024).strip()
+                    
+                    in_ip = addr[0]
+                    
+                    in_data = str(data,'utf-16')
+                    
+                    if DEBUG:
+                        print("{} wrote:".format(in_ip))
+                        print(in_data)
+                    
+                    out = processRequest(in_ip ,in_data)
+                    message = out.split(" ")
+                            
+                    if message[0]=="DISCONNECTED":
+                        username = message[1]
+                        waitingDisconnectionList.append((username, sock, addr))
+                    
+                    if DEBUG:
+                        print(">>> ",out,"\n")
+                    try:
+                        sock.sendall(bytes(out,'utf-16'))
+                    except:
+                        waitingDisconnectionList.append((username, sock, addr))
                 except:
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
