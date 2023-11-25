@@ -291,7 +291,12 @@ def send(input="INPUT " + USERNAME + " . END"):
     if (SOCKET == None and input[0:7] == "CONNECT"):
         SOCKET = socket(AF_INET, SOCK_STREAM)
         SOCKET.settimeout(SOCKET_TIMEOUT)
-        SOCKET.connect((SERVER_IP, SERVER_PORT))
+        try:
+            SOCKET.connect((SERVER_IP, SERVER_PORT))
+        except:
+            exitError("Connection attempt failed, retrying...")
+            SOCKET=None
+            
     
     
     # Usual behavior
