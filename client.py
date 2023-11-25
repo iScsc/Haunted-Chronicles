@@ -185,12 +185,13 @@ def connect():
     
     message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
-    messages = message.split(" ")
+    if message!=None: messages = message.split(" ")
+    else: messages=None
     
     if DEBUG:
         print(message)
     
-    if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+    if (messages!=None and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
         
         try:
             sizeStr = "" + messages[2]
@@ -213,7 +214,7 @@ def connect():
         
         return True
     # Manage failed connections
-    elif "CONNECTED" not in messages:
+    elif messages!=None and "CONNECTED" not in messages:
         askNewPseudo(message)
         
         global SOCKET
@@ -309,7 +310,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             
             return answer
         except:
-            exitError("Loss connection with the remote server.")
+            exitError("Lost connection with the remote server.")
 
 
 
