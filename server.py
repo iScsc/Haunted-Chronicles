@@ -219,7 +219,7 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    _, _, _, position1, size1 = dicoJoueur[pseudo].toList()
+    _, _, position1, size1 = dicoJoueur[pseudo].toList()
     x,y=position1.x,position1.y
 
     match inputLetter:
@@ -261,7 +261,7 @@ def collision(pseudo, x, y ,dx ,dy):
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            _, _, _, position, size = dicoJoueur[key].toList()
+            _, _, position, size = dicoJoueur[key].toList()
             
             if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
                 return True
