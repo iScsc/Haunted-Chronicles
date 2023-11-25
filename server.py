@@ -19,13 +19,13 @@ from common import *
 def extractingIP():
     s = socket(AF_INET, SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
-    IP = s.getsockname()[0]
+    ip = s.getsockname()[0]
     s.close()
-    return(IP)
+    return(ip)
 
 
 # ----------------------- Constants-----------------------
-DEBUG=False
+DEBUG=True
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -52,9 +52,6 @@ PORT = 9998
 MAINSOCKET = None
 LOCK = None
 BACKLOG = 1
-dicoSocket = {}
-#waitingConnectionList = []
-waitingDisconnectionList = []
 
 
 LISTENING = True
@@ -63,6 +60,9 @@ STOP = False
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
+
+dicoSocket = {} # Store clients' (sock, addr) structures where sock is the socket used for communicating, and addr = (ip, port)
+waitingDisconnectionList = []
 
 dicoMur = {}
 
@@ -98,15 +98,15 @@ dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 def processRequest(ip, s):
     type = typeOfRequest(s)
     if type == "CONNECT":
-        return(processConnect(ip, s))
+        return(processConnect(s))
     elif type == "INPUT":
         return(processInput(ip, s))
     elif type == "DISCONNECTION":
-        return(processDisconection(ip, s))
+        return(processDisconnection(ip, s))
     else :
         return("Invalid Request")
 
-def processConnect(ip, s):
+def processConnect(s):
     pseudo = extractPseudo(s)
     if validPseudo(pseudo):
         return("This Pseudo already exists")
@@ -115,7 +115,7 @@ def processConnect(ip, s):
     elif " " in pseudo:
         return("Don't use ' ' in your pseudo !")
     else :
-        initNewPlayer(ip, pseudo)
+        initNewPlayer(pseudo)
         return(firstConnection(pseudo))
     
 def processInput(ip, s):
@@ -128,7 +128,7 @@ def processInput(ip, s):
     Rules(inputLetter,pseudo)
     return(states(pseudo))
 
-def processDisconection(ip, s):
+def processDisconnection(ip, s):
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
@@ -213,7 +213,7 @@ def validPseudo(pseudo):
     return(pseudo in dicoJoueur.keys())
 
 def validIp(ip, pseudo):
-    return (pseudo in dicoJoueur.keys() and dicoJoueur[pseudo].ip == ip)
+    return (pseudo in dicoJoueur.keys() and pseudo in dicoSocket.keys() and dicoSocket[pseudo][1][0] == str(ip))
 
 
 # ----------------------- Games Rules -----------------------
@@ -273,7 +273,7 @@ def collision(pseudo, x, y ,dx ,dy):
 # ----------------------- Init of a new Player -----------------------
 
 
-def initNewPlayer(ip, pseudo):
+def initNewPlayer(pseudo):
     dx,dy = sizeNewPlayer()
     
     x,y = positionNewPlayer(dx, dy)
@@ -282,7 +282,7 @@ def initNewPlayer(ip, pseudo):
         x, y = positionNewPlayer(dx, dy)
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, Position(x,y), Size(dx,dy))
+    dicoJoueur[pseudo] = Player(pseudo, color, Position(x,y), Size(dx,dy))
 
 def sizeNewPlayer():
     return PLAYER_SIZE
@@ -349,8 +349,6 @@ def listen_new():
     global STOP
     global LISTENING
     
-    #global waitingConnectionList
-    
     while not STOP:
         while LISTENING and not STOP:
             try:
@@ -358,31 +356,34 @@ def listen_new():
                 in_ip = addr[0]
                 
                 if(LISTENING):
-                    data = sock.recv(1024).strip()
-                    
-                    in_data = str(data,'utf-16')
-                    
-                    if DEBUG:
-                        print("{} wrote:".format(in_ip))
-                        print(in_data)
-                    
-                    out = processRequest(in_ip ,in_data)
-                    message = out.split(' ')
-                    
-                    if message[0]=="CONNECTED":
-                        LOCK.acquire()
-                        username = message[1]
-                        dicoSocket[username] = (sock, addr)
-                        LOCK.release()
-                    #    waitingConnectionList.append((username, sock, addr))
-
-                    if DEBUG:
-                        print(">>> ",out,"\n")
-                    
                     try:
-                        sock.sendall(bytes(out,'utf-16'))
+                        data = sock.recv(1024).strip()
+                        
+                        in_data = str(data,'utf-16')
+                        
+                        if DEBUG:
+                            print("{} wrote:".format(in_ip))
+                            print(in_data)
+                        
+                        out = processRequest(in_ip ,in_data)
+                        message = out.split(' ')
+                        
+                        if message[0]=="CONNECTED":
+                            LOCK.acquire()
+                            username = message[1]
+                            dicoSocket[username] = (sock, addr)
+                            LOCK.release()
+
+                        if DEBUG:
+                            print(">>> ",out,"\n")
+                        
+                        try:
+                            sock.sendall(bytes(out,'utf-16'))
+                        except:
+                            print("New connection from " + str(in_ip) + " failed!")
                     except:
                         print("New connection from " + str(in_ip) + " failed!")
+                
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
             except:
@@ -396,7 +397,6 @@ def listen_old():
     global STOP
     global MANAGING
     
-    #global waitingConnectionList
     global waitingDisconnectionList
     
     while not STOP:
@@ -406,11 +406,8 @@ def listen_old():
                 username, sock, addr = elt[0], elt[1], elt[2]
                 dicoSocket.pop(username)
                 
-                # deco remaining player with same ip if needed.
-                for username in dicoJoueur:
-                    if dicoJoueur[username].ip == addr[0]:
-                        dicoJoueur.pop(username)
-                        break
+                if username in dicoJoueur.keys():
+                    dicoJoueur.pop(username)
                 
                 sock.close()
             waitingDisconnectionList = []
@@ -418,31 +415,38 @@ def listen_old():
 
             LOCK.acquire()
             for username in dicoSocket:
-                sock = dicoSocket[username][0]
-                addr = dicoSocket[username][1]
+                sock, addr = dicoSocket[username]
 
-                data = sock.recv(1024).strip()
-                
-                in_ip = addr[0]
-                
-                in_data = str(data,'utf-16')
-                
-                if DEBUG:
-                    print("{} wrote:".format(in_ip))
-                    print(in_data)
-                
-                out = processRequest(in_ip ,in_data)
-                message = out.split(" ")
-                        
-                if message[0]=="DISCONNECTED":
-                    username = message[1]
-                    waitingDisconnectionList.append((username, sock, addr))
-                
-                if DEBUG:
-                    print(">>> ",out,"\n")
                 try:
-                    sock.sendall(bytes(out,'utf-16'))
+                    t = time.time()
+                    data = sock.recv(1024).strip()
+                    
+                    in_ip = addr[0]
+                    
+                    in_data = str(data,'utf-16')
+                    
+                    if DEBUG:
+                        print("Player {} with ip {} wrote:".format(username, in_ip))
+                        print(in_data)
+                    
+                    out = processRequest(in_ip ,in_data)
+                    message = out.split(" ")
+                            
+                    if message[0]=="DISCONNECTED":
+                        username = message[1]
+                        waitingDisconnectionList.append((username, sock, addr))
+                    
+                    if DEBUG:
+                        print(">>> ",out,"\n")
+                    try:
+                        sock.sendall(bytes(out,'utf-16'))
+                    except:
+                        print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
+                        print("in ", time.time() - t)
+                        waitingDisconnectionList.append((username, sock, addr))
                 except:
+                    print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")
+                    print("in ", time.time() - t)
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             
