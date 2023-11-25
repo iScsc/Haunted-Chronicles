@@ -311,7 +311,7 @@ def manage_server():
                 print("STOP = ", STOP)
                 try:
                     MAINSOCKET.shutdown(SHUT_RDWR)
-                except:
+                except error:
                     print("MAINSOCKET could not be shutdown")
                 MAINSOCKET.close()
                 
@@ -320,7 +320,7 @@ def manage_server():
                 for username, (sock,addr) in dicoSocket.items():
                     try:
                         sock.shutdown(SHUT_RDWR)
-                    except:
+                    except error:
                         print("Player " + username + "'s socket could not be shutdown.")
                     sock.close()
                 
@@ -379,14 +379,14 @@ def listen_new():
                         
                         try:
                             sock.sendall(bytes(out,'utf-16'))
-                        except:
+                        except error:
                             print("New connection from " + str(in_ip) + " failed!")
-                    except:
+                    except error:
                         print("New connection from " + str(in_ip) + " failed!")
                 
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
-            except:
+            except error:
                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
             
             time.sleep(WAITING_TIME)
@@ -418,7 +418,6 @@ def listen_old():
                 sock, addr = dicoSocket[username]
 
                 try:
-                    t = time.time()
                     data = sock.recv(1024).strip()
                     
                     in_ip = addr[0]
@@ -440,13 +439,11 @@ def listen_old():
                         print(">>> ",out,"\n")
                     try:
                         sock.sendall(bytes(out,'utf-16'))
-                    except:
+                    except error:
                         print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
-                        print("in ", time.time() - t)
                         waitingDisconnectionList.append((username, sock, addr))
-                except:
+                except error:
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")
-                    print("in ", time.time() - t)
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             

@@ -280,9 +280,8 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             print(input)
             SOCKET.sendall(bytes(input, "utf-16"))
-        except:
+        except error:
             exitError("Loss connection with the remote server while sending data.")
-            print("in ", time.time() - t)
             return
             
         # receive answer
@@ -293,10 +292,8 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except error as e:
+        except error:
             exitError("Loss connection with the remote server while receiving data.")
-            print("in ", time.time() - t)
-            print(e)
             return
 
 
