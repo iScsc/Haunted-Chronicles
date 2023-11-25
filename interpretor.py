@@ -78,7 +78,7 @@ def interp(string, **kwargs):
             
         elif type(kwargs[arg])==Player:
             d=interp(values[i],username="",color=common.Color(),position=common.Position(),size=common.Size())
-            kwargs[arg]=Player("",d['username'],d['color'],d['position'],d['size'])
+            kwargs[arg]=Player(d['username'],d['color'],d['position'],d['size'])
             
         elif type(kwargs[arg])==Wall:
             d=interp(values[i],id=0,color=common.Color(),position=common.Position(),size=common.Size())
