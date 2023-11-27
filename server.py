@@ -55,12 +55,16 @@ LISTENING = True
 MANAGING = True
 STOP = False
 
-#Game
+### Game
+# Lobby
 LOBBY = True
 
 TEAMSID = {0 : "Not assigned", 1 : "Seekers", 2 : "Hidders"}
 TEAMS = {0 : [], 1 : [], 2 : []}
 READY = {}
+
+# In-game
+DEAD = {}
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
@@ -136,6 +140,7 @@ def processDisconection(ip, s):
     TEAMS[id].remove(dicoJoueur[pseudo])
     dicoJoueur.pop(pseudo)
     READY.pop(pseudo)
+    DEAD.pop(pseudo)
     return("DISCONNECTED" + s[13:])
 
 
@@ -173,7 +178,8 @@ def states():
     if LOBBY:
         rlist = []
         for key in READY:
-            rlist.append((key, READY[key])) # may be changed to a simple list of ready names only if tuples can not be managed by interpreter
+            if READY[key]:
+                rlist.append(key) # List of ready players' username
         out += "LOBBY " + str(rlist) + " "
     out += "STATE " + (str(liste)).replace(" ","") + " END"
     return(out)
@@ -283,6 +289,7 @@ def initNewPlayer(ip, pseudo):
     dicoJoueur[pseudo] = Player(ip, 0, pseudo, color, (x, y), [dx, dy])
     TEAMS[0].append(dicoJoueur[pseudo])
     READY[pseudo] = False
+    DEAD[pseudo] = False
 
 def sizeNewPlayer():
     return PLAYER_SIZE
@@ -408,6 +415,7 @@ def listen_old():
                         TEAMS[id].remove(dicoJoueur[username])
                         dicoJoueur.pop(username)
                         READY.pop(username)
+                        DEAD.pop(username)
                         break
                 
                 sock.close()
