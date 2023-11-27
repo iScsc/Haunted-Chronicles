@@ -7,13 +7,15 @@ from socket import *
 
 import time
 
+from platform import system
+
 from player import Player
 from wall import Wall
 from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=True
+DEBUG=False
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -24,6 +26,7 @@ MAX_REQUESTS = 10 # number of requests without proper response before force disc
 FPS = 60
 
 SIZE = None
+SCALE_FACTOR = None
 SCREEN = None
 
 FONT = "Arial" # Font used to display texts
@@ -52,10 +55,24 @@ def display():
     
     global SCREEN
     global PLAYERS
+    global SCALE_FACTOR
+    global SIZE
     
     pg.init()
     
-    SCREEN = pg.display.set_mode(SIZE)
+    PLATEFORM = system() # system name (Windows or Linux ... )
+
+    if PLATEFORM=="Linux":
+        info = pg.display.Info()
+        SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+        SCREEN = pg.display.set_mode((0,0),pg.FULLSCREEN)
+    elif PLATEFORM=="Windows":
+        info = pg.display.Info()
+        SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+        SIZE = info.current_w, info.current_h
+        SCREEN = pg.display.set_mode(SIZE)
+    else :
+        SCALE_FACTOR=1,1
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     
@@ -68,28 +85,29 @@ def display():
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
         if WALL_VISIBLE:
-            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
+            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
         # Walls
         for wall in WALLS:
-            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
+            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
+        
         
         
         #Unvisible
         if not(WALL_VISIBLE):
-            pg.draw.polygon(SCREEN, (0,0,0), UNVISIBLE)
+            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
         # Players
         for player in PLAYERS:
-            pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
+            pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
             
             usernameText = player.username
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
         
         #lights
         if DEBUG:
@@ -168,6 +186,9 @@ def connect():
     message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
     messages = message.split(" ")
+    
+    if DEBUG:
+        print(message)
     
     if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
         
