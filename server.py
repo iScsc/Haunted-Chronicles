@@ -173,8 +173,9 @@ def states():
     out = ""
     
     for key in dicoJoueur:
-        ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
-        liste.append((username,color,(x,y),(dx,dy)))
+        ip, id, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
+        if not DEAD[username]:
+            liste.append((username,color,(x,y),(dx,dy)))
     if LOBBY:
         rlist = []
         for key in READY:
@@ -248,6 +249,10 @@ def Rules(inputLetter,pseudo):
     return()
 
 def correctPosition(pseudo, x,y,dx,dy):
+    # The player is dead and can not move
+    if DEAD[pseudo]:
+        return False
+    
     correctX = (x>=0) and (x+dx <= SIZE_X)
     correctY = (y>=0) and (y+dy <= SIZE_Y)
     
@@ -265,9 +270,20 @@ def collision(pseudo, x, y ,dx ,dy):
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            ip, id, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
             
             if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+                
+                if (id != dicoJoueur[pseudo].teamId):
+                    pid = dicoJoueur[pseudo].teamId
+                    
+                    if id == 2 and pid == 1:
+                        DEAD[username] = True
+                        return False # The player caught a hidder and can thus move on its previous position
+                    elif pid == 2 and id == 1:
+                        DEAD[pseudo] = True
+                        return True # The player got caught and can no longer move
+                
                 return True
     
     return False
