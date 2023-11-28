@@ -26,8 +26,9 @@ SIZE_X = int(1920 * .9)
 SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
-STEP_X = 3
-STEP_Y = 3
+# Movements speeds differ depending on the player's team
+STEP_X = [10, 3, 5]
+STEP_Y = [10, 3, 5]
 
 IP = extractingIP()
 
@@ -215,13 +216,13 @@ def Rules(inputLetter,pseudo):
             #y+=randint(-1,1)
             pass
         case "R":
-            x+=STEP_X
+            x+=STEP_X[id]
         case "L":
-            x-=STEP_X
+            x-=STEP_X[id]
         case "U":
-            y-=STEP_Y
+            y-=STEP_Y[id]
         case "D":
-            y+=STEP_Y
+            y+=STEP_Y[id]
         case "RED":
             if LOBBY:
                 TEAMS[1].append(dicoJoueur[pseudo])
@@ -274,7 +275,8 @@ def collision(pseudo, x, y ,dx ,dy):
             
             if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
                 
-                if (id != dicoJoueur[pseudo].teamId):
+                # players should be able to catch others only if the game started (LOBBY = False)
+                if (not LOBBY and id != dicoJoueur[pseudo].teamId):
                     pid = dicoJoueur[pseudo].teamId
                     
                     if id == 2 and pid == 1:
