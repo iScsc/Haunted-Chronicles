@@ -157,11 +157,7 @@ def game():
             requestNumber=0
         
         if requestNumber>=MAX_REQUESTS:
-            
-            if DEBUG:
-                print("Max number of request has been passed for inputs!")
-                
-            exitError()
+            exitError("Max number of request has been passed for inputs!")
 
         
         clock.tick(FPS)
@@ -185,12 +181,13 @@ def connect():
     
     message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
     
-    messages = message.split(" ")
+    if message!=None: messages = message.split(" ")
+    else: messages=None
     
     if DEBUG:
         print(message)
     
-    if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+    if (messages!=None and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
         
         try:
             sizeStr = "" + messages[2]
@@ -213,7 +210,7 @@ def connect():
         
         return True
     # Manage failed connections
-    elif "CONNECTED" not in messages:
+    elif messages!=None and "CONNECTED" not in messages:
         askNewPseudo(message)
         
         global SOCKET
@@ -290,7 +287,12 @@ def send(input="INPUT " + USERNAME + " . END"):
     if (SOCKET == None and input[0:7] == "CONNECT"):
         SOCKET = socket(AF_INET, SOCK_STREAM)
         SOCKET.settimeout(SOCKET_TIMEOUT)
-        SOCKET.connect((SERVER_IP, SERVER_PORT))
+        try:
+            SOCKET.connect((SERVER_IP, SERVER_PORT))
+        except:
+            exitError("Connection attempt failed, retrying...")
+            SOCKET=None
+            
     
     
     # Usual behavior
@@ -309,7 +311,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             
             return answer
         except:
-            exitError("Loss connection with the remote server.")
+            exitError("Lost connection with the remote server.")
 
 
 
@@ -374,11 +376,7 @@ def exit():
             break
     
     if requestNumber>=MAX_REQUESTS:
-        
-        if DEBUG:
-            print("Max number of request has been passed for disconnection!")
-                
-        exitError()
+        exitError("Max number of request has been passed for disconnection!")
     
     CONNECTED = False
     SOCKET.close()
@@ -412,11 +410,7 @@ def main():
         time.sleep(WAITING_TIME)
         requestNumber+=1
     if requestNumber>MAX_REQUESTS:
-        
-        if DEBUG:
-            print("Max number of request has been passed for connections!")
-                
-        exitError()
+        exitError("Max number of request has been passed for connections!")
     
     
     if CONNECTED:
