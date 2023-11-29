@@ -195,29 +195,37 @@ def states(pseudo):
         if key == pseudo:
             player = p
         listOfPlayers.append(p)
-        if not DEAD[pseudo]:
+        if not DEAD[key]:
             listOfAlivePlayers.append(p)
         
     for key in dicoMur:
         listOfWalls.append(dicoMur[key])
     
     
-    if not LOBBY and not DEAD[pseudo]:
-        listOfLights = dummyLights()
-        
-        shadows = Visible(player,listOfLights,listOfAlivePlayers+listOfWalls,SIZE_X,SIZE_Y)
-        visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
-        formatshadows = sendingFormat(shadows)
-        
-        liste.append(str(player))
-        for key in visiblePlayer:
-            p = dicoJoueur[key]
-            if key != pseudo:
+    if not LOBBY:
+        if not DEAD[pseudo]:
+            listOfLights = dummyLights()
+            
+            shadows = Visible(player,listOfLights,listOfAlivePlayers+listOfWalls,SIZE_X,SIZE_Y)
+            visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
+            formatshadows = sendingFormat(shadows)
+            
+            liste.append(str(player))
+            for key in visiblePlayer:
+                p = dicoJoueur[key]
+                if key != pseudo:
+                    liste.append(str(p))
+
+            out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+
+            return(out)
+        else:            
+            for p in listOfAlivePlayers:
                 liste.append(str(p))
+                    
+            out = "STATE "+(str(liste)).replace(" ","")+" SHADES [] END"
 
-        out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
-
-        return(out)
+            return(out)
     else:
         for p in listOfPlayers:
             liste.append(str(p))
@@ -321,6 +329,10 @@ def correctPosition(pseudo, x,y,dx,dy):
 def collision(pseudo, x, y ,dx ,dy):
     global DEAD
     
+    id = 0
+    if pseudo in dicoJoueur:
+        id, _, _, _, _ = dicoJoueur[pseudo].toList()
+    
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
@@ -331,13 +343,12 @@ def collision(pseudo, x, y ,dx ,dy):
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            _, username, _, position, size = dicoJoueur[key].toList()
+            pid, username, _, position, size = dicoJoueur[key].toList()
             
             if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
                 
                 # players should be able to catch others only if the game started (LOBBY = False)
-                if (not LOBBY and id != dicoJoueur[pseudo].teamId):
-                    pid = dicoJoueur[pseudo].teamId
+                if (not LOBBY and id != pid):
                     
                     if id == 2 and pid == 1:
                         DEAD[username] = True
