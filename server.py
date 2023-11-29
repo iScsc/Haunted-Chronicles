@@ -221,6 +221,9 @@ def states(pseudo):
 
         return(out)
     else:
+        for p in listOfPlayers:
+            liste.append(str(p))
+        
         if LOBBY:
             rlist = []
             for key in READY:
