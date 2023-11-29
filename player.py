@@ -28,7 +28,7 @@ class Player:
     
     
     
-    def update(self, color=None, position=None, size=None):
+    def update(self, teamId=None, color=None, position=None, size=None):
         """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
 
         Args:
@@ -36,6 +36,8 @@ class Player:
             - position (tuple): Position of the player.
             - size (list): Size of the player.
         """
+        if teamId != None:
+            self.teamId = teamId
         if color != None:
             self.color = color
         if position != None:
@@ -51,7 +53,7 @@ class Player:
         Returns:
             list: extraction of the player's attributes.
         """
-        return self.ip, self.username, self.color, self.position, self.size
+        return self.teamId, self.username, self.color, self.position, self.size # without ip
     
     
     

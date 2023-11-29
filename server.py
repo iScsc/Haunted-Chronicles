@@ -1,14 +1,19 @@
 
 # ----------------------- Imports -----------------------
 
+
 from socket import *
 from random import randint
 
 from threading import *
 import time
+import traceback
 
 from player import Player
 from wall import Wall
+from light import Light
+from inlight import *
+from common import *
 
 # ----------------------- IP -----------------------
 
@@ -26,16 +31,17 @@ SIZE_X = int(1920 * .9)
 SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
-STEP_X = 3
-STEP_Y = 3
+# Movements speeds differ depending on the player's team
+STEP_X = [10, 3, 5]
+STEP_Y = [10, 3, 5]
 
+# Server
 IP = extractingIP()
 
+# Player
 SIZE_MAX_PSEUDO = 10
 
-PLAYER_SIZE = (20, 20)
-
-
+PLAYER_SIZE = Size(20, 20)
 
 # Maybe not mandatory
 WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
@@ -55,37 +61,49 @@ LISTENING = True
 MANAGING = True
 STOP = False
 
+### Game
+# Lobby
+LOBBY = True
+
+TEAMSID = {0 : "Not assigned", 1 : "Seekers", 2 : "Hidders"}
+TEAMS = {0 : [], 1 : [], 2 : []}
+READY = {}
+
+# In-game
+DEAD = {}
+
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
 
 dicoMur = {}
-dicoMur[-1] = Wall(-1, (50, 50, 50), (350, 575), (225, 10))
-dicoMur[0] = Wall(0, (50, 50, 50), (150, 800), (200, 10))
-dicoMur[1] = Wall(1, (50, 50, 50), (350, 500), (10, 310))
-dicoMur[2] = Wall(2, (50, 50, 50), (250, 500), (100, 10))
 
-dicoMur[3] = Wall(3, (30, 30, 30), (850, 100), (10, 450))
-dicoMur[4] = Wall(4, (30, 30, 30), (450, 100), (400, 10))
+dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
+dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
 
-dicoMur[5] = Wall(5, (30, 30, 30), (75, 100), (275, 10))
-dicoMur[6] = Wall(6, (30, 30, 30), (75, 50), (10, 200))
+dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
+dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
 
-dicoMur[7] = Wall(7, (30, 30, 30), (325, 250), (150, 10))
+dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
+dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
 
-dicoMur[8] = Wall(8, (30, 30, 30), (850, 650), (10, 250))
-dicoMur[9] = Wall(9, (30, 30, 30), (650, 800), (550, 10))
-dicoMur[10] = Wall(10, (30, 30, 30), (850, 950), (10, 250))
+dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
 
-dicoMur[11] = Wall(11, (30, 30, 30), (1400, 800), (200, 10))
-dicoMur[12] = Wall(12, (30, 30, 30), (1600, 300), (10, 510))
-dicoMur[13] = Wall(13, (30, 30, 30), (1400, 225), (200, 10))
-dicoMur[14] = Wall(14, (30, 30, 30), (1400, 225), (10, 510))
+dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
+dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
+#dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
 
-dicoMur[15] = Wall(15, (30, 30, 30), (1400, 625), (150, 10))
-dicoMur[16] = Wall(16, (30, 30, 30), (1450, 400), (150, 10))
+dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
+dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
+dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
+dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
 
-dicoMur[17] = Wall(17, (30, 30, 30), (1150, 0), (10, 350))
-dicoMur[18] = Wall(18, (30, 30, 30), (1000, 450), (310, 10))
+dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
+dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
+
+dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
+dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
@@ -119,13 +137,17 @@ def processInput(ip, s):
         return("You are impersonating someone else !")
     inputLetter = extractLetter(s,pseudo)
     Rules(inputLetter,pseudo)
-    return(states())
+    return(states(pseudo))
 
 def processDisconection(ip, s):
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
+    id, _, _, _, _ = dicoJoueur[pseudo].toList()
+    TEAMS[id].remove(dicoJoueur[pseudo])
     dicoJoueur.pop(pseudo)
+    READY.pop(pseudo)
+    DEAD.pop(pseudo)
     return("DISCONNECTED" + s[13:])
 
 
@@ -153,24 +175,62 @@ def extractLetter(s,pseudo):
     return(s[7 + n])
 
 
-def states():
+def dummyLights():
+    l0 = Light(Position(int(200),int(200)))
+    l1 = Light(Position(int(500),int(800)))
+    l2 = Light(Position(int(1500),int(500)))
+    #l01 = Light(Position(int(100),int(800)))
+    return([l0,l1,l2])    
+
+def states(pseudo):
+    player = 0
     liste = []
+    out = ""
+    
+    listeOfPlayer = []
+    listeOfWall = []
+    listOfLight = dummyLights()
     for key in dicoJoueur:
-        ip, username, color, (x, y), (dx, dy) = dicoJoueur[key].toList()
-        liste.append((username,color,(x,y),(dx,dy))) 
-    out = "STATE " + (str(liste)).replace(" ","") + " END"
+        p =  dicoJoueur[key]
+        if key == pseudo:
+            player = p
+        listeOfPlayer.append(p)
+    
+    
+    for key in dicoMur:
+        listeOfWall.append(dicoMur[key])
+    
+    shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
+    visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
+    formatshadows = sendingFormat(shadows)
+    
+    liste.append(str(player))
+    for key in visiblePlayer:
+        p = dicoJoueur[key]
+        if key != pseudo:       
+            liste.append(str(p))
+            
+    if LOBBY:
+        rlist = []
+        for key in READY:
+            if READY[key]:
+                rlist.append(key) # List of ready players' username
+        out += "LOBBY " + str(rlist) + " "
+
+    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+
     return(out)
 
 def walls():
     liste = []
     for key in dicoMur:
-        id, color, (x, y), (dx, dy) = dicoMur[key].toList()
-        liste.append((id,color,(x,y),(dx,dy)))
+        liste.append(str(dicoMur[key]))
     out = "WALLS " + (str(liste)).replace(" ","") + " END"
     return(out)
 
 def firstConnection(pseudo):
-    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states()
+
+    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
     return(out)
 
 def validPseudo(pseudo):
@@ -183,7 +243,8 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    ip, username, color, (x, y), (dx, dy) = dicoJoueur[pseudo].toList()
+    id, _, _, position1, size1 = dicoJoueur[pseudo].toList()
+    x,y=position1.x,position1.y
 
     match inputLetter:
         case ".": #nothing
@@ -191,22 +252,44 @@ def Rules(inputLetter,pseudo):
             #y+=randint(-1,1)
             pass
         case "R":
-            x+=STEP_X
+            x+=STEP_X[id]
         case "L":
-            x-=STEP_X
+            x-=STEP_X[id]
         case "U":
-            y-=STEP_Y
+            y-=STEP_Y[id]
         case "D":
-            y+=STEP_Y
+            y+=STEP_Y[id]
+        case "RED":
+            if LOBBY:
+                TEAMS[1].append(dicoJoueur[pseudo])
+                TEAMS[id].remove(dicoJoueur[pseudo])
+                id = 1
+        case "BLUE":
+            if LOBBY:
+                TEAMS[2].append(dicoJoueur[pseudo])
+                TEAMS[id].remove(dicoJoueur[pseudo])
+                id = 2
+        case "NEUTRAL":
+            if LOBBY:
+                TEAMS[0].append(dicoJoueur[pseudo])
+                TEAMS[id].remove(dicoJoueur[pseudo])
+                id = 0
+        case "READY":
+            if LOBBY:
+                READY[pseudo] = not READY[pseudo]
         case "T":
             x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
-    if correctPosition(pseudo, x,y,dx,dy):
-        dicoJoueur[pseudo].update(position=(x, y), size=(dx, dy))
+    if correctPosition(pseudo, x,y,size1.w,size1.h):
+        dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
     return()
 
 def correctPosition(pseudo, x,y,dx,dy):
+    # The player is dead and can not move
+    if DEAD.get(pseudo,False):
+        return False
+    
     correctX = (x>=0) and (x+dx <= SIZE_X)
     correctY = (y>=0) and (y+dy <= SIZE_Y)
     
@@ -217,16 +300,28 @@ def collision(pseudo, x, y ,dx ,dy):
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
-        id, color, (wx, wy), (wdx, wdy) = dicoMur[key].toList()
+        _, _, position, size = dicoMur[key].toList()
         
-        if abs(c[0] - wx - wdx/2) < (dx + wdx)/2 and abs(c[1] - wy - wdy/2) < (dy + wdy)/2:
+        if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
             return True
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            ip, username, color, (px, py), (pdx, pdy) = dicoJoueur[key].toList()
+            _, username, _, position, size = dicoJoueur[key].toList()
             
-            if abs(c[0] - px - pdx/2) < (dx + pdx)/2 and abs(c[1] - py - pdy/2) < (dy + pdy)/2:
+            if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
+                
+                # players should be able to catch others only if the game started (LOBBY = False)
+                if (not LOBBY and id != dicoJoueur[pseudo].teamId):
+                    pid = dicoJoueur[pseudo].teamId
+                    
+                    if id == 2 and pid == 1:
+                        DEAD[username] = True
+                        return False # The player caught a hidder and can thus move on its previous position
+                    elif pid == 2 and id == 1:
+                        DEAD[pseudo] = True
+                        return True # The player got caught and can no longer move
+                
                 return True
     
     return False
@@ -237,24 +332,31 @@ def collision(pseudo, x, y ,dx ,dy):
 
 
 def initNewPlayer(ip, pseudo):
-    dx,dy = sizeNewPlayer()
+    size = sizeNewPlayer()
+    dx,dy=size.w,size.h
     
-    x,y = positionNewPlayer(dx, dy)
+    pos = positionNewPlayer(dx, dy)
+    x,y=pos.x,pos.y
     
     while not correctPosition(pseudo, x, y, dx, dy):
-        x, y = positionNewPlayer(dx, dy)
+        pos = positionNewPlayer(dx, dy)
+        x,y=pos.x,pos.y
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, pseudo, color, (x, y), [dx, dy])
+    dicoJoueur[pseudo] = Player(ip, 0, pseudo, color, pos, size)
+    TEAMS[0].append(dicoJoueur[pseudo])
+    READY[pseudo] = False
+    DEAD[pseudo] = False
 
 def sizeNewPlayer():
     return PLAYER_SIZE
 
 def positionNewPlayer(dx, dy):
-    return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
+    return Position(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 def colorNewPlayer():
-    return((randint(1,255),randint(1,255),randint(1,255)))
+    return Color(randint(1,255),randint(1,255),randint(1,255))
+
 
 
 # ----------------------- Threads -----------------------
@@ -335,7 +437,8 @@ def listen_new():
                         print("New connection from " + str(in_ip) + " failed!")
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
-            except:
+            except Exception as e:
+                traceback.print_exc()
                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " STOP = " + str(STOP))
             
             time.sleep(WAITING_TIME)
@@ -367,7 +470,11 @@ def listen_old():
                 # deco remaining player with same ip if needed.
                 for username in dicoJoueur:
                     if dicoJoueur[username].ip == addr[0]:
+                        id, _, _, _, _ = dicoJoueur[username].toList()
+                        TEAMS[id].remove(dicoJoueur[username])
                         dicoJoueur.pop(username)
+                        READY.pop(username)
+                        DEAD.pop(username)
                         break
                 
                 sock.close()
@@ -434,3 +541,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
