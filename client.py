@@ -37,6 +37,8 @@ RED = Color(255, 0, 0)
 GREEN = Color(0, 255, 0)
 BLUE = Color(0, 0, 255)
 
+BACKGROUND_COLOR = Color(100, 100, 100)
+
 FONT = "Arial" # Font used to display texts
 FONT_SIZE_USERNAME = 25
 FONT_SIZE_PING = 12
@@ -97,7 +99,7 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill(BLACK.color)  # May need to be custom
+        SCREEN.fill(BACKGROUND_COLOR.color)  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
