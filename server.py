@@ -25,6 +25,8 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
+DEBUG=False
+
 # Game map
 SIZE_X = int(1920 * .9)
 SIZE_Y = int(1080 * .9)
@@ -307,16 +309,24 @@ def manage_server():
             case "stop":
                 STOP = True
                 print("STOP = ", STOP)
-                MAINSOCKET.shutdown(SHUT_RDWR)
+                try:
+                    MAINSOCKET.shutdown(SHUT_RDWR)
+                except:
+                    print("MAINSOCKET could not be shutdown")
                 MAINSOCKET.close()
                 
                 print("Socket server closed !")
                 
-                for (username,(sock,addr)) in dicoSocket:
-                    sock.shutdown(SHUT_RDWR)
+                for username, (sock,addr) in dicoSocket.items():
+                    try:
+                        sock.shutdown(SHUT_RDWR)
+                    except:
+                        print("Player " + username + "'s socket could not be shutdown.")
                     sock.close()
                 
                 print("Client sockets closed !")
+                
+                print("Every sockets has been successfully closed!")
             case "deaf":
                 LISTENING = False
                 print("LISTENING = ", LISTENING)
@@ -350,9 +360,11 @@ def listen_new():
                 if(LISTENING):
                     data = sock.recv(1024).strip()
                     
-                    print("{} wrote:".format(in_ip))
                     in_data = str(data,'utf-16')
-                    print(in_data)
+                    
+                    if DEBUG:
+                        print("{} wrote:".format(in_ip))
+                        print(in_data)
                     
                     out = processRequest(in_ip ,in_data)
                     message = out.split(' ')
@@ -364,7 +376,9 @@ def listen_new():
                         LOCK.release()
                     #    waitingConnectionList.append((username, sock, addr))
 
-                    print(">>> ",out,"\n")
+                    if DEBUG:
+                        print(">>> ",out,"\n")
+                    
                     try:
                         sock.sendall(bytes(out,'utf-16'))
                     except:
@@ -372,7 +386,7 @@ def listen_new():
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
             except:
-                print("The main socket was closed. LISTENING = " + str(LISTENING) + " STOP = " + str(STOP))
+                print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
             
             time.sleep(WAITING_TIME)
         
@@ -387,14 +401,6 @@ def listen_old():
     
     while not STOP:
         while MANAGING and not STOP:
-            # coSocketList = waitingConnectionList.copy()
-            # waitingConnectionList = []
-            
-            # for elt in coSocketList:
-            #     username, sock, addr = elt[0], elt[1], elt[2]
-            #     dicoSocket[username] = sock, addr
-            
-
             
             for elt in waitingDisconnectionList:
                 username, sock, addr = elt[0], elt[1], elt[2]
@@ -415,24 +421,30 @@ def listen_old():
                 sock = dicoSocket[username][0]
                 addr = dicoSocket[username][1]
 
-                data = sock.recv(1024).strip()
-                
-                in_ip = addr[0]
-                
-                print("{} wrote:".format(in_ip))
-                in_data = str(data,'utf-16')
-                print(in_data)
-                
-                out = processRequest(in_ip ,in_data)
-                message = out.split(" ")
-                        
-                if message[0]=="DISCONNECTED":
-                    username = message[1]
-                    waitingDisconnectionList.append((username, sock, addr))
-                
-                print(">>> ",out,"\n")
                 try:
-                    sock.sendall(bytes(out,'utf-16'))
+                    data = sock.recv(1024).strip()
+                    
+                    in_ip = addr[0]
+                    
+                    in_data = str(data,'utf-16')
+                    
+                    if DEBUG:
+                        print("{} wrote:".format(in_ip))
+                        print(in_data)
+                    
+                    out = processRequest(in_ip ,in_data)
+                    message = out.split(" ")
+                            
+                    if message[0]=="DISCONNECTED":
+                        username = message[1]
+                        waitingDisconnectionList.append((username, sock, addr))
+                    
+                    if DEBUG:
+                        print(">>> ",out,"\n")
+                    try:
+                        sock.sendall(bytes(out,'utf-16'))
+                    except:
+                        waitingDisconnectionList.append((username, sock, addr))
                 except:
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
