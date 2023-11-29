@@ -2,9 +2,8 @@
 from player import Player
 from light import Light
 from numpy import angle
-from shapely.geometry import Polygon, Point, MultiPolygon
+from shapely.geometry import Polygon, Point
 from shapely import get_coordinates, get_interior_ring,get_exterior_ring
-import time
 import interpretor
 from common import *
 
@@ -12,10 +11,10 @@ from common import *
 def extractCorner(p):
     x,y = p.position.x, p.position.y
     dx,dy = p.size.w, p.size.h
-    BD = (x+dx,y+dy)
-    BG = (x,y+dy)
-    HG = (x,y)
-    HD = (x+dx,y)
+    BD = (x+dx,y+dy) # Corner down right
+    BG = (x,y+dy) # Corner down left
+    HG = (x,y) # Corner up left
+    HD = (x+dx,y) # Corner up right
     return [BD,BG,HG,HD]
 
 def extremePoint(l,p):
