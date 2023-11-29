@@ -66,7 +66,6 @@ STOP = False
 LOBBY = True
 
 TEAMSID = {0 : "Not assigned", 1 : "Seekers", 2 : "Hidders"}
-TEAMS = {0 : [], 1 : [], 2 : []}
 READY = {}
 
 # In-game
@@ -144,7 +143,6 @@ def processDisconection(ip, s):
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
     id, _, _, _, _ = dicoJoueur[pseudo].toList()
-    TEAMS[id].remove(dicoJoueur[pseudo])
     dicoJoueur.pop(pseudo)
     READY.pop(pseudo)
     DEAD.pop(pseudo)
@@ -273,18 +271,12 @@ def Rules(inputLetter,pseudo):
             y+=STEP_Y[id]
         case "RED":
             if LOBBY:
-                TEAMS[1].append(dicoJoueur[pseudo])
-                TEAMS[id].remove(dicoJoueur[pseudo])
                 id = 1
         case "BLUE":
             if LOBBY:
-                TEAMS[2].append(dicoJoueur[pseudo])
-                TEAMS[id].remove(dicoJoueur[pseudo])
                 id = 2
         case "NEUTRAL":
             if LOBBY:
-                TEAMS[0].append(dicoJoueur[pseudo])
-                TEAMS[id].remove(dicoJoueur[pseudo])
                 id = 0
         case "READY":
             if LOBBY:
@@ -366,7 +358,6 @@ def initNewPlayer(ip, pseudo):
     
     color = colorNewPlayer()
     dicoJoueur[pseudo] = Player(ip, 0, pseudo, color, pos, size)
-    TEAMS[0].append(dicoJoueur[pseudo])
     READY[pseudo] = False
     DEAD[pseudo] = False
 
@@ -493,7 +484,6 @@ def listen_old():
                 for username in dicoJoueur:
                     if dicoJoueur[username].ip == addr[0]:
                         id, _, _, _, _ = dicoJoueur[username].toList()
-                        TEAMS[id].remove(dicoJoueur[username])
                         dicoJoueur.pop(username)
                         READY.pop(username)
                         DEAD.pop(username)
