@@ -294,7 +294,19 @@ def Rules(inputLetter,pseudo):
             return("Invalid Input")
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
+    launchGame(checkReady())
     return()
+
+def checkReady():
+    for pseudo in READY:
+        if not READY[pseudo]:
+            return False
+    
+    return True
+
+def launchGame(ready):
+    if ready:
+        LOBBY = False
 
 def correctPosition(pseudo, x,y,dx,dy):
     # The player is dead and can not move
