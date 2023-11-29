@@ -180,46 +180,57 @@ def dummyLights():
     l1 = Light(Position(int(500),int(800)))
     l2 = Light(Position(int(1500),int(500)))
     #l01 = Light(Position(int(100),int(800)))
-    return([l0,l1,l2])    
+    return([l0,l1,l2])
 
 def states(pseudo):
     player = 0
     liste = []
     out = ""
     
-    listeOfPlayer = []
-    listeOfWall = []
-    listOfLight = dummyLights()
+    listOfPlayers = []
+    listOfAlivePlayers = []
+    listOfWalls = []
+    
+    
     for key in dicoJoueur:
-        p =  dicoJoueur[key]
+        p = dicoJoueur[key]
         if key == pseudo:
             player = p
-        listeOfPlayer.append(p)
-    
-    
+        listOfPlayers.append(p)
+        if not DEAD[pseudo]:
+            listOfAlivePlayers.append(p)
+        
     for key in dicoMur:
-        listeOfWall.append(dicoMur[key])
+        listOfWalls.append(dicoMur[key])
     
-    shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
-    visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
-    formatshadows = sendingFormat(shadows)
     
-    liste.append(str(player))
-    for key in visiblePlayer:
-        p = dicoJoueur[key]
-        if key != pseudo:       
-            liste.append(str(p))
-            
-    if LOBBY:
-        rlist = []
-        for key in READY:
-            if READY[key]:
-                rlist.append(key) # List of ready players' username
-        out += "LOBBY " + str(rlist) + " "
+    if not LOBBY and not DEAD[pseudo]:
+        listOfLights = dummyLights()
+        
+        shadows = Visible(player,listOfLights,listOfAlivePlayers+listOfWalls,SIZE_X,SIZE_Y)
+        visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
+        formatshadows = sendingFormat(shadows)
+        
+        liste.append(str(player))
+        for key in visiblePlayer:
+            p = dicoJoueur[key]
+            if key != pseudo:
+                liste.append(str(p))
 
-    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+        out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
 
-    return(out)
+        return(out)
+    else:
+        if LOBBY:
+            rlist = []
+            for key in READY:
+                if READY[key]:
+                    rlist.append(key) # List of ready players' username
+            out += "LOBBY " + str(rlist).replace(" ", "") + " "
+        
+        out = "STATE "+(str(listOfPlayers)).replace(" ","")+" END"
+        
+        return out
 
 def walls():
     liste = []
