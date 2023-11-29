@@ -6,6 +6,7 @@ from threading import *
 from socket import *
 
 import time
+import traceback
 
 from platform import system
 
@@ -203,7 +204,7 @@ def connect():
             sizeStr = sizeStr.split(",")
             
             SIZE = (int(sizeStr[0]), int(sizeStr[1]))
-        except:
+        except ValueError:
             if DEBUG:
                 print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
@@ -294,7 +295,9 @@ def send(input="INPUT " + USERNAME + " . END"):
         SOCKET.settimeout(SOCKET_TIMEOUT)
         try:
             SOCKET.connect((SERVER_IP, SERVER_PORT))
-        except:
+        except TimeoutError or ConnectionError:
+            if DEBUG:
+                traceback.print_exc()
             exitError("Connection attempt failed, retrying...")
             SOCKET=None
     
@@ -306,7 +309,9 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             print(input)
             SOCKET.sendall(bytes(input, "utf-16"))
-        except error:
+        except (TimeoutError, ConnectionError):
+            if DEBUG:
+                traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
             return
             
@@ -318,7 +323,9 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except error:
+        except (TimeoutError, ConnectionError):
+            if DEBUG:
+                traceback.print_exc()
             exitError("Loss connection with the remote server while receiving data.")
             return
 
