@@ -258,6 +258,8 @@ def Rules(inputLetter,pseudo):
     id, _, _, position1, size1 = dicoJoueur[pseudo].toList()
     x,y=position1.x,position1.y
 
+    tempId = id
+
     match inputLetter:
         case ".":
             pass
@@ -271,18 +273,20 @@ def Rules(inputLetter,pseudo):
             y+=STEP_Y[id]
         case "RED":
             if LOBBY:
-                id = 1
+                tempId = 1
         case "BLUE":
             if LOBBY:
-                id = 2
+                tempId = 2
         case "NEUTRAL":
             if LOBBY:
-                id = 0
+                tempId = 0
         case "READY":
             if LOBBY:
                 READY[pseudo] = not READY[pseudo]
         case _ :
             return("Invalid Input")
+    if tempId != id:
+        dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
     launchGame(checkReady())
