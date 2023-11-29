@@ -135,8 +135,8 @@ def processInput(ip, s):
         return("No player of that name")
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
-    inputLetter = extractLetter(s,pseudo)
-    Rules(inputLetter,pseudo)
+    inputWord = extractWord(s)
+    Rules(inputWord,pseudo)
     return(states(pseudo))
 
 def processDisconection(ip, s):
@@ -170,9 +170,9 @@ def extractPseudo(s):
         i+=1
     return(pseudo)
 
-def extractLetter(s,pseudo):
-    n = len(pseudo)
-    return(s[7 + n])
+def extractWord(s):
+    parts = s.split(" ")
+    return(parts[2])
 
 
 def dummyLights():
@@ -261,17 +261,15 @@ def Rules(inputLetter,pseudo):
     x,y=position1.x,position1.y
 
     match inputLetter:
-        case ".": #nothing
-            #x+=randint(-1,1)
-            #y+=randint(-1,1)
+        case ".":
             pass
-        case "R":
+        case "RIGHT":
             x+=STEP_X[id]
-        case "L":
+        case "LEFT":
             x-=STEP_X[id]
-        case "U":
+        case "UP":
             y-=STEP_Y[id]
-        case "D":
+        case "DOWN":
             y+=STEP_Y[id]
         case "RED":
             if LOBBY:
@@ -291,8 +289,6 @@ def Rules(inputLetter,pseudo):
         case "READY":
             if LOBBY:
                 READY[pseudo] = not READY[pseudo]
-        case "T":
-            x,y = positionNewPlayer()
         case _ :
             return("Invalid Input")
     if correctPosition(pseudo, x,y,size1.w,size1.h):
