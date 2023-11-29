@@ -11,6 +11,7 @@ from platform import system
 
 from player import Player
 from wall import Wall
+from common import *
 from inlight import toVisible
 
 # ----------------------- Variables -----------------------
@@ -29,6 +30,12 @@ SIZE = None
 SCALE_FACTOR = None
 SCREEN = None
 
+WHITE = Color(255, 255, 255)
+BLACK = Color(0, 0, 0)
+RED = Color(255, 0, 0)
+GREEN = Color(0, 255, 0)
+BLUE = Color(0, 0, 255)
+
 FONT = "Arial" # Font used to display texts
 FONT_SIZE_USERNAME = 25
 FONT_SIZE_PING = 12
@@ -45,6 +52,11 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 
+LOBBY = True
+dicoReady = {}
+LOBBY_COLOR = WHITE
+RED_TEAM = 1
+BLUE_TEAM = 2
 WALL_VISIBLE = True
 
 # ----------------------- Threads -----------------------
@@ -80,7 +92,7 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill((100, 100, 100))  # May need to be custom
+        SCREEN.fill(BLACK)  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
@@ -100,6 +112,7 @@ def display():
         
         
         # Players
+        h=0
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
             
@@ -107,7 +120,23 @@ def display():
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))            
+            if(LOBBY):
+                usernamePosition = (SIZE[0]-usernameSize[0])//2
+                
+                if(player.teamId == RED_TEAM):
+                    usernamePosition = 0
+                if(player.teamId == BLUE_TEAM):
+                    usernamePosition = SIZE[0]-usernameSize[0]
+                
+                #LOBBY (username, ready)
+
+                usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, LOBBY_COLOR)
+                SCREEN.blit(usernameSurface, (usernamePosition, h))
+                h+=usernameSize[1]
+                
+        
+            
         
         #lights
         if DEBUG:
@@ -119,7 +148,7 @@ def display():
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
         
-        pingSurface = pg.font.Font.render(pingFont, pingText, False, (255, 255, 255))
+        pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE)
         
         SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
         
@@ -139,6 +168,9 @@ def game():
     global SERVER_IP
     global SERVER_PORT
     global SOCKET
+    global LOBBY
+    global dicoReady
+    
     
     requestNumber=0
     
@@ -150,6 +182,14 @@ def game():
         
         
         state = send(inputs)
+        
+        split_state = state.split(" ")
+        
+        if(split_state[0] == LOBBY):
+            LOBBY = True
+            dicoReady = get_players_ready(split_state[1])
+        else:
+            LOBBY =False
         
         if (update(state)) :
             requestNumber+=1
@@ -245,6 +285,11 @@ def askNewPseudo(errorMessage):
 
 
 
+def get_players_ready(ready_str):
+    return None
+
+
+
 def getInputs():
     """Get inputs from the keyboard and generate the corresponding request to send to the server.
 
@@ -268,6 +313,14 @@ def getInputs():
         return "INPUT " + USERNAME + " U END"
     elif keys[pg.K_DOWN] or keys[pg.K_s]:
         return "INPUT " + USERNAME + " D END"
+    elif keys[pg.K_r]:
+        return "INPUT" + USERNAME + "RED END"
+    elif keys[pg.K_b]:
+        return "INPUT" + USERNAME + "BLUE END"
+    elif keys[pg.K_n]:
+        return "INPUT" + USERNAME + "NEUTRAL END"
+    elif keys[pg.K_SPACE]:
+        return "INPUT" + USERNAME + "READY END"
     
     return "INPUT " + USERNAME + " . END"
 
