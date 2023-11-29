@@ -63,7 +63,7 @@ class Player:
         Returns:
             str: description of the player used to send data from the server to the clients.
         """
-        msg = "(" + str(self.username) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
+        msg = "(" + str(self.ip) + "," + str(self.username) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
         return msg.replace(" ", "")
 
 
