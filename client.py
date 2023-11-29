@@ -37,7 +37,7 @@ RED = Color(255, 0, 0)
 GREEN = Color(0, 255, 0)
 BLUE = Color(0, 0, 255)
 
-BACKGROUND_COLOR = Color(100, 100, 100)
+BACKGROUND_COLOR = Color(75, 75, 75)
 
 FONT = "Arial" # Font used to display texts
 FONT_SIZE_USERNAME = 25
@@ -138,6 +138,7 @@ def display():
                 if(player.teamId == BLUE_TEAM):
                     usernamePosition = SIZE[0]-usernameSize[0]
                 
+                print(player.username, readyPlayers)
                 if(player.username in readyPlayers):
                     font_color = READY_LOBBY_COLOR
 
@@ -301,6 +302,8 @@ def getInputs():
     for event in events:
         if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
             exit()
+        elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+            return "INPUT " + USERNAME + " READY END"
     
     if keys[pg.K_LEFT] or keys[pg.K_q]:
         return "INPUT " + USERNAME + " LEFT END"
@@ -316,8 +319,6 @@ def getInputs():
         return "INPUT " + USERNAME + " BLUE END"
     elif keys[pg.K_n]:
         return "INPUT " + USERNAME + " NEUTRAL END"
-    elif keys[pg.K_SPACE]:
-        return "INPUT " + USERNAME + " READY END"
     
     return "INPUT " + USERNAME + " . END"
 
@@ -402,7 +403,7 @@ def update(state="STATE [] END"):
         else: return True
         
     elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
-        readyPlayers = interp(messages[1], list=[str, 0])
+        readyPlayers = interp(messages[1], list=["", 0])["list"]
         LOBBY = True
         return False
         
