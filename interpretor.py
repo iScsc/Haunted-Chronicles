@@ -78,6 +78,7 @@ def interp(string, **kwargs):
             
         elif type(kwargs[arg])==Player:
             d=interp(values[i],username="",color=common.Color(),position=common.Position(),size=common.Size())
+            # get rid of '' around usernames due to str(str)
             if len(d['username'])>2 and ((d['username'][0]=="'" and d['username'][-1]=="'") or (d['username'][0]=="\"" and d['username'][-1]=="\"")):
                 d['username']=d['username'][1:-1]
             kwargs[arg]=Player("",d['username'],d['color'],d['position'],d['size'])

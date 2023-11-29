@@ -5,9 +5,11 @@ __pycache__/
 
 # Local Folders
 BACKUPS
+.vscode
 
 # Tests
 *Test.py
+*test.py
 
 # C extensions
 *.so
