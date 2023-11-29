@@ -12,6 +12,7 @@ from platform import system
 from player import Player
 from wall import Wall
 from common import *
+from interpretor import *
 from inlight import toVisible
 
 # ----------------------- Variables -----------------------
@@ -53,11 +54,15 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 PING = None # in milliseconds - ping with the server, None when disconnected
 
 LOBBY = True
-dicoReady = {}
-LOBBY_COLOR = WHITE
+readyPlayers = []
+DEFAULT_LOBBY_COLOR = WHITE
+READY_LOBBY_COLOR = GREEN
+TEAM_DISPLAY_HEIGHT = 100
 RED_TEAM = 1
 BLUE_TEAM = 2
+
 WALL_VISIBLE = True
+
 
 # ----------------------- Threads -----------------------
 
@@ -97,7 +102,7 @@ def display():
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
         if WALL_VISIBLE:
-            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+            pg.draw.polygon(SCREEN, BLACK, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
         # Walls
@@ -108,11 +113,11 @@ def display():
         
         #Unvisible
         if not(WALL_VISIBLE):
-            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+            pg.draw.polygon(SCREEN, BLACK, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
         # Players
-        h=0
+        h=TEAM_DISPLAY_HEIGHT
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
             
@@ -124,14 +129,17 @@ def display():
             if(LOBBY):
                 usernamePosition = (SIZE[0]-usernameSize[0])//2
                 
+                font_color = DEFAULT_LOBBY_COLOR
+                
                 if(player.teamId == RED_TEAM):
                     usernamePosition = 0
                 if(player.teamId == BLUE_TEAM):
                     usernamePosition = SIZE[0]-usernameSize[0]
                 
-                #LOBBY (username, ready)
+                if(player.username in readyPlayers):
+                    font_color = READY_LOBBY_COLOR
 
-                usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, LOBBY_COLOR)
+                usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, font_color)
                 SCREEN.blit(usernameSurface, (usernamePosition, h))
                 h+=usernameSize[1]
                 
@@ -169,7 +177,6 @@ def game():
     global SERVER_PORT
     global SOCKET
     global LOBBY
-    global dicoReady
     
     
     requestNumber=0
@@ -187,7 +194,6 @@ def game():
         
         if(split_state[0] == LOBBY):
             LOBBY = True
-            dicoReady = get_players_ready(split_state[1])
         else:
             LOBBY =False
         
@@ -285,11 +291,6 @@ def askNewPseudo(errorMessage):
 
 
 
-def get_players_ready(ready_str):
-    return None
-
-
-
 def getInputs():
     """Get inputs from the keyboard and generate the corresponding request to send to the server.
 
@@ -376,6 +377,7 @@ def update(state="STATE [] END"):
     global WALLS
     global PLAYERS
     global UNVISIBLE
+    global readyPlayers
 
     
     if type(state) != str or state == "":
@@ -404,7 +406,14 @@ def update(state="STATE [] END"):
             return False
         else: return True
         
-    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4]=="END":
+    elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
+        readyPlayers = interp(messages[1], list=[str, 0])
+        return False
+        
+    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4] == "END":
+        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
+    
+    elif len(messages) == 5 and messages[0] == "LOBBY" and messages[2] == "STATE" and messages[4] == "END":
         return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
     
     return True
