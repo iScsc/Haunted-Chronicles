@@ -53,7 +53,7 @@ class Player:
         Returns:
             list: extraction of the player's attributes.
         """
-        return self.ip, self.teamId, self.username, self.color, self.position, self.size
+        return self.teamId, self.username, self.color, self.position, self.size # without ip
     
     
     

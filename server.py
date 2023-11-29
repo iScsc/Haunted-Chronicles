@@ -7,6 +7,7 @@ from random import randint
 
 from threading import *
 import time
+import traceback
 
 from player import Player
 from wall import Wall
@@ -40,7 +41,7 @@ IP = extractingIP()
 # Player
 SIZE_MAX_PSEUDO = 10
 
-PLAYER_SIZE = (20, 20)
+PLAYER_SIZE = Size(20, 20)
 
 # Maybe not mandatory
 WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
@@ -142,7 +143,7 @@ def processDisconection(ip, s):
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
-    _, id, _, _, _, _ = dicoJoueur[pseudo].toList()
+    id, _, _, _, _ = dicoJoueur[pseudo].toList()
     TEAMS[id].remove(dicoJoueur[pseudo])
     dicoJoueur.pop(pseudo)
     READY.pop(pseudo)
@@ -242,7 +243,7 @@ def validIp(ip, pseudo):
 # ----------------------- Games Rules -----------------------
 
 def Rules(inputLetter,pseudo):
-    _, _, _, _, position1, size1 = dicoJoueur[pseudo].toList()
+    id, _, _, position1, size1 = dicoJoueur[pseudo].toList()
     x,y=position1.x,position1.y
 
     match inputLetter:
@@ -286,7 +287,7 @@ def Rules(inputLetter,pseudo):
 
 def correctPosition(pseudo, x,y,dx,dy):
     # The player is dead and can not move
-    if DEAD[pseudo]:
+    if DEAD.get(pseudo,False):
         return False
     
     correctX = (x>=0) and (x+dx <= SIZE_X)
@@ -299,14 +300,14 @@ def collision(pseudo, x, y ,dx ,dy):
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
-        _, _, _, _, position, size = dicoMur[key].toList()
+        _, _, position, size = dicoMur[key].toList()
         
         if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
             return True
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            _, _, username, _, position, size = dicoJoueur[key].toList()
+            _, username, _, position, size = dicoJoueur[key].toList()
             
             if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
                 
@@ -331,15 +332,18 @@ def collision(pseudo, x, y ,dx ,dy):
 
 
 def initNewPlayer(ip, pseudo):
-    dx,dy = sizeNewPlayer()
+    size = sizeNewPlayer()
+    dx,dy=size.w,size.h
     
-    x,y = positionNewPlayer(dx, dy)
+    pos = positionNewPlayer(dx, dy)
+    x,y=pos.x,pos.y
     
     while not correctPosition(pseudo, x, y, dx, dy):
-        x, y = positionNewPlayer(dx, dy)
+        pos = positionNewPlayer(dx, dy)
+        x,y=pos.x,pos.y
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(ip, 0, pseudo, color, (x, y), [dx, dy])
+    dicoJoueur[pseudo] = Player(ip, 0, pseudo, color, pos, size)
     TEAMS[0].append(dicoJoueur[pseudo])
     READY[pseudo] = False
     DEAD[pseudo] = False
@@ -348,7 +352,7 @@ def sizeNewPlayer():
     return PLAYER_SIZE
 
 def positionNewPlayer(dx, dy):
-    return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
+    return Position(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 def colorNewPlayer():
     return Color(randint(1,255),randint(1,255),randint(1,255))
@@ -433,7 +437,8 @@ def listen_new():
                         print("New connection from " + str(in_ip) + " failed!")
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
-            except:
+            except Exception as e:
+                traceback.print_exc()
                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " STOP = " + str(STOP))
             
             time.sleep(WAITING_TIME)
@@ -465,7 +470,7 @@ def listen_old():
                 # deco remaining player with same ip if needed.
                 for username in dicoJoueur:
                     if dicoJoueur[username].ip == addr[0]:
-                        _, id, _, _, _, _ = dicoJoueur[username].toList()
+                        id, _, _, _, _ = dicoJoueur[username].toList()
                         TEAMS[id].remove(dicoJoueur[username])
                         dicoJoueur.pop(username)
                         READY.pop(username)

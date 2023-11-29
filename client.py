@@ -15,7 +15,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
