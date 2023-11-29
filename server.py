@@ -103,7 +103,7 @@ dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
 
 # -------------------- Processing a Request -----------------------
-def processRequest(ip, s):
+def processRequest(ip, s:str):
     """Calls the right function according to process a request
 
     Args:
@@ -124,7 +124,7 @@ def processRequest(ip, s):
         return("Invalid Request")
 
 
-def processConnect(s):
+def processConnect(s:str):
     """Process a connection request
 
     Args:
@@ -145,7 +145,7 @@ def processConnect(s):
         return(firstConnection(pseudo))
     
     
-def processInput(ip, s):
+def processInput(ip, s:str):
     """Process an 'input' request
 
     Args:
@@ -165,7 +165,7 @@ def processInput(ip, s):
     return(states(pseudo))
 
 
-def processDisconnection(ip, s):
+def processDisconnection(ip, s:str):
     """Process a disconnection request
 
     Args:
@@ -174,14 +174,14 @@ def processDisconnection(ip, s):
     Returns:
         "DISCONNECTED <username> END" or why the connection request was invalid
     """
-    pseudo = extractPseudo(s)
+    pseudo = extractPseudo()
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
     dicoJoueur.pop(pseudo)
     return("DISCONNECTED" + s[13:])
 
 
-def typeOfRequest(s):
+def typeOfRequest(s:str):
     """The type of a request (CONNECT,INPUT,DISCONNECT)"""
     type = ""
     i = 0
@@ -192,7 +192,7 @@ def typeOfRequest(s):
     return(type)
 
 
-def extractPseudo(s):
+def extractPseudo(s:str):
     """The pseudo of a player from a connection request"""
     pseudo = ""
     n = len(s)
@@ -204,7 +204,7 @@ def extractPseudo(s):
     return(pseudo)
 
 
-def extractLetter(s,pseudo):
+def extractLetter(s:str,pseudo:str):
     """The input letter from the 's' input request string"""
     n = len(pseudo)
     return(s[7 + n])
@@ -220,7 +220,7 @@ def dummyLights():
     return([l0,l1,l2])    
 
 
-def states(pseudo):
+def states(pseudo:str):
     """The state of the server modulo what the player can see
 
     Args:
@@ -275,19 +275,19 @@ def walls():
     return(out)
 
 
-def firstConnection(pseudo):
+def firstConnection(pseudo:str):
     """Formated string for first connections:
         "CONNECTED <username> <size> WALLS <wallstring> STATE <statestring> SHADES <shadestring> END" """
     out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
     return(out)
 
 
-def validPseudo(pseudo):
+def validPseudo(pseudo:str):
     """If the pseudo exists"""
     return(pseudo in dicoJoueur.keys())
 
 
-def validIp(ip, pseudo):
+def validIp(ip, pseudo:str):
     """If the pseudo and a socket with the ip exist and they are associated"""
     return (pseudo in dicoJoueur.keys() and pseudo in dicoSocket.keys() and dicoSocket[pseudo][1][0] == str(ip))
 
@@ -295,7 +295,7 @@ def validIp(ip, pseudo):
 
 # ----------------------- Games Rules -----------------------
 
-def Rules(inputLetter,pseudo):
+def Rules(inputLetter:str,pseudo:str):
     """Process an input for a player
 
     Args:
@@ -329,7 +329,7 @@ def Rules(inputLetter,pseudo):
     return
 
 
-def correctPosition(pseudo, x,y,dx,dy):
+def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
     """If a position is inside the level boundaries and does not overlap walls or other players
 
     Args:
@@ -348,7 +348,7 @@ def correctPosition(pseudo, x,y,dx,dy):
     return correctX and correctY and not collision(pseudo, x, y, dx, dy)
 
 
-def collision(pseudo, x, y ,dx ,dy):
+def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
     """If a position does not overlap walls or other players
 
     Args:
@@ -383,7 +383,7 @@ def collision(pseudo, x, y ,dx ,dy):
 # ----------------------- Init of a new Player -----------------------
 
 
-def initNewPlayer(pseudo):
+def initNewPlayer(pseudo:str):
     """Creates a new player 'pseudo'
 
     Args:
@@ -405,7 +405,7 @@ def sizeNewPlayer():
     return PLAYER_SIZE
 
 
-def positionNewPlayer(dx, dy):
+def positionNewPlayer(dx:int, dy:int):
     """A position for a new player (random)"""
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
