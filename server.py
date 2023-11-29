@@ -94,6 +94,24 @@ dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
 dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
 dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
+WALLS = []
+for key in dicoMur:
+    WALLS.append(dicoMur[key])
+
+def dummyLights():
+    l0 = Light(Position(int(200),int(200)))
+    l1 = Light(Position(int(500),int(800)))
+    l2 = Light(Position(int(1500),int(500)))
+    #l01 = Light(Position(int(100),int(800)))
+    return([l0,l1,l2])    
+
+t1 = time.time()
+LIGHTS = dummyLights()
+STATIC_SHADOW = AllSources(LIGHTS, WALLS, SIZE_X, SIZE_Y)
+LIST_STATIC_SHADOW = [OneSource(l, WALLS, SIZE_X, SIZE_Y) for l in LIGHTS]
+t2 = time.time()
+print("time of precalculation : ",t2-t1," s")
+
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s):
     type = typeOfRequest(s)
@@ -160,32 +178,20 @@ def extractLetter(s,pseudo):
     return(s[7 + n])
 
 
-def dummyLights():
-    l0 = Light(Position(int(200),int(200)))
-    l1 = Light(Position(int(500),int(800)))
-    l2 = Light(Position(int(1500),int(500)))
-    #l01 = Light(Position(int(100),int(800)))
-    return([l0,l1,l2])    
-
 def states(pseudo):
     player = 0
     liste = []
-    listeOfPlayer = []
-    listeOfWall = []
-    listOfLight = dummyLights()
+    listOfPlayer = []
+        
     for key in dicoJoueur:
         p =  dicoJoueur[key]
         if key == pseudo:
             player = p
-        listeOfPlayer.append(p)
+        listOfPlayer.append(p)
     
-    
-    for key in dicoMur:
-        listeOfWall.append(dicoMur[key])
-    
-    shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
-    visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
-    formatshadows = sendingFormat(shadows)
+    shadows = Visible(player, LIGHTS, listOfPlayer, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
+    visiblePlayer = allVisiblePlayer(shadows,listOfPlayer)
+    formatShadows = sendingFormat(shadows)
     
     liste.append(str(player))
     for key in visiblePlayer:
@@ -193,7 +199,7 @@ def states(pseudo):
         if key != pseudo:       
             liste.append(str(p))
 
-    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
 
     return(out)
 
