@@ -81,7 +81,7 @@ def interp(string, **kwargs):
             # get rid of '' around usernames due to str(str)
             if len(d['username'])>2 and ((d['username'][0]=="'" and d['username'][-1]=="'") or (d['username'][0]=="\"" and d['username'][-1]=="\"")):
                 d['username']=d['username'][1:-1]
-            kwargs[arg]=Player("",d['username'],d['color'],d['position'],d['size'])
+            kwargs[arg]=Player(d['username'],d['color'],d['position'],d['size'])
             
         elif type(kwargs[arg])==Wall:
             d=interp(values[i],id=0,color=common.Color(),position=common.Position(),size=common.Size())

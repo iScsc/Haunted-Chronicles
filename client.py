@@ -6,6 +6,7 @@ from threading import *
 from socket import *
 
 import time
+import traceback
 
 from platform import system
 
@@ -328,6 +329,7 @@ def update(state="STATE [] END"):
         state (str): The normalized state of the game. Defaults to "STATE [] END".
     """
     
+    
     global WALLS
     global PLAYERS
     global UNVISIBLE
@@ -339,7 +341,9 @@ def update(state="STATE [] END"):
     messages = state.split(" ")
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
+        
         players = Player.toPlayers(messages[1],DEBUG)
+        
         if (players != None):
             PLAYERS=players
             return False
