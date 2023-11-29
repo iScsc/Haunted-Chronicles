@@ -104,7 +104,9 @@ def dummyLights():
     return([l0,l1,l2])    
 
 t1 = time.time()
-STATICSHADOW = AllSources(dummyLights(),WALLS,SIZE_X,SIZE_Y)
+LIGHTS = dummyLights()
+STATIC_SHADOW = AllSources(LIGHTS, WALLS, SIZE_X, SIZE_Y)
+LIST_STATIC_SHADOW = [OneSource(l, WALLS, SIZE_X, SIZE_Y) for l in LIGHTS]
 t2 = time.time()
 print("time of precalculation : ",t2-t1," s")
 
@@ -177,20 +179,17 @@ def extractLetter(s,pseudo):
 def states(pseudo):
     player = 0
     liste = []
-    listeOfPlayer = []
-    
-    listOfLight = dummyLights()
-    
+    listOfPlayer = []
+        
     for key in dicoJoueur:
         p =  dicoJoueur[key]
         if key == pseudo:
             player = p
-        listeOfPlayer.append(p)
+        listOfPlayer.append(p)
     
-    
-    shadows = Visible(player,listOfLight,listeOfPlayer,SIZE_X,SIZE_Y,STATICSHADOW,WALLS)
-    visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
-    formatshadows = sendingFormat(shadows)
+    shadows = Visible(player, LIGHTS, listOfPlayer, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
+    visiblePlayer = allVisiblePlayer(shadows,listOfPlayer)
+    formatShadows = sendingFormat(shadows)
     
     liste.append(str(player))
     for key in visiblePlayer:
@@ -198,7 +197,7 @@ def states(pseudo):
         if key != pseudo:       
             liste.append(str(p))
 
-    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
 
     return(out)
 

@@ -124,18 +124,22 @@ def OneSource(l,listOfp,sizex,sizey):
             print("light in")
     return(poly)
 
-def AllSources(listOfl,listOfp,sizex,sizey):
+def AllSources(listOfl,listOfp,sizex,sizey,listShadows = []):
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
-    for l in listOfl:
-        polyl = OneSource(l,listOfp,sizex,sizey)
-        poly = poly.intersection(polyl) 
+    for i in range(len(listOfl)):
+        polyl = OneSource(listOfl[i],listOfp,sizex,sizey)
+        shadesI = polyl
+        if i<len(listShadows):
+            shadesI = listShadows[i].union(polyl)
+        poly = poly.intersection(shadesI)
     return(poly)
 
-def Visible(p,listOfl,listOfp,sizex,sizey,FixSources = Polygon(),listofWall = []):
+def Visible(p,listOfl,listOfp,sizex,sizey,FixSources = Polygon(),listofWall = [],listShadows = []):
     l = Light(Position(p.position.x+p.size.h/2,p.position.y+p.size.w/2))
     listOfp2 = [x for x in listOfp if x!=p]
     poly = OneSource(l,listOfp2 + listofWall,sizex,sizey)
-    mobileSources = poly.union(AllSources(listOfl,listOfp,sizex,sizey))
+    shadowsFromPlayers = AllSources(listOfl,listOfp,sizex,sizey,listShadows)
+    mobileSources = poly.union(shadowsFromPlayers)
     return(mobileSources.union(FixSources))
 
 def isVisible(shadows,p):
