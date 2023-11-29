@@ -120,10 +120,10 @@ def interp(string, **kwargs):
         
         # specific types, uses recursivity
         elif type(kwargs[arg])==Player:
-            d=interp(values[i],username="",color=common.Color(),position=common.Position(),size=common.Size())
+            d=interp(values[i],teamId=0, username="",color=common.Color(),position=common.Position(),size=common.Size())
             if len(d['username'])>2 and ((d['username'][0]=="'" and d['username'][-1]=="'") or (d['username'][0]=="\"" and d['username'][-1]=="\"")):
                 d['username']=d['username'][1:-1]
-            kwargs[arg]=Player("",0,d['username'],d['color'],d['position'],d['size'])
+            kwargs[arg]=Player("",d['teamId'],d['username'],d['color'],d['position'],d['size'])
             
         elif type(kwargs[arg])==Wall:
             d=interp(values[i],id=0,color=common.Color(),position=common.Position(),size=common.Size())
