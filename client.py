@@ -315,13 +315,13 @@ def getInputs():
     elif keys[pg.K_DOWN] or keys[pg.K_s]:
         return "INPUT " + USERNAME + " D END"
     elif keys[pg.K_r]:
-        return "INPUT" + USERNAME + "RED END"
+        return "INPUT " + USERNAME + " RED END"
     elif keys[pg.K_b]:
-        return "INPUT" + USERNAME + "BLUE END"
+        return "INPUT " + USERNAME + " BLUE END"
     elif keys[pg.K_n]:
-        return "INPUT" + USERNAME + "NEUTRAL END"
+        return "INPUT " + USERNAME + " NEUTRAL END"
     elif keys[pg.K_SPACE]:
-        return "INPUT" + USERNAME + "READY END"
+        return "INPUT " + USERNAME + " READY END"
     
     return "INPUT " + USERNAME + " . END"
 
