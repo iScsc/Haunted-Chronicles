@@ -2,12 +2,13 @@ import common
 
 
 
-def spc(string:str):
+def spc(string:str, strip=False):
     """Splits a given string on parenthesis and commas, taking just into acount first level parenthesis.
     For instance: "(abc,def),ghi,(jkl,(mno))" -> ["abc,def","ghi","jkl,(mno)"]
 
     Args:
         string (str): The string to split
+        strip (bool): The boolean representing if the values should be stripped from forbidden characters before being processed.
 
     Returns:
         list(str): The list of substrings 
@@ -19,6 +20,17 @@ def spc(string:str):
     pf=[] #list of closing parenthesis
     indexo=0 #index of the last opening parenthesis found
     indexf=0 #index of the last closing parenthesis found
+    
+    print("string =", string)
+    forbidden_char = ["[", "]", "'", '"']
+    
+    if strip:
+        if len(string) == 1 and string[0] in forbidden_char:
+            string = ""
+        while len(string) >= 2 and string[0] in forbidden_char:
+            string = string[1:]
+        while len(string) >= 2 and string[-1] in forbidden_char:
+            string = string[:-1]
     
     while indexo!=-1 and indexf!=-1: # While an opening and closing parenthesis have been found
         indexo=string.find('(',indexo) # find the next  parethesis index starting from the last one
@@ -53,7 +65,7 @@ def spc(string:str):
         substr+=(string[pf[-1]+1:]).split(',')
         
     #epurating from void substring, residual apostrophe and unwanted substrings
-    substr=[s for s in substr if s not in ['',"'","['","']",'[',']']]
+    substr=[s for s in substr if s not in ['',"'","['","']",'[',']','[]']]
     
     return substr
 
@@ -132,6 +144,7 @@ def interp(string, **kwargs):
         # list, uses recursivity, shifts index
         elif type(kwargs[arg])==list:
             # kwargs[arg]=[a,k...]
+            values = spc(string, True)
             k=kwargs[arg][1]
             if k==-1:
                 k=len(kwargs[arg])-2
