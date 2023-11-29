@@ -230,7 +230,7 @@ def connect():
     if DEBUG:
         print(message)
     
-    if (len(messages) == 8 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END"):
+    if (len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
         
         try:
             sizeStr = "" + messages[2]
