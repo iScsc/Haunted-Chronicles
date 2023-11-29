@@ -100,7 +100,26 @@ dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
 dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
 dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
+# list of walls
+WALLS = []
+for key in dicoMur:
+    WALLS.append(dicoMur[key])
 
+# Some static lights
+def dummyLights():
+    """Some static lights"""
+    l0 = Light(Position(int(200),int(200)))
+    l1 = Light(Position(int(500),int(800)))
+    l2 = Light(Position(int(1500),int(500)))
+    #l01 = Light(Position(int(100),int(800)))
+    return([l0,l1,l2])    
+
+t1 = time.time()
+LIGHTS = dummyLights()
+STATIC_SHADOW = AllSources(LIGHTS, WALLS, SIZE_X, SIZE_Y)
+LIST_STATIC_SHADOW = [OneSource(l, WALLS, SIZE_X, SIZE_Y) for l in LIGHTS]
+t2 = time.time()
+print("time of precalculation : ",t2-t1," s")
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s:str):
@@ -210,15 +229,6 @@ def extractLetter(s:str,pseudo:str):
     return(s[7 + n])
 
 
-# Some static lights 
-def dummyLights():
-    """Some static lights"""
-    l0 = Light(Position(int(200),int(200)))
-    l1 = Light(Position(int(500),int(800)))
-    l2 = Light(Position(int(1500),int(500)))
-    #l01 = Light(Position(int(100),int(800)))
-    return([l0,l1,l2])    
-
 
 def states(pseudo:str):
     """The state of the server modulo what the player can see
@@ -231,27 +241,18 @@ def states(pseudo:str):
     """
     player = 0 # the player
     liste = [] # list of player strings
-    listeOfPlayer = [] # list of all players
-    listeOfWall = [] # list of all walls
-    listOfLight = dummyLights() # list of static lights
+    listOfPlayer = [] # list of all players
     
     # gets all players
     for key in dicoJoueur:
         p =  dicoJoueur[key]
         if key == pseudo:
-            player = p # gets the player
-        listeOfPlayer.append(p)
+            player = p
+        listOfPlayer.append(p)
     
-    # gets walls
-    for key in dicoMur:
-        listeOfWall.append(dicoMur[key])
-    
-    # gets shadow polygon
-    shadows = Visible(player,listOfLight,listeOfPlayer+listeOfWall,SIZE_X,SIZE_Y)
-    # gets visible players from the shadow polygon
-    visiblePlayer = allVisiblePlayer(shadows,listeOfPlayer)
-    # shadow string
-    formatshadows = sendingFormat(shadows)
+    shadows = Visible(player, LIGHTS, listOfPlayer, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
+    visiblePlayer = allVisiblePlayer(shadows,listOfPlayer)
+    formatShadows = sendingFormat(shadows)
     
     # gets visible player strings
     liste.append(str(player))
@@ -261,7 +262,7 @@ def states(pseudo:str):
             liste.append(str(p))
 
     # string to send back
-    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
 
     return(out)
 
