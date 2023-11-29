@@ -7,19 +7,16 @@ class Player:
     BASE_POSITION = common.Position()
     BASE_SIZE = common.Size()
     
-    def __init__(self, ip="", username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
+    def __init__(self, username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
 
         Args:
-            - ip (str, optional): Ip address of the player (only defined on the server side).
             - username (str): Username of the player.
             - color (tuple): Color used by the player.
             - position (tuple): Position of the player.
             - size (list): Size of the player.
         """
         
-        # ip may be deleted from the Player class as it can now be identified using the player's socket
-        self.ip = ip
         self.username = username
         self.color = color
         self.position = position
@@ -45,12 +42,12 @@ class Player:
     
     
     def toList(self):
-        """Generate the list representation of the player with the format [ip, username, color, position, size]
+        """Generate the list representation of the player with the format [username, color, position, size]
 
         Returns:
             list: extraction of the player's attributes.
         """
-        return self.ip, self.username, self.color, self.position, self.size
+        return self.username, self.color, self.position, self.size
     
     
     
