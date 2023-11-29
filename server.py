@@ -231,7 +231,7 @@ def states(pseudo):
                     rlist.append(key) # List of ready players' username
             out += "LOBBY " + str(rlist).replace(" ", "") + " "
         
-        out = "STATE "+(str(listOfPlayers)).replace(" ","")+" END"
+        out = "STATE "+(str(liste)).replace(" ","")+" END"
         
         return out
 
