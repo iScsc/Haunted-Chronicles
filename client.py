@@ -228,7 +228,7 @@ def connect():
 
 
 
-def askNewPseudo(errorMessage):
+def askNewPseudo(errorMessage:str):
     """Ask for another username when connection fails to try to connect again.
 
     Args:
