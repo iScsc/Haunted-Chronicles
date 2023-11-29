@@ -7,8 +7,11 @@ from socket import *
 
 import time
 
+from platform import system
+
 from player import Player
 from wall import Wall
+from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
@@ -23,6 +26,7 @@ MAX_REQUESTS = 10 # number of requests without proper response before force disc
 FPS = 60
 
 SIZE = None
+SCALE_FACTOR = None
 SCREEN = None
 
 FONT = "Arial" # Font used to display texts
@@ -32,6 +36,7 @@ FONT_SIZE_PING = 12
 USERNAME = "John"
 PLAYERS = []
 WALLS = []
+UNVISIBLE = []
 
 SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
@@ -39,6 +44,8 @@ SOCKET_TIMEOUT = 30 # in seconds
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
+
+WALL_VISIBLE = True
 
 # ----------------------- Threads -----------------------
 
@@ -48,10 +55,24 @@ def display():
     
     global SCREEN
     global PLAYERS
+    global SCALE_FACTOR
+    global SIZE
     
     pg.init()
     
-    SCREEN = pg.display.set_mode(SIZE)
+    PLATEFORM = system() # system name (Windows or Linux ... )
+
+    if PLATEFORM=="Linux":
+        info = pg.display.Info()
+        SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+        SCREEN = pg.display.set_mode((0,0),pg.FULLSCREEN)
+    elif PLATEFORM=="Windows":
+        info = pg.display.Info()
+        SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
+        SIZE = info.current_w, info.current_h
+        SCREEN = pg.display.set_mode(SIZE)
+    else :
+        SCALE_FACTOR=1,1
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     
@@ -59,25 +80,41 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill((0, 0, 0))  # May need to be custom
+        SCREEN.fill((100, 100, 100))  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
-        
+    
+        if WALL_VISIBLE:
+            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+    
+    
         # Walls
         for wall in WALLS:
-            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x, wall.position.y, wall.size.w, wall.size.h])
+            pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
+        
+        
+        
+        #Unvisible
+        if not(WALL_VISIBLE):
+            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+        
         
         # Players
         for player in PLAYERS:
-            pg.draw.rect(SCREEN, player.color.color, [player.position.x, player.position.y, player.size.w, player.size.h])
+            pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
             
             usernameText = player.username
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position.x + (player.size.w - usernameSize[0]) // 2, player.position.y - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
         
-        
+        #lights
+        if DEBUG:
+            pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
+ 
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
@@ -150,7 +187,11 @@ def connect():
     
     messages = message.split(" ")
     
-    if messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END":
+    if DEBUG:
+        print(message)
+    
+    if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+        
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -168,7 +209,7 @@ def connect():
         beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
         
         update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
-        update(message[beginPlayerIndex:]) # Players
+        update(message[beginPlayerIndex:]) #Players and Shades
         
         return True
     # Manage failed connections
@@ -179,7 +220,7 @@ def connect():
         
         SOCKET.close()
         SOCKET = None
-    
+
     return False
 
 
@@ -257,11 +298,12 @@ def send(input="INPUT " + USERNAME + " . END"):
         t = time.time()
 
         # send data
+
         try:
             SOCKET.sendall(bytes(input, "utf-16"))
             
             # receive answer
-            answer = str(SOCKET.recv(1024*2), "utf-16")
+            answer = str(SOCKET.recv(1024*16), "utf-16")
             
             PING = int((time.time() - t) * 1000)
             
@@ -280,6 +322,8 @@ def update(state="STATE [] END"):
     
     global WALLS
     global PLAYERS
+    global UNVISIBLE
+
     
     if type(state) != str or state == "":
         return False
@@ -298,8 +342,18 @@ def update(state="STATE [] END"):
         if (walls != None):
             WALLS=walls
             return False
-        else:
-            return True
+        else: return True
+        
+    elif len(messages) == 3 and messages[0] == "SHADES" and messages[2] == "END":
+        unvisible = toVisible(messages[1],DEBUG)
+        if (unvisible != None):
+            UNVISIBLE=unvisible
+            return False
+        else: return True
+        
+    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4]=="END":
+        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
+    
     return True
 
 def exit():
