@@ -140,8 +140,15 @@ def Visible(p,listOfl,listOfp,sizex,sizey,FixSources = Polygon(),listofWall = []
     poly = OneSource(l,listOfp2 + listofWall,sizex,sizey)
     shadowsFromPlayers = AllSources(listOfl,listOfp,sizex,sizey,listShadows)
     mobileSources = poly.union(shadowsFromPlayers)
-    #proximity = Polygon([(0,0),(0,10),(10,10),(10,0)])
-    return(mobileSources.union(FixSources))
+    
+    x,y = p.position.x-10, p.position.y-10
+    dx,dy = p.size.w+20, p.size.h+20
+    BD = (x+dx,y+dy)
+    BG = (x,y+dy)
+    HG = (x,y)
+    HD = (x+dx,y)
+    proximity = Polygon([BD,BG,HG,HD])
+    return(mobileSources.union(FixSources).difference(proximity))
 
 def isVisible(shadows,p):
     body = Polygon(extractCorner(p))
