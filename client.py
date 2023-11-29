@@ -60,8 +60,10 @@ def display():
     
     pg.init()
     
+    
     PLATEFORM = system() # system name (Windows or Linux ... )
 
+    # sets screen size and scale factors
     if PLATEFORM=="Linux":
         info = pg.display.Info()
         SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
@@ -73,10 +75,15 @@ def display():
         SCREEN = pg.display.set_mode(SIZE)
     else :
         SCALE_FACTOR=1,1
+    
+    
+    # set fonts for ping and usernames
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     
+    
     clock = pg.time.Clock()
+    
     
     while CONNECTED:
         
@@ -84,7 +91,7 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
-        if WALL_VISIBLE:
+        if WALL_VISIBLE: # draws shades under the walls
             pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
@@ -93,9 +100,8 @@ def display():
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
         
         
-        
-        #Unvisible
-        if not(WALL_VISIBLE):
+        # Unvisible
+        if not(WALL_VISIBLE): #draw shades on top of the walls
             pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
@@ -109,8 +115,8 @@ def display():
             
             SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
         
-        #lights
-        if DEBUG:
+        # Lights
+        if DEBUG: # Draw lights where they are meant to be in the server
             pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
@@ -148,10 +154,9 @@ def game():
         
         inputs = getInputs()
         
-        
         state = send(inputs)
         
-        if (update(state)) :
+        if (update(state)) : # request failed
             requestNumber+=1
         else :
             requestNumber=0
@@ -183,7 +188,7 @@ def connect():
     
     global SIZE
     
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
     messages = message.split(" ")
     
