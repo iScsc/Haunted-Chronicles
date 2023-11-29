@@ -319,6 +319,7 @@ def correctPosition(pseudo, x,y,dx,dy):
     return correctX and correctY and not collision(pseudo, x, y, dx, dy)
 
 def collision(pseudo, x, y ,dx ,dy):
+    global DEAD
     
     c = (x + dx/2, y + dy/2)
     
