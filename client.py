@@ -31,11 +31,11 @@ SIZE = None
 SCALE_FACTOR = None
 SCREEN = None
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
+WHITE = Color(255, 255, 255)
+BLACK = Color(0, 0, 0)
+RED = Color(255, 0, 0)
+GREEN = Color(0, 255, 0)
+BLUE = Color(0, 0, 255)
 
 FONT = "Arial" # Font used to display texts
 FONT_SIZE_USERNAME = 25
@@ -97,12 +97,12 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill(BLACK)  # May need to be custom
+        SCREEN.fill(BLACK.color)  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
         if not LOBBY and WALL_VISIBLE and len(UNVISIBLE) > 2:
-            pg.draw.polygon(SCREEN, BLACK, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+            pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
         # Walls
@@ -113,7 +113,7 @@ def display():
         
         #Unvisible
         if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2:
-            pg.draw.polygon(SCREEN, BLACK, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+            pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
         # Players
@@ -139,7 +139,7 @@ def display():
                 if(player.username in readyPlayers):
                     font_color = READY_LOBBY_COLOR
 
-                usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, font_color)
+                usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, font_color.color)
                 SCREEN.blit(usernameSurface, (usernamePosition, h))
                 h+=usernameSize[1]
                 
@@ -156,7 +156,7 @@ def display():
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
         
-        pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE)
+        pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE.color)
         
         SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
         
