@@ -301,13 +301,13 @@ def getInputs():
             exit()
     
     if keys[pg.K_LEFT] or keys[pg.K_q]:
-        return "INPUT " + USERNAME + " L END"
+        return "INPUT " + USERNAME + " LEFT END"
     elif keys[pg.K_RIGHT] or keys[pg.K_d]:
-        return "INPUT " + USERNAME + " R END"
+        return "INPUT " + USERNAME + " RIGHT END"
     elif keys[pg.K_UP] or keys[pg.K_z]:
-        return "INPUT " + USERNAME + " U END"
+        return "INPUT " + USERNAME + " UP END"
     elif keys[pg.K_DOWN] or keys[pg.K_s]:
-        return "INPUT " + USERNAME + " D END"
+        return "INPUT " + USERNAME + " DOWN END"
     elif keys[pg.K_r]:
         return "INPUT " + USERNAME + " RED END"
     elif keys[pg.K_b]:
