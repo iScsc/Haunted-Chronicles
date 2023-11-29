@@ -192,8 +192,9 @@ def connect():
     if DEBUG:
         print(message)
     
-    if (messages!=None and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+    if (messages!=None and len(messages)==10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
         
+        # get serveur default screen size
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -207,13 +208,12 @@ def connect():
                 print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
-        beginWallIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
-        beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
-        
-        update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
-        update(message[beginPlayerIndex:]) #Players and Shades
+        # set walls players and shades
+        update(messages[3] + " " + messages[4] + " " + messages[9]) # Walls
+        update(messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9]) #Players and Shades
         
         return True
+    
     # Manage failed connections
     elif messages!=None and "CONNECTED" not in messages:
         askNewPseudo(message)
@@ -297,8 +297,6 @@ def send(input="INPUT " + USERNAME + " . END"):
         except:
             exitError("Connection attempt failed, retrying...")
             SOCKET=None
-            
-    
     
     # Usual behavior
     if SOCKET != None:
@@ -331,6 +329,8 @@ def update(state="STATE [] END"):
 
     Args:
         state (str): The normalized state of the game. Defaults to "STATE [] END".
+    Returns:
+        bool: was there a problem in updating variables ?
     """
     
     global WALLS
@@ -369,6 +369,8 @@ def update(state="STATE [] END"):
     
     return True
 
+
+
 def exit():
     """Send the normalized disconnection request and then exits the game.
     """
@@ -395,7 +397,9 @@ def exit():
 
 def exitError(errorMessage="Sorry a problem occured..."):
     """Exit the game
-        Called if there has been a problem with the server"""
+        Called if there has been a problem with the server
+    Args:
+        errorMessage (str): the string to print according to the error ("Sorry a problem occured..." by default)"""
         
     global CONNECTED
     global SOCKET
