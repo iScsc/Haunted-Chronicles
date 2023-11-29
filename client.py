@@ -31,11 +31,11 @@ SIZE = None
 SCALE_FACTOR = None
 SCREEN = None
 
-WHITE = Color(255, 255, 255)
-BLACK = Color(0, 0, 0)
-RED = Color(255, 0, 0)
-GREEN = Color(0, 255, 0)
-BLUE = Color(0, 0, 255)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 
 FONT = "Arial" # Font used to display texts
 FONT_SIZE_USERNAME = 25
@@ -101,7 +101,7 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
-        if WALL_VISIBLE:
+        if not LOBBY and WALL_VISIBLE and len(UNVISIBLE) > 2:
             pg.draw.polygon(SCREEN, BLACK, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
@@ -112,7 +112,7 @@ def display():
         
         
         #Unvisible
-        if not(WALL_VISIBLE):
+        if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2:
             pg.draw.polygon(SCREEN, BLACK, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
@@ -187,15 +187,9 @@ def game():
         
         inputs = getInputs()
         
-        
         state = send(inputs)
         
-        split_state = state.split(" ")
-        
-        if(split_state[0] == LOBBY):
-            LOBBY = True
-        else:
-            LOBBY =False
+
         
         if (update(state)) :
             requestNumber+=1
@@ -236,7 +230,7 @@ def connect():
     if DEBUG:
         print(message)
     
-    if (messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+    if (len(messages) == 8 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "END"):
         
         try:
             sizeStr = "" + messages[2]
@@ -352,7 +346,6 @@ def send(input="INPUT " + USERNAME + " . END"):
         t = time.time()
 
         # send data
-
         try:
             SOCKET.sendall(bytes(input, "utf-16"))
             
@@ -378,12 +371,17 @@ def update(state="STATE [] END"):
     global PLAYERS
     global UNVISIBLE
     global readyPlayers
-
+    global LOBBY
     
-    if type(state) != str or state == "":
+    if state == None or type(state) != str or state == "":
         return False
     
     messages = state.split(" ")
+    
+    if(messages[0] == "LOBBY"):
+        LOBBY = True
+    else:
+        LOBBY = False
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         players = Player.toPlayers(messages[1],DEBUG)
