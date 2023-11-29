@@ -378,11 +378,6 @@ def update(state="STATE [] END"):
     
     messages = state.split(" ")
     
-    if(messages[0] == "LOBBY"):
-        LOBBY = True
-    else:
-        LOBBY = False
-    
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         players = Player.toPlayers(messages[1],DEBUG)
         if (players != None):
@@ -406,12 +401,15 @@ def update(state="STATE [] END"):
         
     elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
         readyPlayers = interp(messages[1], list=[str, 0])
+        LOBBY = True
         return False
         
     elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4] == "END":
+        LOBBY = False
         return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
     
     elif len(messages) == 5 and messages[0] == "LOBBY" and messages[2] == "STATE" and messages[4] == "END":
+        LOBBY = True
         return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
     
     return True
