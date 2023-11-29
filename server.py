@@ -301,6 +301,8 @@ def checkReady():
     return True
 
 def launchGame(ready):
+    global LOBBY
+    
     if ready:
         LOBBY = False
 
