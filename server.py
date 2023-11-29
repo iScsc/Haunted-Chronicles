@@ -25,7 +25,7 @@ def extractingIP():
 
 
 # ----------------------- Constants-----------------------
-DEBUG=True
+DEBUG=False
 
 # Game map
 SIZE_X = int(1920 * .9)
