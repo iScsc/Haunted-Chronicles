@@ -24,7 +24,7 @@ class Player:
     
     
     
-    def update(self, color=None, position=None, size=None):
+    def update(self, color:common.Color=None, position:common.Position=None, size:common.Size=None):
         """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
 
         Args:
@@ -62,7 +62,7 @@ class Player:
 
 
 
-    def toPlayers(playersString, DEBUG=False):
+    def toPlayers(playersString:str, DEBUG=False):
         """Generate the list of players described by the playersString variable.
 
         Args:

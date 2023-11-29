@@ -2,7 +2,7 @@ import common
 
 
 
-def spc(string):
+def spc(string:str):
     
     #getting parenthesis index
     po=[]
@@ -43,7 +43,7 @@ def spc(string):
 
 
 
-def interp(string, **kwargs):
+def interp(string:str, **kwargs):
     
     from player import Player
     from wall import Wall

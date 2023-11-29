@@ -45,7 +45,7 @@ class Wall:
     
     
     
-    def toWalls(wallsString, DEBUG=False):
+    def toWalls(wallsString:str, DEBUG=False):
         """Generate the list of walls described by the wallsString variable.
 
         Args:
