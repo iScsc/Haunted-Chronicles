@@ -120,8 +120,8 @@ def OneSource(l,listOfp,sizex,sizey):
         if not(body.contains(Point(l.position.x,l.position.y))):           
             polyp = Polygon(polyInLight(l,p,sizex,sizey))
             poly = poly.union(polyp)
-        else :
-            print("light in")
+        # else :
+        #     print("light is inside an object")
     return(poly)
 
 def AllSources(listOfl,listOfp,sizex,sizey,listShadows = []):
