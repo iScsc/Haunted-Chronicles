@@ -1,6 +1,7 @@
 
 from player import Player
 from light import Light
+from wall import Wall
 from numpy import angle
 from shapely.geometry import Polygon, Point, MultiPolygon
 from shapely import get_coordinates, get_interior_ring,get_exterior_ring
@@ -9,7 +10,15 @@ import interpretor
 from common import *
 
 
-def extractCorner(p):
+def extractCorner(p:Player|Wall):
+    """_summary_
+
+    Args:
+        p (Player|Wall): a player or a wall
+
+    Returns:
+        list[tuple[int]]: a list of the player/wall's corners
+    """
     x,y = p.position.x, p.position.y
     dx,dy = p.size.w, p.size.h
     BD = (x+dx,y+dy)
@@ -18,7 +27,16 @@ def extractCorner(p):
     HD = (x+dx,y)
     return [BD,BG,HG,HD]
 
-def extremePoint(l,p):
+def extremePoint(l:Light,p:Player|Wall):
+    """The furthest point in term of angle from wich that intersect the light for a player
+
+    Args:
+        l (Light): a light
+        p (Player|Wall): a player or a wall
+    
+    Returns:
+        A tuple with the angle, the x position and the y position
+    """
     Corners = extractCorner(p)
     maxphi = 0,0,0
     for i in range(4):
@@ -39,7 +57,18 @@ def extremePoint(l,p):
                 
     return(maxphi)
 
-def pointBorder(l,point,sizex,sizey):
+def pointBorder(l:Light,point:tuple[int],sizex:int,sizey:int):
+    """Takes a light and a point, returns the projection of the point against the level borders
+
+    Args:
+        l (Light): a light
+        point (tuple[int]): a point
+        sizex (int): the level width
+        sizey (int): the level height
+
+    Returns:
+        tuple[int]: the projected point
+    """
     lx,ly = l.position.x, l.position.y
     px,py = point
     wallx = 0
@@ -69,7 +98,18 @@ def pointBorder(l,point,sizex,sizey):
         return (wallx,abs(py + (py - ly)*tx))
     return (abs(px + (px - lx)*ty),wally)
     
-def nextCorner(x,y,sizex,sizey):
+def nextCorner(x:int,y:int,sizex:int,sizey:int):
+    """The next corner of a rectangle in counter clockwise rotation
+
+    Args:
+        x (int): x position
+        y (int): y position
+        sizex (int): width
+        sizey (int): height
+
+    Returns:
+        tuple[int]: the next corner
+    """
     if (x,y) == (0,0):
         return 0,sizey
     if (x,y) == (0,sizey):
@@ -79,7 +119,18 @@ def nextCorner(x,y,sizex,sizey):
     if (x,y) == (sizex,0):
         return 0,0
 
-def cornerRight(x,y,sizex,sizey):
+def cornerRight(x:int,y:int,sizex:int,sizey:int):
+    """The corner right of the given corner of a rectangle in counter clockwise rotation
+
+    Args:
+        x (int): x position
+        y (int): y position
+        sizex (int): width
+        sizey (int): height
+
+    Returns:
+        tuple[int]: the right corner
+    """
     if x==0:
         return 0,sizey
     if x==sizex:
@@ -88,8 +139,19 @@ def cornerRight(x,y,sizex,sizey):
         return 0,0
     return sizex,sizey    
 
-def polyInLight(l,p,sizex,sizey):
-    phi,i,j = extremePoint(l,p)
+def polyInLight(l:Light,p:Player|Wall,sizex:int,sizey:int):
+    """The polygon of shadow from a light and a player
+
+    Args:
+        l (Light): a light
+        p (Player|Wall): a player or a wall
+        sizex (int): level width
+        sizey (int): level height
+
+    Returns:
+        list[tuple[int]]: the polygon of shadow
+    """
+    _,i,j = extremePoint(l,p)
     if p.position.x < l.position.x:
         i,j = j,i
     corners = extractCorner(p)
@@ -113,7 +175,18 @@ def polyInLight(l,p,sizex,sizey):
     shadows = poly.difference(Polygon(coord))
     return get_coordinates(shadows).tolist()
 
-def OneSource(l,listOfp,sizex,sizey):
+def OneSource(l:Light,listOfp:list[Player|Wall],sizex:int,sizey:int):
+    """The polygon of shadow from a light and a list of objects
+
+    Args:
+        l (Light): a light
+        listOfp (list[Player | Wall]): a list of objects on the level
+        sizex (int): width of level
+        sizey (int): height of level
+        
+    Returns:
+        Polygon: the polygon
+    """
     poly = Polygon()
     for p in listOfp:
         body = Polygon(extractCorner(p))
@@ -124,32 +197,89 @@ def OneSource(l,listOfp,sizex,sizey):
             print("light in")
     return(poly)
 
-def AllSources(listOfl,listOfp,sizex,sizey):
+def AllSources(listOfl:list[Light],listOfp:list[Player|Wall],sizex:int,sizey:int,listShadows:list[Polygon] = []):
+    """The polygon of shadow from a light and a list of objects
+
+    Args:
+        listOfl (list[Light]): list of lights
+        listOfp (list[Player | Wall]): list of objects on the level
+        sizex (int): width of level
+        sizey (int): height of level
+        listShadows (list, optional): list of already predetermined shadows. Defaults to [].
+        
+    Returns:
+        Polygon: the polygon
+    """
     poly = Polygon([(0,0),(0,sizey),(sizex,sizey),(sizex,0)])
-    for l in listOfl:
-        polyl = OneSource(l,listOfp,sizex,sizey)
-        poly = poly.intersection(polyl) 
+    for i in range(len(listOfl)):
+        polyl = OneSource(listOfl[i],listOfp,sizex,sizey)
+        shadesI = polyl
+        if i<len(listShadows):
+            shadesI = listShadows[i].union(polyl)
+        poly = poly.intersection(shadesI)
     return(poly)
 
-def Visible(p,listOfl,listOfp,sizex,sizey):
-    l = Light(Position(p.position.x+p.size.h/2,p.position.y+p.size.w/2)) # TODO middle rather than top left corner
-    listOfp2 = [x for x in listOfp if x!=p]
-    poly = OneSource(l,listOfp2,sizex,sizey)
-    return(poly.union(AllSources(listOfl,listOfp,sizex,sizey)))
+def Visible(p:Player|Wall,listOfl:list[Light],listOfp:list[Player|Wall],sizex:int,sizey:int,FixSources:Polygon = Polygon(),listofWall:list[Wall] = [],listShadows:list[Polygon] = []):
+    """The visible polygon for a player or a wall
 
-def isVisible(shadows,p):
+    Args:
+        p (Player | Wall): a player or a wall
+        listOfl (list[Light]): a list of light
+        listOfp (list[Player | Wall]): a list of other objects on the level
+        sizex (int): level width
+        sizey (int): level height
+        FixSources (Polygon, optional): static shadows. Defaults to Polygon().
+        listofWall (list[Wall], optional): a list of wall. Defaults to [].
+        listShadows (list[Polygon], optional): a list of polygon. Defaults to [].
+        
+    Returns:
+        Polygon: the polygon
+    """
+    l = Light(Position(p.position.x+p.size.h/2,p.position.y+p.size.w/2))
+    listOfp2 = [x for x in listOfp if x!=p]
+    poly = OneSource(l,listOfp2 + listofWall,sizex,sizey)
+    shadowsFromPlayers = AllSources(listOfl,listOfp,sizex,sizey,listShadows)
+    mobileSources = poly.union(shadowsFromPlayers)
+    return(mobileSources.union(FixSources))
+
+def isVisible(shadows:Polygon,p:Player|Wall):
+    """_summary_
+
+    Args:
+        shadows (Polygon): a polygon representing shadows
+        p (Player | Wall): an object on the level
+
+    Returns:
+        bool: is the object out of the shadow?
+    """
     body = Polygon(extractCorner(p))
     return not(shadows.contains_properly(body))
 
-def allVisiblePlayer(shadows,listOfp):
+def allVisiblePlayer(shadows:Polygon,listOfp:list[Player|Wall]):
+    """_summary_
+
+    Args:
+        shadows (Polygon): a polygon representing shadows
+        listOfp (list[Player | Wall]): a list of objects on the level
+
+    Returns:
+        list[str]: a list of the visible objects' username
+    """
     l = []
     for p in listOfp:
         if isVisible(shadows,p):
             l.append(p.username)
     return l
         
-def sendingFormat(shadows):
-    
+def sendingFormat(shadows:Polygon|MultiPolygon):
+    """Format a shadow polygon to be sent
+
+    Args:
+        shadows (Polygon|MultiPolygon): _description_
+
+    Returns:
+        str: the formatted string for the polygon
+    """
 #    if type(shadows)==type(Polygon()):
 #        listcoord = [[int(i) for i in x ] for x in get_coordinates(shadows).tolist()]
 #        return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
@@ -174,7 +304,15 @@ def sendingFormat(shadows):
         l+= [l2[0]] + endl
     return "["+str(l+endl).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
 
-def extractGeoms(poly):
+def extractGeoms(poly:Polygon):
+    """Returns the list of points
+
+    Args:
+        poly (Polygon): the polygon
+
+    Returns:
+        list[Point]: the list of points
+    """
     Geoms = []
     if type(poly)==type(Polygon()):
         Geoms.append(get_exterior_ring(poly))
@@ -191,7 +329,16 @@ def extractGeoms(poly):
     return Geoms
 
 
-def toVisible(visibleString,DEBUG):
+def toVisible(visibleString:str,DEBUG:bool):
+    """Returns a list of points from a formatted string
+
+    Args:
+        visibleString (str): the string representing the list of points
+        DEBUG (bool): a debug boolean
+
+    Returns:
+        list[list[float]]: the list of points
+    """
     try :
         visibleList = []
         

@@ -7,19 +7,16 @@ class Player:
     BASE_POSITION = common.Position()
     BASE_SIZE = common.Size()
     
-    def __init__(self, ip="", teamId=0, username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
+    def __init__(self, teamId=0, username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
 
         Args:
-            - ip (str, optional): Ip address of the player (only defined on the server side).
             - username (str): Username of the player.
             - color (tuple): Color used by the player.
             - position (tuple): Position of the player.
             - size (list): Size of the player.
         """
-        
-        # ip may be deleted from the Player class as it can now be identified using the player's socket
-        self.ip = ip
+
         self.teamId = teamId
         self.username = username
         self.color = color
@@ -28,7 +25,8 @@ class Player:
     
     
     
-    def update(self, teamId=None, color=None, position=None, size=None):
+
+    def update(self, teamId:int=None, color:common.Color=None, position:common.Position=None, size:common.Size=None):
         """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
 
         Args:
@@ -48,12 +46,12 @@ class Player:
     
     
     def toList(self):
-        """Generate the list representation of the player with the format [ip, username, color, position, size]
+        """Generate the list representation of the player with the format [username, color, position, size]
 
         Returns:
             list: extraction of the player's attributes.
         """
-        return self.teamId, self.username, self.color, self.position, self.size # without ip
+        return self.teamId, self.username, self.color, self.position, self.size
     
     
     
@@ -68,7 +66,7 @@ class Player:
 
 
 
-    def toPlayers(playersString, DEBUG=False):
+    def toPlayers(playersString:str, DEBUG=False):
         """Generate the list of players described by the playersString variable.
 
         Args:

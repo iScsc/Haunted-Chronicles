@@ -1,7 +1,6 @@
 import common
 
 
-
 def spc(string:str, strip=False):
     """Splits a given string on parenthesis and commas, taking just into acount first level parenthesis.
     For instance: "(abc,def),ghi,(jkl,(mno))" -> ["abc,def","ghi","jkl,(mno)"]
@@ -133,6 +132,7 @@ def interp(string, **kwargs):
         # specific types, uses recursivity
         elif type(kwargs[arg])==Player:
             d=interp(values[i],teamId=0, username="",color=common.Color(),position=common.Position(),size=common.Size())
+            # get rid of '' around usernames due to str(str)
             if len(d['username'])>2 and ((d['username'][0]=="'" and d['username'][-1]=="'") or (d['username'][0]=="\"" and d['username'][-1]=="\"")):
                 d['username']=d['username'][1:-1]
             kwargs[arg]=Player("",d['teamId'],d['username'],d['color'],d['position'],d['size'])
