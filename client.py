@@ -6,6 +6,7 @@ from threading import *
 from socket import *
 
 import time
+import traceback
 
 from platform import system
 
@@ -60,8 +61,10 @@ def display():
     
     pg.init()
     
+    
     PLATEFORM = system() # system name (Windows or Linux ... )
 
+    # sets screen size and scale factors
     if PLATEFORM=="Linux":
         info = pg.display.Info()
         SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
@@ -73,10 +76,15 @@ def display():
         SCREEN = pg.display.set_mode(SIZE)
     else :
         SCALE_FACTOR=1,1
+    
+    
+    # set fonts for ping and usernames
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     
+    
     clock = pg.time.Clock()
+    
     
     while CONNECTED:
         
@@ -84,7 +92,7 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
     
-        if WALL_VISIBLE:
+        if WALL_VISIBLE: # draws shades under the walls
             pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
     
     
@@ -93,9 +101,8 @@ def display():
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
         
         
-        
-        #Unvisible
-        if not(WALL_VISIBLE):
+        # Unvisible
+        if not(WALL_VISIBLE): #draw shades on top of the walls
             pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
@@ -109,8 +116,8 @@ def display():
             
             SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
         
-        #lights
-        if DEBUG:
+        # Lights
+        if DEBUG: # Draw lights where they are meant to be in the server
             pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
@@ -148,10 +155,9 @@ def game():
         
         inputs = getInputs()
         
-        
         state = send(inputs)
         
-        if (update(state)) :
+        if (update(state)) : # request failed
             requestNumber+=1
         else :
             requestNumber=0
@@ -179,7 +185,7 @@ def connect():
     
     global SIZE
     
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> END"
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
     if message!=None: messages = message.split(" ")
     else: messages=None
@@ -187,8 +193,9 @@ def connect():
     if DEBUG:
         print(message)
     
-    if (messages!=None and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+    if (messages!=None and len(messages)==10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
         
+        # get serveur default screen size
         try:
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
@@ -197,18 +204,17 @@ def connect():
             sizeStr = sizeStr.split(",")
             
             SIZE = (int(sizeStr[0]), int(sizeStr[1]))
-        except:
+        except ValueError:
             if DEBUG:
                 print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
-        beginWallIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + 3 # 3 characters 'space'
-        beginPlayerIndex = len(messages[0]) + len(messages[1]) + len(messages[2]) + len(messages[3]) + len(messages[4]) + 5 # 5 characters 'space'
-        
-        update(message[beginWallIndex : beginPlayerIndex - 1] + " END") # Walls
-        update(message[beginPlayerIndex:]) #Players and Shades
+        # set walls players and shades
+        update(messages[3] + " " + messages[4] + " " + messages[9]) # Walls
+        update(messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9]) #Players and Shades
         
         return True
+    
     # Manage failed connections
     elif messages!=None and "CONNECTED" not in messages:
         askNewPseudo(message)
@@ -222,7 +228,7 @@ def connect():
 
 
 
-def askNewPseudo(errorMessage):
+def askNewPseudo(errorMessage:str):
     """Ask for another username when connection fails to try to connect again.
 
     Args:
@@ -289,11 +295,11 @@ def send(input="INPUT " + USERNAME + " . END"):
         SOCKET.settimeout(SOCKET_TIMEOUT)
         try:
             SOCKET.connect((SERVER_IP, SERVER_PORT))
-        except:
+        except TimeoutError or ConnectionError:
+            if DEBUG:
+                traceback.print_exc()
             exitError("Connection attempt failed, retrying...")
             SOCKET=None
-            
-    
     
     # Usual behavior
     if SOCKET != None:
@@ -303,7 +309,9 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             print(input)
             SOCKET.sendall(bytes(input, "utf-16"))
-        except error:
+        except (TimeoutError, ConnectionError):
+            if DEBUG:
+                traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
             return
             
@@ -315,7 +323,9 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except error:
+        except (TimeoutError, ConnectionError):
+            if DEBUG:
+                traceback.print_exc()
             exitError("Loss connection with the remote server while receiving data.")
             return
 
@@ -326,6 +336,8 @@ def update(state="STATE [] END"):
 
     Args:
         state (str): The normalized state of the game. Defaults to "STATE [] END".
+    Returns:
+        bool: was there a problem in updating variables ?
     """
     
     global WALLS
@@ -364,6 +376,8 @@ def update(state="STATE [] END"):
     
     return True
 
+
+
 def exit():
     """Send the normalized disconnection request and then exits the game.
     """
@@ -390,7 +404,9 @@ def exit():
 
 def exitError(errorMessage="Sorry a problem occured..."):
     """Exit the game
-        Called if there has been a problem with the server"""
+        Called if there has been a problem with the server
+    Args:
+        errorMessage (str): the string to print according to the error ("Sorry a problem occured..." by default)"""
         
     global CONNECTED
     global SOCKET
