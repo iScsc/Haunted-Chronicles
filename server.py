@@ -7,6 +7,7 @@ from random import randint
 
 from threading import *
 import time
+import traceback
 
 from player import Player
 from wall import Wall
@@ -17,11 +18,13 @@ from common import *
 # ----------------------- IP -----------------------
 
 def extractingIP():
+    """The host IP"""
     s = socket(AF_INET, SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     ip = s.getsockname()[0]
     s.close()
     return(ip)
+
 
 
 # ----------------------- Constants-----------------------
@@ -49,14 +52,17 @@ WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying t
 HOST = str(IP)
 PORT = 9998
 
+# Sockets main variable
 MAINSOCKET = None
 LOCK = None
 BACKLOG = 1
 
-
+# Server managing variables
 LISTENING = True
 MANAGING = True
 STOP = False
+
+
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
@@ -94,11 +100,14 @@ dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
 dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
 dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
+# list of walls
 WALLS = []
 for key in dicoMur:
     WALLS.append(dicoMur[key])
 
+# Some static lights
 def dummyLights():
+    """Some static lights"""
     l0 = Light(Position(int(200),int(200)))
     l1 = Light(Position(int(500),int(800)))
     l2 = Light(Position(int(1500),int(500)))
@@ -113,7 +122,16 @@ t2 = time.time()
 print("time of precalculation : ",t2-t1," s")
 
 # -------------------- Processing a Request -----------------------
-def processRequest(ip, s):
+def processRequest(ip, s:str):
+    """Calls the right function according to process a request
+
+    Args:
+        ip : player IP
+        s (str): the request to process
+        
+    Returns:
+        A string representing the connection of the player and/or the state of the server or why the request was invalid
+    """
     type = typeOfRequest(s)
     if type == "CONNECT":
         return(processConnect(s))
@@ -124,7 +142,16 @@ def processRequest(ip, s):
     else :
         return("Invalid Request")
 
-def processConnect(s):
+
+def processConnect(s:str):
+    """Process a connection request
+
+    Args:
+        s (str): the connection request ("CONNECT <username> END")
+        
+    Returns:
+        A string representing the connection of the player and the state of the server or why the connection request was invalid
+    """
     pseudo = extractPseudo(s)
     if validPseudo(pseudo):
         return("This Pseudo already exists")
@@ -136,7 +163,17 @@ def processConnect(s):
         initNewPlayer(pseudo)
         return(firstConnection(pseudo))
     
-def processInput(ip, s):
+    
+def processInput(ip, s:str):
+    """Process an 'input' request
+
+    Args:
+        ip : player IP
+        s (str): the input request ("INPUT <username> <input> END")
+        
+    Returns:
+        A string representing the state of the server or why the connection request was invalid
+    """
     pseudo = extractPseudo(s)
     if not(validPseudo(pseudo)):
         return("No player of that name")
@@ -146,15 +183,25 @@ def processInput(ip, s):
     Rules(inputLetter,pseudo)
     return(states(pseudo))
 
-def processDisconnection(ip, s):
-    pseudo = extractPseudo(s)
+
+def processDisconnection(ip, s:str):
+    """Process a disconnection request
+
+    Args:
+        s (str): the disconnection request ("DISCONNECT <username> END")
+        
+    Returns:
+        "DISCONNECTED <username> END" or why the connection request was invalid
+    """
+    pseudo = extractPseudo()
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
     dicoJoueur.pop(pseudo)
     return("DISCONNECTED" + s[13:])
 
 
-def typeOfRequest(s):
+def typeOfRequest(s:str):
+    """The type of a request (CONNECT,INPUT,DISCONNECT)"""
     type = ""
     i = 0
     n = len(s)
@@ -163,7 +210,9 @@ def typeOfRequest(s):
         i+=1
     return(type)
 
-def extractPseudo(s):
+
+def extractPseudo(s:str):
+    """The pseudo of a player from a connection request"""
     pseudo = ""
     n = len(s)
     i0 = len(typeOfRequest(s)) + 1
@@ -173,16 +222,28 @@ def extractPseudo(s):
         i+=1
     return(pseudo)
 
-def extractLetter(s,pseudo):
+
+def extractLetter(s:str,pseudo:str):
+    """The input letter from the 's' input request string"""
     n = len(pseudo)
     return(s[7 + n])
 
 
-def states(pseudo):
-    player = 0
-    liste = []
-    listOfPlayer = []
+
+def states(pseudo:str):
+    """The state of the server modulo what the player can see
+
+    Args:
+        pseudo (str): player pseudo
         
+    Returns:
+        A string representing the state of the server
+    """
+    player = 0 # the player
+    liste = [] # list of player strings
+    listOfPlayer = [] # list of all players
+    
+    # gets all players
     for key in dicoJoueur:
         p =  dicoJoueur[key]
         if key == pseudo:
@@ -193,38 +254,57 @@ def states(pseudo):
     visiblePlayer = allVisiblePlayer(shadows,listOfPlayer)
     formatShadows = sendingFormat(shadows)
     
+    # gets visible player strings
     liste.append(str(player))
     for key in visiblePlayer:
         p = dicoJoueur[key]
         if key != pseudo:       
             liste.append(str(p))
 
+    # string to send back
     out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
 
     return(out)
 
+
 def walls():
+    """Formated wall string "WALLS <wallstring> END" """
     liste = []
     for key in dicoMur:
         liste.append(str(dicoMur[key]))
     out = "WALLS " + (str(liste)).replace(" ","") + " END"
     return(out)
 
-def firstConnection(pseudo):
 
+def firstConnection(pseudo:str):
+    """Formated string for first connections:
+        "CONNECTED <username> <size> WALLS <wallstring> STATE <statestring> SHADES <shadestring> END" """
     out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
     return(out)
 
-def validPseudo(pseudo):
+
+def validPseudo(pseudo:str):
+    """If the pseudo exists"""
     return(pseudo in dicoJoueur.keys())
 
-def validIp(ip, pseudo):
+
+def validIp(ip, pseudo:str):
+    """If the pseudo and a socket with the ip exist and they are associated"""
     return (pseudo in dicoJoueur.keys() and pseudo in dicoSocket.keys() and dicoSocket[pseudo][1][0] == str(ip))
+
 
 
 # ----------------------- Games Rules -----------------------
 
-def Rules(inputLetter,pseudo):
+def Rules(inputLetter:str,pseudo:str):
+    """Process an input for a player
+
+    Args:
+        inputLetter (char): input letter
+        pseudo (str): player pseudo
+    Returns:
+        "Invalid Input" if the input did not respect the rules, else None
+    """
     _, _, position1, size1 = dicoJoueur[pseudo].toList()
     x,y=position1.x,position1.y
 
@@ -247,16 +327,41 @@ def Rules(inputLetter,pseudo):
             return("Invalid Input")
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
-    return()
+    return
 
-def correctPosition(pseudo, x,y,dx,dy):
+
+def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
+    """If a position is inside the level boundaries and does not overlap walls or other players
+
+    Args:
+        pseudo (str): player pseudo
+        x (int): player x position
+        y (int): player y position
+        dx (int): player width
+        dy (int): player height
+
+    Returns:
+        bool: is the position valid for player 'pseudo'?
+    """
     correctX = (x>=0) and (x+dx <= SIZE_X)
     correctY = (y>=0) and (y+dy <= SIZE_Y)
     
     return correctX and correctY and not collision(pseudo, x, y, dx, dy)
 
-def collision(pseudo, x, y ,dx ,dy):
-    
+
+def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
+    """If a position does not overlap walls or other players
+
+    Args:
+        pseudo (str): player pseudo
+        x (int): player x position
+        y (int): player y position
+        dx (int): player width
+        dy (int): player height
+
+    Returns:
+        bool: is the position not making player 'pseudo' overlap walls or other?
+    """
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
@@ -279,7 +384,12 @@ def collision(pseudo, x, y ,dx ,dy):
 # ----------------------- Init of a new Player -----------------------
 
 
-def initNewPlayer(pseudo):
+def initNewPlayer(pseudo:str):
+    """Creates a new player 'pseudo'
+
+    Args:
+        pseudo (str): the player pseudo
+    """
     dx,dy = sizeNewPlayer()
     
     x,y = positionNewPlayer(dx, dy)
@@ -290,19 +400,27 @@ def initNewPlayer(pseudo):
     color = colorNewPlayer()
     dicoJoueur[pseudo] = Player(pseudo, color, Position(x,y), Size(dx,dy))
 
+
 def sizeNewPlayer():
+    """A size for a new player (fixed)"""
     return PLAYER_SIZE
 
-def positionNewPlayer(dx, dy):
+
+def positionNewPlayer(dx:int, dy:int):
+    """A position for a new player (random)"""
     return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
+
 def colorNewPlayer():
+    """A color for a new player (random)"""
     return Color(randint(1,255),randint(1,255),randint(1,255))
 
 
 
 # ----------------------- Threads -----------------------
+
 def manage_server():
+    """Manage console inputs"""
     global STOP
     global LISTENING
     global MANAGING
@@ -317,7 +435,9 @@ def manage_server():
                 print("STOP = ", STOP)
                 try:
                     MAINSOCKET.shutdown(SHUT_RDWR)
-                except error:
+                except ConnectionError:
+                    if DEBUG:
+                        traceback.print_exc()
                     print("MAINSOCKET could not be shutdown")
                 MAINSOCKET.close()
                 
@@ -326,7 +446,9 @@ def manage_server():
                 for username, (sock,addr) in dicoSocket.items():
                     try:
                         sock.shutdown(SHUT_RDWR)
-                    except error:
+                    except ConnectionError:
+                        if DEBUG:
+                            traceback.print_exc()
                         print("Player " + username + "'s socket could not be shutdown.")
                     sock.close()
                 
@@ -352,6 +474,7 @@ def manage_server():
                 print("MANAGING = ", MANAGING)
                 
 def listen_new():
+    """Manage first connections and connection request"""
     global STOP
     global LISTENING
     
@@ -385,14 +508,20 @@ def listen_new():
                         
                         try:
                             sock.sendall(bytes(out,'utf-16'))
-                        except error:
+                        except (TimeoutError,ConnectionError):
+                            if DEBUG:
+                                traceback.print_exc()
                             print("New connection from " + str(in_ip) + " failed!")
-                    except error:
+                    except (TimeoutError,ConnectionError):
+                        if DEBUG:
+                            traceback.print_exc()
                         print("New connection from " + str(in_ip) + " failed!")
                 
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
-            except error:
+            except (TimeoutError,ConnectionError):
+                if DEBUG:
+                    traceback.print_exc()
                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
             
             time.sleep(WAITING_TIME)
@@ -400,6 +529,7 @@ def listen_new():
         time.sleep(WAITING_TIME)
 
 def listen_old():
+    """Manage already connected sockets and inputs or disconnection request"""
     global STOP
     global MANAGING
     
@@ -445,10 +575,14 @@ def listen_old():
                         print(">>> ",out,"\n")
                     try:
                         sock.sendall(bytes(out,'utf-16'))
-                    except error:
+                    except (TimeoutError,ConnectionError):
+                        if DEBUG:
+                            traceback.print_exc()
                         print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                         waitingDisconnectionList.append((username, sock, addr))
-                except error:
+                except (TimeoutError,ConnectionError):
+                    if DEBUG:
+                        traceback.print_exc()
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
@@ -461,6 +595,8 @@ def listen_old():
 
 # ----------------------- Main -----------------------
 def main():
+    """Main function launching the parallel threads to manage the different aspects of the server.
+    """
     global MAINSOCKET
     global LOCK
     
