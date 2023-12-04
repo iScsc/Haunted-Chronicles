@@ -3,7 +3,7 @@ from player import Player
 from light import Light
 from wall import Wall
 from numpy import angle
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, MultiPolygon
 from shapely import get_coordinates, get_interior_ring,get_exterior_ring
 import interpretor
 from common import *
@@ -287,9 +287,9 @@ def sendingFormat(shadows:Polygon|MultiPolygon):
     Returns:
         str: the formatted string for the polygon
     """
-#    if type(shadows)==type(Polygon()):
-#        listcoord = [[int(i) for i in x ] for x in get_coordinates(shadows).tolist()]
-#        return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+    #if type(shadows)==type(Polygon()):
+    #    listcoord = [[int(i) for i in x ] for x in get_coordinates(shadows).tolist()]
+    #    return "["+str(listcoord).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
     l = []
     endl = []
     startNotFound =True
