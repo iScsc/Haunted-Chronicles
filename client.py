@@ -456,16 +456,16 @@ def exit():
     
     t = time.time()
     while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
-        requestNumber+=1
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
+            CONNECTED = False
+            SOCKET.close()
+            SOCKET = None
             break
+        requestNumber+=1
     
     if requestNumber>=MAX_REQUESTS:
         exitError("Max number of request has been passed for disconnection!")
-    
-    CONNECTED = False
-    SOCKET.close()
-    SOCKET = None
+
 
 def exitError(errorMessage="Sorry a problem occured..."):
     """Exit the game

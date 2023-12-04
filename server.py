@@ -269,7 +269,6 @@ def states(pseudo:str):
     
     if not LOBBY:
         if not DEAD[pseudo]:
-            listOfLights = dummyLights()
             
             shadows = Visible(player, LIGHTS, listOfAlivePlayers, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
             visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
@@ -282,7 +281,7 @@ def states(pseudo:str):
                 if key != pseudo:
                     liste.append(str(p))
 
-            out = "STATE "+(str(liste)).replace(" ","")+" SHADES " + formatShadows + " END"
+            out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
 
             return(out)
         else:            
