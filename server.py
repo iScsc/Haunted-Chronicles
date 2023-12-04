@@ -205,11 +205,7 @@ def processDisconnection(ip, s:str):
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
-    id, _, _, _, _ = dicoJoueur[pseudo].toList()
-    dicoJoueur.pop(pseudo)
-    READY.pop(pseudo)
-    DEAD.pop(pseudo)
-    return("DISCONNECTED" + s[13:])
+    return("DISCONNECTED " + pseudo + " END")
 
 
 def typeOfRequest(s:str):
@@ -640,16 +636,12 @@ def listen_old():
             
             for elt in waitingDisconnectionList:
                 username, sock, addr = elt[0], elt[1], elt[2]
-                dicoSocket.pop(username)
                 
-                # deco remaining player with same ip if needed.
-                for username in dicoJoueur:
-                    if dicoJoueur[username].ip == addr[0]:
-                        id, _, _, _, _ = dicoJoueur[username].toList()
-                        dicoJoueur.pop(username)
-                        READY.pop(username)
-                        DEAD.pop(username)
-                        break
+                if username in dicoSocket and dicoSocket[username] == (sock, addr):
+                    dicoSocket.pop(username)
+                    dicoJoueur.pop(username)
+                    READY.pop(username)
+                    DEAD.pop(username)
                 
                 sock.close()
             waitingDisconnectionList = []
