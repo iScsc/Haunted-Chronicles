@@ -202,7 +202,7 @@ def processDisconnection(ip, s:str):
     Returns:
         "DISCONNECTED <username> END" or why the connection request was invalid
     """
-    pseudo = extractPseudo()
+    pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
     id, _, _, _, _ = dicoJoueur[pseudo].toList()
@@ -252,7 +252,7 @@ def states(pseudo:str):
     """
     player = 0 # the player
     liste = [] # list of player strings
-    listOfPlayer = [] # list of all players
+    listOfPlayers = [] # list of all players
     listOfAlivePlayers = [] # list of players that have not been caught yet
     
     out="" # string to send back
@@ -265,9 +265,6 @@ def states(pseudo:str):
         listOfPlayers.append(p)
         if not DEAD[key]:
             listOfAlivePlayers.append(p)
-        
-    for key in dicoMur:
-        listOfWalls.append(dicoMur[key])
     
     
     if not LOBBY:
@@ -285,7 +282,7 @@ def states(pseudo:str):
                 if key != pseudo:
                     liste.append(str(p))
 
-            out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatshadows+" END"
+            out = "STATE "+(str(liste)).replace(" ","")+" SHADES " + formatShadows + " END"
 
             return(out)
         else:            
@@ -393,7 +390,7 @@ def Rules(inputLetter:str,pseudo:str):
 
 
 def checkReady():
-"""Are all players ready?"""
+    """Are all players ready?"""
     for pseudo in READY:
         if not READY[pseudo]:
             return False
@@ -402,7 +399,7 @@ def checkReady():
 
   
 def launchGame(ready):
-  """Exit lobby"""
+    """Exit lobby"""
     global LOBBY
     
     if ready:
