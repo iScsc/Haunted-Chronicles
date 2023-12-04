@@ -534,7 +534,7 @@ def manage_server():
                 print("STOP = ", STOP)
                 try:
                     MAINSOCKET.shutdown(SHUT_RDWR)
-                except ConnectionError:
+                except (ConnectionError, OSError):
                     if DEBUG:
                         traceback.print_exc()
                     print("MAINSOCKET could not be shutdown")
@@ -545,7 +545,7 @@ def manage_server():
                 for username, (sock,addr) in dicoSocket.items():
                     try:
                         sock.shutdown(SHUT_RDWR)
-                    except ConnectionError:
+                    except (ConnectionError, OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("Player " + username + "'s socket could not be shutdown.")
