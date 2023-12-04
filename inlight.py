@@ -3,9 +3,8 @@ from player import Player
 from light import Light
 from wall import Wall
 from numpy import angle
-from shapely.geometry import Polygon, Point, MultiPolygon
+from shapely.geometry import Polygon, Point
 from shapely import get_coordinates, get_interior_ring,get_exterior_ring
-import time
 import interpretor
 from common import *
 
@@ -21,10 +20,10 @@ def extractCorner(p:Player|Wall):
     """
     x,y = p.position.x, p.position.y
     dx,dy = p.size.w, p.size.h
-    BD = (x+dx,y+dy)
-    BG = (x,y+dy)
-    HG = (x,y)
-    HD = (x+dx,y)
+    BD = (x+dx,y+dy) # Corner down right
+    BG = (x,y+dy) # Corner down left
+    HG = (x,y) # Corner up left
+    HD = (x+dx,y) # Corner up right
     return [BD,BG,HG,HD]
 
 def extremePoint(l:Light,p:Player|Wall):
@@ -193,8 +192,8 @@ def OneSource(l:Light,listOfp:list[Player|Wall],sizex:int,sizey:int):
         if not(body.contains(Point(l.position.x,l.position.y))):           
             polyp = Polygon(polyInLight(l,p,sizex,sizey))
             poly = poly.union(polyp)
-        else :
-            print("light in")
+        # else :
+        #     print("light is inside an object")
     return(poly)
 
 def AllSources(listOfl:list[Light],listOfp:list[Player|Wall],sizex:int,sizey:int,listShadows:list[Polygon] = []):
@@ -240,7 +239,15 @@ def Visible(p:Player|Wall,listOfl:list[Light],listOfp:list[Player|Wall],sizex:in
     poly = OneSource(l,listOfp2 + listofWall,sizex,sizey)
     shadowsFromPlayers = AllSources(listOfl,listOfp,sizex,sizey,listShadows)
     mobileSources = poly.union(shadowsFromPlayers)
-    return(mobileSources.union(FixSources))
+    
+    x,y = p.position.x-10, p.position.y-10
+    dx,dy = p.size.w+20, p.size.h+20
+    BD = (x+dx,y+dy)
+    BG = (x,y+dy)
+    HG = (x,y)
+    HD = (x+dx,y)
+    proximity = Polygon([BD,BG,HG,HD])
+    return(mobileSources.union(FixSources).difference(proximity))
 
 def isVisible(shadows:Polygon,p:Player|Wall):
     """_summary_
