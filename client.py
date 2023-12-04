@@ -146,7 +146,6 @@ def display():
                 if(player.teamId == BLUE_TEAM):
                     usernamePosition = SIZE[0]-usernameSize[0]
                 
-                print(player.username, readyPlayers)
                 if(player.username in readyPlayers):
                     font_color = READY_LOBBY_COLOR
 
@@ -358,7 +357,8 @@ def send(input="INPUT " + USERNAME + " . END"):
 
         # send data
         try:
-            print(input)
+            if DEBUG:
+                print(input)
             SOCKET.sendall(bytes(input, "utf-16"))
         except (TimeoutError, ConnectionError):
             if DEBUG:
@@ -369,7 +369,8 @@ def send(input="INPUT " + USERNAME + " . END"):
         # receive answer
         try:
             answer = str(SOCKET.recv(1024*16), "utf-16")
-            print(answer)
+            if DEBUG:
+                print(answer)
              
             PING = int((time.time() - t) * 1000)
             
