@@ -530,7 +530,7 @@ def manage_server():
                 print("STOP = ", STOP)
                 try:
                     MAINSOCKET.shutdown(SHUT_RDWR)
-                except ConnectionError:
+                except (OSError):
                     if DEBUG:
                         traceback.print_exc()
                     print("MAINSOCKET could not be shutdown")
@@ -541,7 +541,7 @@ def manage_server():
                 for username, (sock,addr) in dicoSocket.items():
                     try:
                         sock.shutdown(SHUT_RDWR)
-                    except ConnectionError:
+                    except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("Player " + username + "'s socket could not be shutdown.")
@@ -603,11 +603,11 @@ def listen_new():
                         
                         try:
                             sock.sendall(bytes(out,'utf-16'))
-                        except (TimeoutError,ConnectionError):
+                        except (OSError):
                             if DEBUG:
                                 traceback.print_exc()
                             print("New connection from " + str(in_ip) + " failed!")
-                    except (TimeoutError,ConnectionError):
+                    except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("New connection from " + str(in_ip) + " failed!")
@@ -615,7 +615,7 @@ def listen_new():
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
 
-            except (TimeoutError,ConnectionError):
+            except (OSError):
                 if DEBUG:
                     traceback.print_exc()
                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
@@ -672,12 +672,12 @@ def listen_old():
                         print(">>> ",out,"\n")
                     try:
                         sock.sendall(bytes(out,'utf-16'))
-                    except (TimeoutError,ConnectionError):
+                    except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                         waitingDisconnectionList.append((username, sock, addr))
-                except (TimeoutError,ConnectionError):
+                except (OSError):
                     if DEBUG:
                         traceback.print_exc()
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")

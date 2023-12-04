@@ -360,7 +360,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             if DEBUG:
                 print(input)
             SOCKET.sendall(bytes(input, "utf-16"))
-        except (TimeoutError, ConnectionError):
+        except (OSError):
             if DEBUG:
                 traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
@@ -375,7 +375,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except (TimeoutError, ConnectionError):
+        except (OSError):
             if DEBUG:
                 traceback.print_exc()
             exitError("Loss connection with the remote server while receiving data.")
