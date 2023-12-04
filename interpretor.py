@@ -20,7 +20,6 @@ def spc(string:str, strip=False):
     indexo=0 #index of the last opening parenthesis found
     indexf=0 #index of the last closing parenthesis found
     
-    print("string =", string)
     forbidden_char = ["[", "]", "'", '"']
     
     if strip:
