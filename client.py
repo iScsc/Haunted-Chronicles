@@ -18,7 +18,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -233,7 +233,7 @@ def connect():
     else: messages=None
     
     if DEBUG:
-        print(message)
+        print("messages: ", messages)
     
     if (messages!=None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
         
@@ -358,7 +358,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         # send data
         try:
             if DEBUG:
-                print(input)
+                print("input: ",input)
             SOCKET.sendall(bytes(input, "utf-16"))
         except (OSError):
             if DEBUG:
@@ -370,7 +370,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             answer = str(SOCKET.recv(1024*16), "utf-16")
             if DEBUG:
-                print(answer)
+                print("answer: ",answer)
              
             PING = int((time.time() - t) * 1000)
             
