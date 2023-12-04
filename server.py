@@ -396,9 +396,11 @@ def checkReady():
 def launchGame(ready):
     """Exit lobby"""
     global LOBBY
+    global LISTENING
     
     if ready:
         LOBBY = False
+        LISTENING = False
 
         
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
