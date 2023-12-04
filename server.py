@@ -162,12 +162,13 @@ def processConnect(s:str):
         A string representing the connection of the player and the state of the server or why the connection request was invalid
     """
     pseudo = extractPseudo(s)
+    
     if validPseudo(pseudo):
         return("This Pseudo already exists")
     elif len(pseudo)>SIZE_MAX_PSEUDO:
         return("Your pseudo is too big !")
-    elif " " in pseudo:
-        return("Don't use ' ' in your pseudo !")
+    elif [c for c in pseudo if c in [" ", ",", "(", ")"]] != []:
+        return("Don't use ' ' or ',' or '(' or ')' in your pseudo !")
     else :
         initNewPlayer(pseudo)
         return(firstConnection(pseudo))
@@ -222,12 +223,19 @@ def typeOfRequest(s:str):
 def extractPseudo(s:str):
     """The pseudo of a player from a connection request"""
     pseudo = ""
-    n = len(s)
-    i0 = len(typeOfRequest(s)) + 1
-    i = i0
-    while i<n and s[i]!=" ":
-        pseudo+=s[i]
-        i+=1
+    parts = s.split(" ")
+    
+    if parts[0] == "CONNECT":
+        i = 1
+        
+        while parts[i] != "END" and i < len(parts) - 1:
+            pseudo += parts[i] + " "
+            i+=1
+        
+        pseudo = pseudo[:-1]
+    else:
+        pseudo = parts[1]
+    
     return(pseudo)
 
   
