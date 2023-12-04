@@ -340,6 +340,7 @@ def update(state="STATE [] END"):
         bool: was there a problem in updating variables ?
     """
     
+    
     global WALLS
     global PLAYERS
     global UNVISIBLE
@@ -351,7 +352,9 @@ def update(state="STATE [] END"):
     messages = state.split(" ")
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
+        
         players = Player.toPlayers(messages[1],DEBUG)
+        
         if (players != None):
             PLAYERS=players
             return False

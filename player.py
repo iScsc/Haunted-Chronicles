@@ -75,7 +75,7 @@ class Player:
         """
         try :
             playersList = []
-            
+
             string=interpretor.spc(playersString)
             
             for s in string:
