@@ -161,6 +161,10 @@ def processConnect(s:str):
     Returns:
         A string representing the connection of the player and the state of the server or why the connection request was invalid
     """
+
+    if not LOBBY:
+        return("The game has already started")
+
     pseudo = extractPseudo(s)
     
     if validPseudo(pseudo):
@@ -388,7 +392,7 @@ def Rules(inputLetter:str,pseudo:str):
         dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
-    launchGame(checkReady())
+    switchGameState(checkReady())
     return
 
 
@@ -401,14 +405,11 @@ def checkReady():
     return True
 
   
-def launchGame(ready):
+def switchGameState(ready):
     """Exit lobby"""
     global LOBBY
-    global LISTENING
     
-    if ready:
-        LOBBY = False
-        LISTENING = False
+    LOBBY=not ready
 
         
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
@@ -577,6 +578,8 @@ def manage_server():
                 print("STOP = ", STOP)
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
+                print("LOBBY = ", LOBBY)
+                
                 
 def listen_new():
     """Manage first connections and connection request"""
@@ -593,7 +596,7 @@ def listen_new():
                     try:
                         data = sock.recv(1024).strip()
                         
-                        in_data = str(data,'utf-16')
+                        in_data = str(data,'utf-8')
                         
                         if DEBUG:
                             print("{} wrote:".format(in_ip))
@@ -612,7 +615,7 @@ def listen_new():
                             print(">>> ",out,"\n")
                         
                         try:
-                            sock.sendall(bytes(out,'utf-16'))
+                            sock.sendall(bytes(out,'utf-8'))
                         except (OSError):
                             if DEBUG:
                                 traceback.print_exc()
@@ -633,6 +636,7 @@ def listen_new():
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
+        
 
 def listen_old():
     """Manage already connected sockets and inputs or disconnection request"""
@@ -664,8 +668,8 @@ def listen_old():
                     data = sock.recv(1024).strip()
                     
                     in_ip = addr[0]
-                    
-                    in_data = str(data,'utf-16')
+
+                    in_data = str(data,'utf-8')
                     
                     if DEBUG:
                         print("Player {} with ip {} wrote:".format(username, in_ip))
@@ -681,7 +685,7 @@ def listen_old():
                     if DEBUG:
                         print(">>> ",out,"\n")
                     try:
-                        sock.sendall(bytes(out,'utf-16'))
+                        sock.sendall(bytes(out,'utf-8'))
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()
@@ -694,6 +698,9 @@ def listen_old():
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             
+            if not LOBBY and len(dicoSocket.keys())==0:
+                switchGameState(False)  
+                  
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)

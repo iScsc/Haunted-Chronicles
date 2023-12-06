@@ -88,9 +88,10 @@ def display():
     global SCALE_FACTOR
     global SIZE
     
+
     global TEAMS
     global TEAMS_FINAL_POSITIONS
-    
+
     pg.init()
     
     
@@ -101,6 +102,7 @@ def display():
         info = pg.display.Info()
         SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
         SCREEN = pg.display.set_mode((0,0),pg.FULLSCREEN)
+        SIZE=SCREEN.get_size()
     elif PLATEFORM=="Windows":
         info = pg.display.Info()
         SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
@@ -123,7 +125,7 @@ def display():
         baseHeight = TEAM_DISPLAY_HEIGHT + teamSize[1]
         
         TEAMS_TEXTS[id] = pg.font.Font.render(teamFont, TEAMS_NAMES[id], False, TEAMS_COLOR[id].color)
-        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] * SCALE_FACTOR[0] - teamSize[0]) / 2 * TEAMS_POSITIONS[id]
+        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] - teamSize[0]) / 2 * TEAMS_POSITIONS[id]
     
     
     clock = pg.time.Clock()
@@ -135,11 +137,10 @@ def display():
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
 
-
         if not LOBBY and WALL_VISIBLE and len(UNVISIBLE) > 2: # draws shades under the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
 
-
+            
         # Walls
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
@@ -148,6 +149,7 @@ def display():
         #Unvisible
         if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2: #draw shades on top of the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+            
         
         # Teams display
         if LOBBY:
@@ -155,6 +157,7 @@ def display():
                 SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
             
             TEAMS = {0 : [], 1 : [], 2 : []}
+        
         
         # Players
         for player in PLAYERS:
@@ -171,9 +174,9 @@ def display():
                     TEAMS[player.teamId].append(player)
                     h = baseHeight + (len(TEAMS[player.teamId]) - 1) * usernameSize[1]
                 
-                usernamePosition = (SIZE[0] * SCALE_FACTOR[0] - usernameSize[0]) / 2
+                usernamePosition = (SIZE[0] - usernameSize[0]) / 2
                 if player.teamId in TEAMS_POSITIONS:
-                    usernamePosition = (SIZE[0] * SCALE_FACTOR[0] - usernameSize[0]) / 2 * TEAMS_POSITIONS[player.teamId]
+                    usernamePosition = (SIZE[0] - usernameSize[0]) / 2 * TEAMS_POSITIONS[player.teamId]
                 
                 font_color = DEFAULT_LOBBY_COLOR
                 
@@ -184,14 +187,12 @@ def display():
                 SCREEN.blit(usernameSurface, (usernamePosition, h))
         
         
-        
-        
         # Lights
         if DEBUG: # Draw lights where they are meant to be in the server
-            pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
-            pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
-            pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
-        
+            pg.draw.rect(SCREEN, (255,255,0), [200*SCALE_FACTOR[0], 200*SCALE_FACTOR[1], 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [500*SCALE_FACTOR[0], 800*SCALE_FACTOR[1], 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [1500*SCALE_FACTOR[0], 500*SCALE_FACTOR[1], 10, 10])
+ 
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
@@ -380,7 +381,7 @@ def send(input="INPUT " + USERNAME + " . END"):
                 traceback.print_exc()
             exitError("Connection attempt failed, retrying...")
             SOCKET=None
-    
+            
     # Usual behavior
     if SOCKET != None:
         t = time.time()
@@ -389,7 +390,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             if DEBUG:
                 print("input: ",input)
-            SOCKET.sendall(bytes(input, "utf-16"))
+            SOCKET.sendall(bytes(input, "utf-8"))
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
@@ -398,7 +399,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             
         # receive answer
         try:
-            answer = str(SOCKET.recv(1024*16), "utf-16")
+            answer = str(SOCKET.recv(1024*16), "utf-8")
             if DEBUG:
                 print("answer: ",answer)
              
@@ -421,14 +422,13 @@ def update(state="STATE [] END"):
     Returns:
         bool: was there a problem in updating variables ?
     """
-    
-    
+        
     global WALLS
     global PLAYERS
     global UNVISIBLE
     global readyPlayers
     global LOBBY
-    
+
     if state == None or type(state) != str or state == "":
         return False
     
