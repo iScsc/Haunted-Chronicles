@@ -12,6 +12,8 @@ from platform import system
 
 from player import Player
 from wall import Wall
+from common import *
+from interpretor import *
 from inlight import toVisible
 
 # ----------------------- Variables -----------------------
@@ -30,6 +32,14 @@ SIZE = None
 SCALE_FACTOR = None
 SCREEN = None
 
+WHITE = Color(255, 255, 255)
+BLACK = Color(0, 0, 0)
+RED = Color(255, 0, 0)
+GREEN = Color(0, 255, 0)
+BLUE = Color(0, 0, 255)
+
+BACKGROUND_COLOR = Color(75, 75, 75)
+
 FONT = "Arial" # Font used to display texts
 FONT_SIZE_USERNAME = 25
 FONT_SIZE_PING = 12
@@ -46,7 +56,26 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 
+LOBBY = True
+readyPlayers = []
+DEFAULT_LOBBY_COLOR = WHITE
+READY_LOBBY_COLOR = GREEN
+
+# Teams display
+TEAM_DISPLAY_HEIGHT = 100
+TEAMS_NAMES = {0 : "Not assigned (press 'N' to join)",
+               1 : "Seekers (press 'R' to join)",
+               2 : "Hidders (press 'B' to join)"}
+TEAMS = {0 : [], 1 : [], 2 : []}
+TEAMS_COLOR = {0 : WHITE, 1 : RED, 2 : BLUE}
+FONT_SIZE_TEAMS = 30
+
+TEAMS_POSITIONS = {0 : 1, 1 : 0, 2 : 2}
+TEAMS_FINAL_POSITIONS = {0 : None, 1 : None, 2 : None}
+TEAMS_TEXTS = {0 : None, 1 : None, 2 : None}
+
 WALL_VISIBLE = True
+
 
 # ----------------------- Threads -----------------------
 
@@ -58,6 +87,9 @@ def display():
     global PLAYERS
     global SCALE_FACTOR
     global SIZE
+    
+    global TEAMS
+    global TEAMS_FINAL_POSITIONS
     
     pg.init()
     
@@ -78,9 +110,20 @@ def display():
         SCALE_FACTOR=1,1
     
     
-    # set fonts for ping and usernames
+    # set fonts for ping, teams and usernames
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
+    teamFont = pg.font.SysFont(FONT, FONT_SIZE_TEAMS)
+    
+    # set teams display parameters
+    baseHeight = TEAM_DISPLAY_HEIGHT
+    for id in TEAMS_TEXTS:
+        teamSize = pg.font.Font.size(teamFont, TEAMS_NAMES[id])
+        
+        baseHeight = TEAM_DISPLAY_HEIGHT + teamSize[1]
+        
+        TEAMS_TEXTS[id] = pg.font.Font.render(teamFont, TEAMS_NAMES[id], False, TEAMS_COLOR[id].color)
+        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] * SCALE_FACTOR[0] - teamSize[0]) / 2 * TEAMS_POSITIONS[id]
     
     
     clock = pg.time.Clock()
@@ -88,23 +131,30 @@ def display():
     
     while CONNECTED:
         
-        SCREEN.fill((100, 100, 100))  # May need to be custom
+        SCREEN.fill(BACKGROUND_COLOR.color)  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
-    
-        if WALL_VISIBLE: # draws shades under the walls
-            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
-    
-    
+
+
+        if not LOBBY and WALL_VISIBLE and len(UNVISIBLE) > 2: # draws shades under the walls
+            pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+
+
         # Walls
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
         
+
+        #Unvisible
+        if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2: #draw shades on top of the walls
+            pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
-        # Unvisible
-        if not(WALL_VISIBLE): #draw shades on top of the walls
-            pg.draw.polygon(SCREEN, (0,0,0), [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
-        
+        # Teams display
+        if LOBBY:
+            for id in TEAMS_NAMES:
+                SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
+            
+            TEAMS = {0 : [], 1 : [], 2 : []}
         
         # Players
         for player in PLAYERS:
@@ -114,19 +164,39 @@ def display():
             usernameSize = pg.font.Font.size(usernameFont, usernameText)
             usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, player.color.color)
             
-            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))
+            SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))            
+            if(LOBBY):
+                h = baseHeight
+                if player.teamId in TEAMS:
+                    TEAMS[player.teamId].append(player)
+                    h = baseHeight + (len(TEAMS[player.teamId]) - 1) * usernameSize[1]
+                
+                usernamePosition = (SIZE[0] * SCALE_FACTOR[0] - usernameSize[0]) / 2
+                if player.teamId in TEAMS_POSITIONS:
+                    usernamePosition = (SIZE[0] * SCALE_FACTOR[0] - usernameSize[0]) / 2 * TEAMS_POSITIONS[player.teamId]
+                
+                font_color = DEFAULT_LOBBY_COLOR
+                
+                if(player.username in readyPlayers):
+                    font_color = READY_LOBBY_COLOR
+
+                usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, font_color.color)
+                SCREEN.blit(usernameSurface, (usernamePosition, h))
+        
+        
+        
         
         # Lights
         if DEBUG: # Draw lights where they are meant to be in the server
             pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
- 
+        
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
         
-        pingSurface = pg.font.Font.render(pingFont, pingText, False, (255, 255, 255))
+        pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE.color)
         
         SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
         
@@ -146,6 +216,8 @@ def game():
     global SERVER_IP
     global SERVER_PORT
     global SOCKET
+    global LOBBY
+    
     
     requestNumber=0
     
@@ -191,9 +263,9 @@ def connect():
     else: messages=None
     
     if DEBUG:
-        print(message)
+        print("messages: ", messages)
     
-    if (messages!=None and len(messages)==10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "STATE" and messages[7] == "SHADES" and messages[9] == "END"):
+    if (messages!=None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
         
         # get serveur default screen size
         try:
@@ -262,15 +334,23 @@ def getInputs():
     for event in events:
         if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
             exit()
+        elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+            return "INPUT " + USERNAME + " READY END"
     
     if keys[pg.K_LEFT] or keys[pg.K_q]:
-        return "INPUT " + USERNAME + " L END"
+        return "INPUT " + USERNAME + " LEFT END"
     elif keys[pg.K_RIGHT] or keys[pg.K_d]:
-        return "INPUT " + USERNAME + " R END"
+        return "INPUT " + USERNAME + " RIGHT END"
     elif keys[pg.K_UP] or keys[pg.K_z]:
-        return "INPUT " + USERNAME + " U END"
+        return "INPUT " + USERNAME + " UP END"
     elif keys[pg.K_DOWN] or keys[pg.K_s]:
-        return "INPUT " + USERNAME + " D END"
+        return "INPUT " + USERNAME + " DOWN END"
+    elif keys[pg.K_r]:
+        return "INPUT " + USERNAME + " RED END"
+    elif keys[pg.K_b]:
+        return "INPUT " + USERNAME + " BLUE END"
+    elif keys[pg.K_n]:
+        return "INPUT " + USERNAME + " NEUTRAL END"
     
     return "INPUT " + USERNAME + " . END"
 
@@ -307,9 +387,10 @@ def send(input="INPUT " + USERNAME + " . END"):
 
         # send data
         try:
-            print(input)
+            if DEBUG:
+                print("input: ",input)
             SOCKET.sendall(bytes(input, "utf-16"))
-        except (TimeoutError, ConnectionError):
+        except (OSError):
             if DEBUG:
                 traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
@@ -318,12 +399,13 @@ def send(input="INPUT " + USERNAME + " . END"):
         # receive answer
         try:
             answer = str(SOCKET.recv(1024*16), "utf-16")
-            print(answer)
+            if DEBUG:
+                print("answer: ",answer)
              
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except (TimeoutError, ConnectionError):
+        except (OSError):
             if DEBUG:
                 traceback.print_exc()
             exitError("Loss connection with the remote server while receiving data.")
@@ -344,9 +426,10 @@ def update(state="STATE [] END"):
     global WALLS
     global PLAYERS
     global UNVISIBLE
-
+    global readyPlayers
+    global LOBBY
     
-    if type(state) != str or state == "":
+    if state == None or type(state) != str or state == "":
         return False
     
     messages = state.split(" ")
@@ -374,7 +457,17 @@ def update(state="STATE [] END"):
             return False
         else: return True
         
-    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4]=="END":
+    elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
+        readyPlayers = interp(messages[1], list=["", 0])["list"]
+        LOBBY = True
+        return False
+        
+    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4] == "END":
+        LOBBY = False
+        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
+    
+    elif len(messages) == 5 and messages[0] == "LOBBY" and messages[2] == "STATE" and messages[4] == "END":
+        LOBBY = True
         return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
     
     return True
@@ -394,16 +487,16 @@ def exit():
     
     t = time.time()
     while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
-        requestNumber+=1
         if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
+            CONNECTED = False
+            SOCKET.close()
+            SOCKET = None
             break
+        requestNumber+=1
     
     if requestNumber>=MAX_REQUESTS:
         exitError("Max number of request has been passed for disconnection!")
-    
-    CONNECTED = False
-    SOCKET.close()
-    SOCKET = None
+
 
 def exitError(errorMessage="Sorry a problem occured..."):
     """Exit the game

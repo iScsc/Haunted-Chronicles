@@ -35,8 +35,9 @@ SIZE_X = int(1920 * .9)
 SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
-STEP_X = 3
-STEP_Y = 3
+# Movements speeds differ depending on the player's team
+STEP_X = [10, 3, 5]
+STEP_Y = [10, 3, 5]
 
 # Server
 IP = extractingIP()
@@ -44,7 +45,7 @@ IP = extractingIP()
 # Player
 SIZE_MAX_PSEUDO = 10
 
-PLAYER_SIZE = (20, 20)
+PLAYER_SIZE = Size(20, 20)
 
 # Maybe not mandatory
 WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
@@ -62,7 +63,15 @@ LISTENING = True
 MANAGING = True
 STOP = False
 
+### Game
+# Lobby
+LOBBY = True
 
+TEAMSID = {0 : "Not assigned", 1 : "Seekers", 2 : "Hidders"}
+READY = {}
+
+# In-game
+DEAD = {}
 
 # ----------------------- Variables -----------------------
 dicoJoueur = {} # Store players' Player structure
@@ -153,12 +162,13 @@ def processConnect(s:str):
         A string representing the connection of the player and the state of the server or why the connection request was invalid
     """
     pseudo = extractPseudo(s)
+    
     if validPseudo(pseudo):
         return("This Pseudo already exists")
     elif len(pseudo)>SIZE_MAX_PSEUDO:
         return("Your pseudo is too big !")
-    elif " " in pseudo:
-        return("Don't use ' ' in your pseudo !")
+    elif [c for c in pseudo if c in [" ", ",", "(", ")"]] != []:
+        return("Don't use ' ' or ',' or '(' or ')' in your pseudo !")
     else :
         initNewPlayer(pseudo)
         return(firstConnection(pseudo))
@@ -179,8 +189,8 @@ def processInput(ip, s:str):
         return("No player of that name")
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
-    inputLetter = extractLetter(s,pseudo)
-    Rules(inputLetter,pseudo)
+    inputWord = extractWord(s)
+    Rules(inputWord,pseudo)
     return(states(pseudo))
 
 
@@ -193,11 +203,10 @@ def processDisconnection(ip, s:str):
     Returns:
         "DISCONNECTED <username> END" or why the connection request was invalid
     """
-    pseudo = extractPseudo()
+    pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
-    dicoJoueur.pop(pseudo)
-    return("DISCONNECTED" + s[13:])
+    return("DISCONNECTED " + pseudo + " END")
 
 
 def typeOfRequest(s:str):
@@ -214,21 +223,27 @@ def typeOfRequest(s:str):
 def extractPseudo(s:str):
     """The pseudo of a player from a connection request"""
     pseudo = ""
-    n = len(s)
-    i0 = len(typeOfRequest(s)) + 1
-    i = i0
-    while i<n and s[i]!=" ":
-        pseudo+=s[i]
-        i+=1
+    parts = s.split(" ")
+    
+    if parts[0] == "CONNECT":
+        i = 1
+        
+        while parts[i] != "END" and i < len(parts) - 1:
+            pseudo += parts[i] + " "
+            i+=1
+        
+        pseudo = pseudo[:-1]
+    else:
+        pseudo = parts[1]
+    
     return(pseudo)
 
-
-def extractLetter(s:str,pseudo:str):
-    """The input letter from the 's' input request string"""
-    n = len(pseudo)
-    return(s[7 + n])
-
-
+  
+def extractWord(s):
+    """The input word from the 's' input request string"""
+    parts = s.split(" ")
+    return(parts[2])
+  
 
 def states(pseudo:str):
     """The state of the server modulo what the player can see
@@ -241,30 +256,61 @@ def states(pseudo:str):
     """
     player = 0 # the player
     liste = [] # list of player strings
-    listOfPlayer = [] # list of all players
+    listOfPlayers = [] # list of all players
+    listOfAlivePlayers = [] # list of players that have not been caught yet
     
-    # gets all players
+    out="" # string to send back
+    
+    # gets all player
     for key in dicoJoueur:
-        p =  dicoJoueur[key]
+        p = dicoJoueur[key]
         if key == pseudo:
             player = p
-        listOfPlayer.append(p)
+        listOfPlayers.append(p)
+        if not DEAD[key]:
+            listOfAlivePlayers.append(p)
     
-    shadows = Visible(player, LIGHTS, listOfPlayer, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
-    visiblePlayer = allVisiblePlayer(shadows,listOfPlayer)
-    formatShadows = sendingFormat(shadows)
     
-    # gets visible player strings
-    liste.append(str(player))
-    for key in visiblePlayer:
-        p = dicoJoueur[key]
-        if key != pseudo:       
+    if not LOBBY:
+        if not DEAD[pseudo]:
+            
+            shadows = Visible(player, LIGHTS, listOfAlivePlayers, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
+            visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
+            formatShadows = sendingFormat(shadows)
+
+            # gets visible player strings
+            liste.append(str(player))
+            for key in visiblePlayer:
+                p = dicoJoueur[key]
+                if key != pseudo:
+                    liste.append(str(p))
+
+            out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
+
+            return(out)
+        else:            
+            for p in listOfAlivePlayers:
+                liste.append(str(p))
+                    
+            out = "STATE "+(str(liste)).replace(" ","")+" SHADES [] END"
+
+
+            return(out)
+    else:
+        for p in listOfPlayers:
             liste.append(str(p))
-
-    # string to send back
-    out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
-
-    return(out)
+        
+        if LOBBY:
+            rlist = []
+            for key in READY:
+                if READY[key]:
+                    rlist.append(key) # List of ready players' username
+            
+            out += "LOBBY " + str(rlist).replace(" ", "") + " "
+        
+        out += "STATE "+(str(liste)).replace(" ","")+" END"
+        
+        return out
 
 
 def walls():
@@ -305,31 +351,66 @@ def Rules(inputLetter:str,pseudo:str):
     Returns:
         "Invalid Input" if the input did not respect the rules, else None
     """
-    _, _, position1, size1 = dicoJoueur[pseudo].toList()
+    
+    global READY
+    
+    id, _, _, position1, size1 = dicoJoueur[pseudo].toList()
     x,y=position1.x,position1.y
 
+    tempId = id
+
     match inputLetter:
-        case ".": #nothing
-            #x+=randint(-1,1)
-            #y+=randint(-1,1)
+        case ".":
             pass
-        case "R":
-            x+=STEP_X
-        case "L":
-            x-=STEP_X
-        case "U":
-            y-=STEP_Y
-        case "D":
-            y+=STEP_Y
-        case "T":
-            x,y = positionNewPlayer()
+        case "RIGHT":
+            x+=STEP_X[id]
+        case "LEFT":
+            x-=STEP_X[id]
+        case "UP":
+            y-=STEP_Y[id]
+        case "DOWN":
+            y+=STEP_Y[id]
+        case "RED":
+            if LOBBY and not READY[pseudo]:
+                tempId = 1
+        case "BLUE":
+            if LOBBY and not READY[pseudo]:
+                tempId = 2
+        case "NEUTRAL":
+            if LOBBY and not READY[pseudo]:
+                tempId = 0
+        case "READY":
+            if LOBBY and id != 0:
+                READY[pseudo] = not READY[pseudo]
         case _ :
             return("Invalid Input")
+    if tempId != id:
+        dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
+    launchGame(checkReady())
     return
 
 
+def checkReady():
+    """Are all players ready?"""
+    for pseudo in READY:
+        if not READY[pseudo]:
+            return False
+    
+    return True
+
+  
+def launchGame(ready):
+    """Exit lobby"""
+    global LOBBY
+    global LISTENING
+    
+    if ready:
+        LOBBY = False
+        LISTENING = False
+
+        
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
     """If a position is inside the level boundaries and does not overlap walls or other players
 
@@ -343,6 +424,9 @@ def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
     Returns:
         bool: is the position valid for player 'pseudo'?
     """
+    # The player is dead and can not move
+    if DEAD.get(pseudo,False):
+        return False
     correctX = (x>=0) and (x+dx <= SIZE_X)
     correctY = (y>=0) and (y+dy <= SIZE_Y)
     
@@ -362,6 +446,12 @@ def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
     Returns:
         bool: is the position not making player 'pseudo' overlap walls or other?
     """
+    global DEAD
+    
+    id = 0
+    if pseudo in dicoJoueur:
+        id, _, _, _, _ = dicoJoueur[pseudo].toList()
+        
     c = (x + dx/2, y + dy/2)
     
     for key in dicoMur.keys():
@@ -372,9 +462,20 @@ def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
     
     for key in dicoJoueur.keys():
         if key != pseudo:
-            _, _, position, size = dicoJoueur[key].toList()
+            pid, username, _, position, size = dicoJoueur[key].toList()
             
             if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
+                
+                # players should be able to catch others only if the game started (LOBBY = False)
+                if (not LOBBY and id != pid):
+                    
+                    if id == 2 and pid == 1:
+                        DEAD[username] = True
+                        return False # The player caught a hidder and can thus move on its previous position
+                    elif pid == 2 and id == 1:
+                        DEAD[pseudo] = True
+                        return True # The player got caught and can no longer move
+                
                 return True
     
     return False
@@ -383,32 +484,36 @@ def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
 
 # ----------------------- Init of a new Player -----------------------
 
-
 def initNewPlayer(pseudo:str):
     """Creates a new player 'pseudo'
 
     Args:
         pseudo (str): the player pseudo
     """
-    dx,dy = sizeNewPlayer()
+    size = sizeNewPlayer()
+    dx,dy=size.w,size.h
     
-    x,y = positionNewPlayer(dx, dy)
+    pos = positionNewPlayer(dx, dy)
+    x,y=pos.x,pos.y
     
     while not correctPosition(pseudo, x, y, dx, dy):
-        x, y = positionNewPlayer(dx, dy)
+        pos = positionNewPlayer(dx, dy)
+        x,y=pos.x,pos.y
     
     color = colorNewPlayer()
-    dicoJoueur[pseudo] = Player(pseudo, color, Position(x,y), Size(dx,dy))
+    dicoJoueur[pseudo] = Player(0, pseudo, color, pos, size)
+    READY[pseudo] = False
+    DEAD[pseudo] = False
 
-
+    
 def sizeNewPlayer():
     """A size for a new player (fixed)"""
     return PLAYER_SIZE
 
-
-def positionNewPlayer(dx:int, dy:int):
+  
+def positionNewPlayer(dx, dy):
     """A position for a new player (random)"""
-    return(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
+    return Position(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
 
 
 def colorNewPlayer():
@@ -435,7 +540,7 @@ def manage_server():
                 print("STOP = ", STOP)
                 try:
                     MAINSOCKET.shutdown(SHUT_RDWR)
-                except ConnectionError:
+                except (OSError):
                     if DEBUG:
                         traceback.print_exc()
                     print("MAINSOCKET could not be shutdown")
@@ -446,7 +551,7 @@ def manage_server():
                 for username, (sock,addr) in dicoSocket.items():
                     try:
                         sock.shutdown(SHUT_RDWR)
-                    except ConnectionError:
+                    except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("Player " + username + "'s socket could not be shutdown.")
@@ -508,18 +613,19 @@ def listen_new():
                         
                         try:
                             sock.sendall(bytes(out,'utf-16'))
-                        except (TimeoutError,ConnectionError):
+                        except (OSError):
                             if DEBUG:
                                 traceback.print_exc()
                             print("New connection from " + str(in_ip) + " failed!")
-                    except (TimeoutError,ConnectionError):
+                    except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("New connection from " + str(in_ip) + " failed!")
                 
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
-            except (TimeoutError,ConnectionError):
+
+            except (OSError):
                 if DEBUG:
                     traceback.print_exc()
                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
@@ -540,14 +646,15 @@ def listen_old():
             
             for elt in waitingDisconnectionList:
                 username, sock, addr = elt[0], elt[1], elt[2]
-                dicoSocket.pop(username)
                 
-                if username in dicoJoueur.keys():
+                if username in dicoSocket and dicoSocket[username] == (sock, addr):
+                    dicoSocket.pop(username)
                     dicoJoueur.pop(username)
+                    READY.pop(username)
+                    DEAD.pop(username)
                 
                 sock.close()
             waitingDisconnectionList = []
-
 
             LOCK.acquire()
             for username in dicoSocket:
@@ -575,12 +682,12 @@ def listen_old():
                         print(">>> ",out,"\n")
                     try:
                         sock.sendall(bytes(out,'utf-16'))
-                    except (TimeoutError,ConnectionError):
+                    except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                         waitingDisconnectionList.append((username, sock, addr))
-                except (TimeoutError,ConnectionError):
+                except (OSError):
                     if DEBUG:
                         traceback.print_exc()
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")

@@ -7,7 +7,7 @@ class Player:
     BASE_POSITION = common.Position()
     BASE_SIZE = common.Size()
     
-    def __init__(self, username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
+    def __init__(self, teamId=0, username="", color=BASE_COLOR, position=BASE_POSITION, size=BASE_SIZE):
         """Create a new player with given parameters.
 
         Args:
@@ -16,7 +16,8 @@ class Player:
             - position (tuple): Position of the player.
             - size (list): Size of the player.
         """
-        
+
+        self.teamId = teamId
         self.username = username
         self.color = color
         self.position = position
@@ -24,7 +25,8 @@ class Player:
     
     
     
-    def update(self, color:common.Color=None, position:common.Position=None, size:common.Size=None):
+
+    def update(self, teamId:int=None, color:common.Color=None, position:common.Position=None, size:common.Size=None):
         """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
 
         Args:
@@ -32,6 +34,8 @@ class Player:
             - position (tuple): Position of the player.
             - size (list): Size of the player.
         """
+        if teamId != None:
+            self.teamId = teamId
         if color != None:
             self.color = color
         if position != None:
@@ -47,7 +51,7 @@ class Player:
         Returns:
             list: extraction of the player's attributes.
         """
-        return self.username, self.color, self.position, self.size
+        return self.teamId, self.username, self.color, self.position, self.size
     
     
     
@@ -57,7 +61,7 @@ class Player:
         Returns:
             str: description of the player used to send data from the server to the clients.
         """
-        msg = "(" + str(self.username) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
+        msg = "(" + str(self.teamId) + "," + str(self.username) + "," + str(self.color) + "," + str(self.position) + "," + str(self.size) + ")"
         return msg.replace(" ", "")
 
 
