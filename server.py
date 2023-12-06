@@ -161,10 +161,10 @@ def processConnect(s:str):
     Returns:
         A string representing the connection of the player and the state of the server or why the connection request was invalid
     """
-    
+
     if not LOBBY:
         return("The game has already started")
-    
+
     pseudo = extractPseudo(s)
     
     if validPseudo(pseudo):
@@ -375,16 +375,16 @@ def Rules(inputLetter:str,pseudo:str):
         case "DOWN":
             y+=STEP_Y[id]
         case "RED":
-            if LOBBY:
+            if LOBBY and not READY[pseudo]:
                 tempId = 1
         case "BLUE":
-            if LOBBY:
+            if LOBBY and not READY[pseudo]:
                 tempId = 2
         case "NEUTRAL":
-            if LOBBY:
+            if LOBBY and not READY[pseudo]:
                 tempId = 0
         case "READY":
-            if LOBBY:
+            if LOBBY and id != 0:
                 READY[pseudo] = not READY[pseudo]
         case _ :
             return("Invalid Input")
@@ -580,6 +580,7 @@ def manage_server():
                 print("MANAGING = ", MANAGING)
                 print("LOBBY = ", LOBBY)
                 
+                
 def listen_new():
     """Manage first connections and connection request"""
     global STOP
@@ -635,6 +636,7 @@ def listen_new():
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
+        
 
 def listen_old():
     """Manage already connected sockets and inputs or disconnection request"""
@@ -666,7 +668,7 @@ def listen_old():
                     data = sock.recv(1024).strip()
                     
                     in_ip = addr[0]
-                    
+
                     in_data = str(data,'utf-8')
                     
                     if DEBUG:
@@ -700,8 +702,6 @@ def listen_old():
                 switchGameState(False)  
                   
             time.sleep(WAITING_TIME)
-        
-        
         
         time.sleep(WAITING_TIME)
     
