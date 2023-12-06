@@ -392,7 +392,7 @@ def Rules(inputLetter:str,pseudo:str):
         dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
-    launchGame(checkReady())
+    switchGameState(checkReady())
     return
 
 
@@ -405,12 +405,11 @@ def checkReady():
     return True
 
   
-def launchGame(ready):
+def switchGameState(ready):
     """Exit lobby"""
     global LOBBY
     
-    if ready:
-        LOBBY = False
+    LOBBY=not ready
 
         
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
@@ -579,6 +578,7 @@ def manage_server():
                 print("STOP = ", STOP)
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
+                print("LOBBY = ", LOBBY)
                 
 def listen_new():
     """Manage first connections and connection request"""
@@ -696,7 +696,12 @@ def listen_old():
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             
+            if not LOBBY and len(dicoSocket.keys())==0:
+                switchGameState(False)  
+                  
             time.sleep(WAITING_TIME)
+        
+        
         
         time.sleep(WAITING_TIME)
     
