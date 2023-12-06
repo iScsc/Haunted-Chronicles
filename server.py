@@ -371,16 +371,16 @@ def Rules(inputLetter:str,pseudo:str):
         case "DOWN":
             y+=STEP_Y[id]
         case "RED":
-            if LOBBY:
+            if LOBBY and not READY[pseudo]:
                 tempId = 1
         case "BLUE":
-            if LOBBY:
+            if LOBBY and not READY[pseudo]:
                 tempId = 2
         case "NEUTRAL":
-            if LOBBY:
+            if LOBBY and not READY[pseudo]:
                 tempId = 0
         case "READY":
-            if LOBBY:
+            if LOBBY and id != 0:
                 READY[pseudo] = not READY[pseudo]
         case _ :
             return("Invalid Input")
