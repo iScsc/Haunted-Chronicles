@@ -60,7 +60,20 @@ LOBBY = True
 readyPlayers = []
 DEFAULT_LOBBY_COLOR = WHITE
 READY_LOBBY_COLOR = GREEN
+
+# Teams display
 TEAM_DISPLAY_HEIGHT = 100
+TEAMS_NAMES = {0 : "Not assigned (press 'N' to join)",
+               1 : "Seekers (press 'R' to join)",
+               2 : "Hidders (press 'B' to join)"}
+TEAMS = {0 : [], 1 : [], 2 : []}
+TEAMS_COLOR = {0 : WHITE, 1 : RED, 2 : BLUE}
+FONT_SIZE_TEAMS = 30
+
+TEAMS_POSITIONS = {0 : 1, 1 : 0, 2 : 2}
+TEAMS_FINAL_POSITIONS = {0 : None, 1 : None, 2 : None}
+TEAMS_TEXTS = {0 : None, 1 : None, 2 : None}
+
 RED_TEAM = 1
 BLUE_TEAM = 2
 
@@ -77,6 +90,9 @@ def display():
     global PLAYERS
     global SCALE_FACTOR
     global SIZE
+    
+    global TEAMS
+    global TEAMS_FINAL_POSITIONS
     
     pg.init()
     
@@ -97,9 +113,20 @@ def display():
         SCALE_FACTOR=1,1
     
     
-    # set fonts for ping and usernames
+    # set fonts for ping, teams and usernames
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
+    teamFont = pg.font.SysFont(FONT, FONT_SIZE_TEAMS)
+    
+    # set teams display parameters
+    baseHeight = TEAM_DISPLAY_HEIGHT
+    for id in TEAMS_TEXTS:
+        teamSize = pg.font.Font.size(teamFont, TEAMS_NAMES[id])
+        
+        baseHeight = TEAM_DISPLAY_HEIGHT + teamSize[1]
+        
+        TEAMS_TEXTS[id] = pg.font.Font.render(teamFont, TEAMS_NAMES[id], False, TEAMS_COLOR[id].color)
+        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] * SCALE_FACTOR[0] - teamSize[0]) / 2 * TEAMS_POSITIONS[id]
     
     
     clock = pg.time.Clock()
@@ -110,12 +137,12 @@ def display():
         SCREEN.fill(BACKGROUND_COLOR.color)  # May need to be custom
         
         pg.event.pump() # Useless, just to make windows understand that the game has not crashed...
- 
+
 
         if not LOBBY and WALL_VISIBLE and len(UNVISIBLE) > 2: # draws shades under the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
 
-    
+
         # Walls
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
@@ -125,9 +152,14 @@ def display():
         if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2: #draw shades on top of the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
+        # Teams display
+        if LOBBY:
+            for id in TEAMS_NAMES:
+                SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
+            
+            TEAMS = {0 : [], 1 : [], 2 : []}
         
         # Players
-        h=TEAM_DISPLAY_HEIGHT
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
             
@@ -137,21 +169,22 @@ def display():
             
             SCREEN.blit(usernameSurface, (player.position.x*SCALE_FACTOR[0] + (player.size.w*SCALE_FACTOR[0] - usernameSize[0]) // 2, player.position.y*SCALE_FACTOR[1] - usernameSize[1]))            
             if(LOBBY):
-                usernamePosition = (SIZE[0]-usernameSize[0])//2
+                h = baseHeight
+                if player.teamId in TEAMS:
+                    TEAMS[player.teamId].append(player)
+                    h = baseHeight + (len(TEAMS[player.teamId]) - 1) * usernameSize[1]
+                
+                usernamePosition = (SIZE[0] * SCALE_FACTOR[0] - usernameSize[0]) / 2
+                if player.teamId in TEAMS_POSITIONS:
+                    usernamePosition = (SIZE[0] * SCALE_FACTOR[0] - usernameSize[0]) / 2 * TEAMS_POSITIONS[player.teamId]
                 
                 font_color = DEFAULT_LOBBY_COLOR
-                
-                if(player.teamId == RED_TEAM):
-                    usernamePosition = 0
-                if(player.teamId == BLUE_TEAM):
-                    usernamePosition = SIZE[0]-usernameSize[0]
                 
                 if(player.username in readyPlayers):
                     font_color = READY_LOBBY_COLOR
 
                 usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, font_color.color)
                 SCREEN.blit(usernameSurface, (usernamePosition, h))
-                h+=usernameSize[1]
                 
         
             
