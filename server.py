@@ -593,7 +593,7 @@ def listen_new():
                     try:
                         data = sock.recv(1024).strip()
                         
-                        in_data = str(data,'utf-16')
+                        in_data = str(data,'utf-8')
                         
                         if DEBUG:
                             print("{} wrote:".format(in_ip))
@@ -612,7 +612,7 @@ def listen_new():
                             print(">>> ",out,"\n")
                         
                         try:
-                            sock.sendall(bytes(out,'utf-16'))
+                            sock.sendall(bytes(out,'utf-8'))
                         except (OSError):
                             if DEBUG:
                                 traceback.print_exc()
@@ -665,7 +665,7 @@ def listen_old():
                     
                     in_ip = addr[0]
                     
-                    in_data = str(data,'utf-16')
+                    in_data = str(data,'utf-8')
                     
                     if DEBUG:
                         print("Player {} with ip {} wrote:".format(username, in_ip))
@@ -681,7 +681,7 @@ def listen_old():
                     if DEBUG:
                         print(">>> ",out,"\n")
                     try:
-                        sock.sendall(bytes(out,'utf-16'))
+                        sock.sendall(bytes(out,'utf-8'))
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()

@@ -18,7 +18,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -88,6 +88,7 @@ def display():
         info = pg.display.Info()
         SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
         SCREEN = pg.display.set_mode((0,0),pg.FULLSCREEN)
+        SIZE=SCREEN.get_size()
     elif PLATEFORM=="Windows":
         info = pg.display.Info()
         SCALE_FACTOR = info.current_w/SIZE[0],info.current_h/SIZE[1]
@@ -158,9 +159,9 @@ def display():
         
         # Lights
         if DEBUG: # Draw lights where they are meant to be in the server
-            pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
-            pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
-            pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [200*SCALE_FACTOR[0], 200*SCALE_FACTOR[1], 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [500*SCALE_FACTOR[0], 800*SCALE_FACTOR[1], 10, 10])
+            pg.draw.rect(SCREEN, (255,255,0), [1500*SCALE_FACTOR[0], 500*SCALE_FACTOR[1], 10, 10])
  
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
@@ -359,7 +360,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             if DEBUG:
                 print("input: ",input)
-            SOCKET.sendall(bytes(input, "utf-16"))
+            SOCKET.sendall(bytes(input, "utf-8"))
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
@@ -368,7 +369,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             
         # receive answer
         try:
-            answer = str(SOCKET.recv(1024*16), "utf-16")
+            answer = str(SOCKET.recv(1024*16), "utf-8")
             if DEBUG:
                 print("answer: ",answer)
              
