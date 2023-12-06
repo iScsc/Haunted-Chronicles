@@ -74,9 +74,6 @@ TEAMS_POSITIONS = {0 : 1, 1 : 0, 2 : 2}
 TEAMS_FINAL_POSITIONS = {0 : None, 1 : None, 2 : None}
 TEAMS_TEXTS = {0 : None, 1 : None, 2 : None}
 
-RED_TEAM = 1
-BLUE_TEAM = 2
-
 WALL_VISIBLE = True
 
 
@@ -185,16 +182,16 @@ def display():
 
                 usernameSurface = pg.font.Font.render(usernameFont, usernameText, False, font_color.color)
                 SCREEN.blit(usernameSurface, (usernamePosition, h))
-                
         
-            
+        
+        
         
         # Lights
         if DEBUG: # Draw lights where they are meant to be in the server
             pg.draw.rect(SCREEN, (255,255,0), [200, 200, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500, 800, 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500, 500, 10, 10])
- 
+        
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
