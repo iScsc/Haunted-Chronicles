@@ -161,6 +161,10 @@ def processConnect(s:str):
     Returns:
         A string representing the connection of the player and the state of the server or why the connection request was invalid
     """
+    
+    if not LOBBY:
+        return("The game has already started")
+    
     pseudo = extractPseudo(s)
     
     if validPseudo(pseudo):
@@ -404,11 +408,9 @@ def checkReady():
 def launchGame(ready):
     """Exit lobby"""
     global LOBBY
-    global LISTENING
     
     if ready:
         LOBBY = False
-        LISTENING = False
 
         
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
