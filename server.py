@@ -1,7 +1,6 @@
 
 # ----------------------- Imports -----------------------
 
-
 from socket import *
 from random import randint
 
@@ -25,9 +24,8 @@ def extractingIP():
     s.close()
     return(ip)
 
-
-
 # ----------------------- Constants-----------------------
+
 DEBUG=False
 
 # Game map
@@ -36,8 +34,8 @@ SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
 # Movements speeds differ depending on the player's team
-STEP_X = [10, 3, 5]
-STEP_Y = [10, 3, 5]
+STEP_X = [10, 4, 3]
+STEP_Y = [10, 4, 3]
 
 # Server
 IP = extractingIP()
@@ -64,71 +62,33 @@ MANAGING = True
 STOP = False
 
 ### Game
+TIME_TO_SWITCH = 10 # Time before switching from lobby to the game when everyone is ready, and from game to lobby when the game is finished.
+
 # Lobby
 LOBBY = True
 
-TEAMSID = {0 : "Not assigned", 1 : "Seekers", 2 : "Hidders"}
+TEAMSID = {"Not assigned" : 0, "Seekers" : 1, "Hidders" : 2}
 READY = {}
 
 # In-game
 DEAD = {}
 
+SEEKING_TIME = 180 # Time to seek for the hidders - in seconds
+CURRENT_TIME = None # Current in-game time left - in seconds
+
 # ----------------------- Variables -----------------------
+
 dicoJoueur = {} # Store players' Player structure
 
 dicoSocket = {} # Store clients' (sock, addr) structures where sock is the socket used for communicating, and addr = (ip, port)
 waitingDisconnectionList = []
 
 dicoMur = {}
+WALLS = [] # List of walls
 
-dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
-dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
-dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
-dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
-
-dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
-dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
-
-dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
-dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
-
-dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
-
-dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
-dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
-#dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
-
-dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
-dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
-dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
-dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
-
-dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
-dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
-
-dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
-dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
-
-# list of walls
-WALLS = []
-for key in dicoMur:
-    WALLS.append(dicoMur[key])
-
-# Some static lights
-def dummyLights():
-    """Some static lights"""
-    l0 = Light(Position(int(200),int(200)))
-    l1 = Light(Position(int(500),int(800)))
-    l2 = Light(Position(int(1500),int(500)))
-    #l01 = Light(Position(int(100),int(800)))
-    return([l0,l1,l2])    
-
-t1 = time.time()
-LIGHTS = dummyLights()
-STATIC_SHADOW = AllSources(LIGHTS, WALLS, SIZE_X, SIZE_Y)
-LIST_STATIC_SHADOW = [OneSource(l, WALLS, SIZE_X, SIZE_Y) for l in LIGHTS]
-t2 = time.time()
-print("time of precalculation : ",t2-t1," s")
+LIGHTS = []
+STATIC_SHADOW = None
+LIST_STATIC_SHADOW = []
 
 # -------------------- Processing a Request -----------------------
 def processRequest(ip, s:str):
@@ -194,7 +154,7 @@ def processInput(ip, s:str):
     if not(validIp(ip, pseudo)):
         return("You are impersonating someone else !")
     inputWord = extractWord(s)
-    Rules(inputWord,pseudo)
+    rules(inputWord,pseudo)
     return(states(pseudo))
 
 
@@ -346,7 +306,7 @@ def validIp(ip, pseudo:str):
 
 # ----------------------- Games Rules -----------------------
 
-def Rules(inputLetter:str,pseudo:str):
+def rules(inputLetter:str,pseudo:str):
     """Process an input for a player
 
     Args:
@@ -376,13 +336,13 @@ def Rules(inputLetter:str,pseudo:str):
             y+=STEP_Y[id]
         case "RED":
             if LOBBY and not READY[pseudo]:
-                tempId = 1
+                tempId = TEAMSID["Seekers"]
         case "BLUE":
             if LOBBY and not READY[pseudo]:
-                tempId = 2
+                tempId = TEAMSID["Hidders"]
         case "NEUTRAL":
             if LOBBY and not READY[pseudo]:
-                tempId = 0
+                tempId = TEAMSID["Not assigned"]
         case "READY":
             if LOBBY and id != 0:
                 READY[pseudo] = not READY[pseudo]
@@ -396,6 +356,26 @@ def Rules(inputLetter:str,pseudo:str):
     return
 
 
+def checkForWin():
+    """Did a team win the game?"""
+    if not LOBBY:
+        pass
+    else:
+        if CURRENT_TIME <= 0:
+            return "The hidders won the game!"
+        else:
+            every1dead = True # by default, but updated right afterwards
+            
+            for pseudo in dicoJoueur:
+                if dicoJoueur[pseudo].teamId == TEAMSID["Hidders"]:
+                    every1dead = every1dead and DEAD.get(pseudo,False)
+            
+            if every1dead:
+                return "The seekers won the game!"
+        
+        return "None of both teams have won the game yet."
+
+
 def checkReady():
     """Are all players ready?"""
     for pseudo in READY:
@@ -405,13 +385,18 @@ def checkReady():
     return True
 
   
-def switchGameState(ready):
+def switchGameState(ready:bool):
     """Exit lobby"""
     global LOBBY
+    global CURRENT_TIME
     
     LOBBY=not ready
-
+    if not LOBBY:
+        CURRENT_TIME = SEEKING_TIME
+    else:
+        CURRENT_TIME = None
         
+
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
     """If a position is inside the level boundaries and does not overlap walls or other players
 
@@ -707,6 +692,61 @@ def listen_old():
     
 
 
+# Some static lights
+def dummyLights():
+    """Some static lights"""
+    l0 = Light(Position(int(200),int(200)))
+    l1 = Light(Position(int(500),int(800)))
+    l2 = Light(Position(int(1500),int(500)))
+    #l01 = Light(Position(int(100),int(800)))
+    return([l0,l1,l2])
+
+def baseInit():
+    global dicoMur
+    global WALLS
+    global LIGHTS
+    global STATIC_SHADOW
+    global LIST_STATIC_SHADOW
+    
+    dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
+    dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
+    dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
+    dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))
+
+    dicoMur[3] = Wall(3, Color(30, 30, 30), Position(850, 100), Size(10, 450))
+    dicoMur[4] = Wall(4, Color(30, 30, 30), Position(450, 100), Size(400, 10))
+
+    dicoMur[5] = Wall(5, Color(30, 30, 30), Position(75, 100), Size(275, 10))
+    dicoMur[6] = Wall(6, Color(30, 30, 30), Position(75, 50), Size(10, 200))
+
+    dicoMur[7] = Wall(7, Color(30, 30, 30), Position(325, 250), Size(150, 10))
+
+    dicoMur[8] = Wall(8, Color(30, 30, 30), Position(850, 650), Size(10, 250))
+    dicoMur[9] = Wall(9, Color(30, 30, 30), Position(650, 800), Size(550, 10))
+    #dicoMur[10] = Wall(10, Color(30, 30, 30), Position(850, 950), Size(10, 250))
+
+    dicoMur[11] = Wall(11, Color(30, 30, 30), Position(1400, 800), Size(200, 10))
+    dicoMur[12] = Wall(12, Color(30, 30, 30), Position(1600, 300), Size(10, 510))
+    dicoMur[13] = Wall(13, Color(30, 30, 30), Position(1400, 225), Size(200, 10))
+    dicoMur[14] = Wall(14, Color(30, 30, 30), Position(1400, 225), Size(10, 510))
+
+    dicoMur[15] = Wall(15, Color(30, 30, 30), Position(1400, 625), Size(150, 10))
+    dicoMur[16] = Wall(16, Color(30, 30, 30), Position(1450, 400), Size(150, 10))
+
+    dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
+    dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
+
+    # list of walls
+    for key in dicoMur:
+        WALLS.append(dicoMur[key]) 
+
+    t1 = time.time()
+    LIGHTS = dummyLights()
+    STATIC_SHADOW = AllSources(LIGHTS, WALLS, SIZE_X, SIZE_Y)
+    LIST_STATIC_SHADOW = [OneSource(l, WALLS, SIZE_X, SIZE_Y) for l in LIGHTS]
+    t2 = time.time()
+    print("time of precalculation : ",t2-t1," s")
+
 # ----------------------- Main -----------------------
 def main():
     """Main function launching the parallel threads to manage the different aspects of the server.
@@ -715,6 +755,7 @@ def main():
     global LOCK
     
     # Initialization
+    baseInit()
     if MAINSOCKET == None:
         MAINSOCKET = socket(AF_INET, SOCK_STREAM)
         MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
