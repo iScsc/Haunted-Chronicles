@@ -75,6 +75,7 @@ DEAD = {}
 
 SEEKING_TIME = 180 # Time to seek for the hidders - in seconds
 CURRENT_TIME = None # Current in-game time left - in seconds
+game_start_time = None
 
 # ----------------------- Variables -----------------------
 
@@ -236,6 +237,8 @@ def states(pseudo:str):
     
     
     if not LOBBY:
+        out += "GAME " + "{time:.2f} ".format(time=CURRENT_TIME)
+        
         if not DEAD[pseudo]:
             
             shadows = Visible(player, LIGHTS, listOfAlivePlayers, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
@@ -249,28 +252,25 @@ def states(pseudo:str):
                 if key != pseudo:
                     liste.append(str(p))
 
-            out = "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
-
-            return(out)
+            out += "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
+            
         else:            
             for p in listOfAlivePlayers:
                 liste.append(str(p))
                     
-            out = "STATE "+(str(liste)).replace(" ","")+" SHADES [] END"
+            out += "STATE "+(str(liste)).replace(" ","")+" SHADES [] END"
 
-
-            return(out)
+        return out
     else:
         for p in listOfPlayers:
             liste.append(str(p))
         
-        if LOBBY:
-            rlist = []
-            for key in READY:
-                if READY[key]:
-                    rlist.append(key) # List of ready players' username
-            
-            out += "LOBBY " + str(rlist).replace(" ", "") + " "
+        rlist = []
+        for key in READY:
+            if READY[key]:
+                rlist.append(key) # List of ready players' username
+        
+        out = "LOBBY " + str(rlist).replace(" ", "") + " "
         
         out += "STATE "+(str(liste)).replace(" ","")+" END"
         
@@ -358,8 +358,8 @@ def rules(inputLetter:str,pseudo:str):
 
 def checkForWin():
     """Did a team win the game?"""
-    if not LOBBY:
-        pass
+    if LOBBY:
+        return ""
     else:
         if CURRENT_TIME <= 0:
             return "The hidders won the game!"
@@ -386,15 +386,26 @@ def checkReady():
 
   
 def switchGameState(ready:bool):
-    """Exit lobby"""
+    """Switch from lobby to game or vice-versa"""
     global LOBBY
-    global CURRENT_TIME
     
-    LOBBY=not ready
-    if not LOBBY:
-        CURRENT_TIME = SEEKING_TIME
-    else:
-        CURRENT_TIME = None
+    global CURRENT_TIME
+    global game_start_time
+    
+    global READY
+    
+    if LOBBY == ready:
+        LOBBY=not ready
+        
+        # in game
+        if not LOBBY:
+            CURRENT_TIME = SEEKING_TIME
+            game_start_time = time.time()
+        # in lobby
+        else:
+            CURRENT_TIME = None
+            game_start_time = None
+            READY = {}
         
 
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
@@ -455,10 +466,10 @@ def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
                 # players should be able to catch others only if the game started (LOBBY = False)
                 if (not LOBBY and id != pid):
                     
-                    if id == 2 and pid == 1:
+                    if id == TEAMSID["Seekers"] and pid == TEAMSID["Hidders"]:
                         DEAD[username] = True
                         return False # The player caught a hidder and can thus move on its previous position
-                    elif pid == 2 and id == 1:
+                    elif pid == TEAMSID["Hidders"] and id == TEAMSID["Seekers"]:
                         DEAD[pseudo] = True
                         return True # The player got caught and can no longer move
                 
@@ -630,6 +641,8 @@ def listen_old():
     
     global waitingDisconnectionList
     
+    global CURRENT_TIME
+    
     while not STOP:
         while MANAGING and not STOP:
             
@@ -683,9 +696,13 @@ def listen_old():
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             
-            if not LOBBY and len(dicoSocket.keys())==0:
-                switchGameState(False)  
-                  
+            if not (None in [CURRENT_TIME, game_start_time]):
+                CURRENT_TIME = SEEKING_TIME - (time.time() - game_start_time)
+            
+            print(checkForWin(), not "None" in checkForWin())
+            if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
+                switchGameState(False)
+            
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
