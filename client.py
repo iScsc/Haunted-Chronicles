@@ -76,6 +76,8 @@ TEAMS_TEXTS = {0 : None, 1 : None, 2 : None}
 
 WALL_VISIBLE = True
 
+# In-game variables
+GAME_TIME = None
 
 # ----------------------- Threads -----------------------
 
@@ -112,10 +114,11 @@ def display():
         SCALE_FACTOR=1,1
     
     
-    # set fonts for ping, teams and usernames
+    # set fonts for ping, teams, usernames and in-game printings
     pingFont = pg.font.SysFont(FONT, FONT_SIZE_PING)
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     teamFont = pg.font.SysFont(FONT, FONT_SIZE_TEAMS)
+    timeFont = teamFont
     
     # set teams display parameters
     baseHeight = TEAM_DISPLAY_HEIGHT
@@ -140,7 +143,7 @@ def display():
         if not LOBBY and WALL_VISIBLE and len(UNVISIBLE) > 2: # draws shades under the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
 
-            
+        
         # Walls
         for wall in WALLS:
             pg.draw.rect(SCREEN, wall.color.color, [wall.position.x*SCALE_FACTOR[0], wall.position.y*SCALE_FACTOR[1], wall.size.w*SCALE_FACTOR[0], wall.size.h*SCALE_FACTOR[1]])
@@ -149,7 +152,7 @@ def display():
         #Unvisible
         if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2: #draw shades on top of the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
-            
+        
         
         # Teams display
         if LOBBY:
@@ -200,6 +203,16 @@ def display():
         pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE.color)
         
         SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
+        
+        
+        # Remaining game time
+        if not LOBBY:
+            timeText = "Remaining Seeking Time : " + str(GAME_TIME) + "s"
+            timeSize = pg.font.Font.size(timeFont, timeText)
+            
+            timeSurface = pg.font.Font.render(timeFont, timeText, False, WHITE.color)
+            
+            SCREEN.blit(timeSurface, (TEAMS_FINAL_POSITIONS[0], TEAM_DISPLAY_HEIGHT))
         
         
         # End
@@ -428,6 +441,7 @@ def update(state="STATE [] END"):
     global UNVISIBLE
     global readyPlayers
     global LOBBY
+    global GAME_TIME
 
     if state == None or type(state) != str or state == "":
         return False
@@ -461,10 +475,19 @@ def update(state="STATE [] END"):
         readyPlayers = interp(messages[1], list=["", 0])["list"]
         LOBBY = True
         return False
+    
+    elif len(messages) == 3 and messages[0] == "GAME" and messages[2] == "END":
+        GAME_TIME = interp(messages[1], time=0.0)["time"]
+        LOBBY = False
+        return False
         
     elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4] == "END":
         LOBBY = False
         return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
+    
+    elif len(messages) == 7 and messages[0] == "GAME" and messages[2] == "STATE" and messages[4] == "SHADES" and messages[6] == "END":
+        LOBBY = False
+        return update(messages[0]+" "+messages[1]+" "+messages[6]) or update(messages[2]+" "+messages[3]+" "+messages[6]) or update(messages[4]+" "+messages[5]+" "+messages[6])
     
     elif len(messages) == 5 and messages[0] == "LOBBY" and messages[2] == "STATE" and messages[4] == "END":
         LOBBY = True
