@@ -73,7 +73,7 @@ READY = {}
 # In-game
 DEAD = {}
 
-SEEKING_TIME = 180 # Time to seek for the hidders - in seconds
+SEEKING_TIME = 20 # Time to seek for the hidders - in seconds
 CURRENT_TIME = None # Current in-game time left - in seconds
 game_start_time = None
 
@@ -389,24 +389,43 @@ def switchGameState(ready:bool):
     """Switch from lobby to game or vice-versa"""
     global LOBBY
     
-    global CURRENT_TIME
-    global game_start_time
-    
-    global READY
-    
     if LOBBY == ready:
         LOBBY=not ready
         
         # in game
         if not LOBBY:
-            CURRENT_TIME = SEEKING_TIME
-            game_start_time = time.time()
+            launchGame()
         # in lobby
         else:
-            CURRENT_TIME = None
-            game_start_time = None
-            READY = {}
+            resetGameState()
+
+
+def launchGame():
+    """Set the basic state of the game when launching a new game"""
+    global CURRENT_TIME
+    global game_start_time
+
+    CURRENT_TIME = SEEKING_TIME
+    game_start_time = time.time()
+
+
+def resetGameState():
+    """Reset the current state of the game to get ready for a new game"""
+    global CURRENT_TIME
+    global game_start_time
+    
+    global READY
+    global DEAD
+    
+    CURRENT_TIME = None
+    game_start_time = None
+    for pseudo in dicoJoueur:
+        _, _, _, _, size = dicoJoueur[pseudo].toList()
+        READY[pseudo] = False
+        DEAD[pseudo] = False
         
+        dicoJoueur[pseudo].update(position=randomValidPosition(pseudo, size.w, size.h))
+
 
 def correctPosition(pseudo:str, x:int,y:int,dx:int,dy:int):
     """If a position is inside the level boundaries and does not overlap walls or other players
@@ -490,12 +509,7 @@ def initNewPlayer(pseudo:str):
     size = sizeNewPlayer()
     dx,dy=size.w,size.h
     
-    pos = positionNewPlayer(dx, dy)
-    x,y=pos.x,pos.y
-    
-    while not correctPosition(pseudo, x, y, dx, dy):
-        pos = positionNewPlayer(dx, dy)
-        x,y=pos.x,pos.y
+    pos = positionNewPlayer(pseudo, dx, dy)
     
     color = colorNewPlayer()
     dicoJoueur[pseudo] = Player(0, pseudo, color, pos, size)
@@ -508,9 +522,9 @@ def sizeNewPlayer():
     return PLAYER_SIZE
 
   
-def positionNewPlayer(dx, dy):
+def positionNewPlayer(pseudo, dx, dy):
     """A position for a new player (random)"""
-    return Position(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
+    return randomValidPosition(pseudo, dx, dy)
 
 
 def colorNewPlayer():
@@ -518,6 +532,17 @@ def colorNewPlayer():
     return Color(randint(1,255),randint(1,255),randint(1,255))
 
 
+def randomValidPosition(pseudo, dx, dy):
+    """Generate a random valid position"""
+    
+    pos = Position(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
+    x,y=pos.x,pos.y
+    
+    while not correctPosition(pseudo, x, y, dx, dy):
+        pos = Position(randint(0, int(SIZE_X - dx)), randint(0, int(SIZE_Y - dy)))
+        x,y=pos.x,pos.y
+    
+    return pos
 
 # ----------------------- Threads -----------------------
 
@@ -699,7 +724,6 @@ def listen_old():
             if not (None in [CURRENT_TIME, game_start_time]):
                 CURRENT_TIME = SEEKING_TIME - (time.time() - game_start_time)
             
-            print(checkForWin(), not "None" in checkForWin())
             if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
                 switchGameState(False)
             
