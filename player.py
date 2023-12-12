@@ -25,7 +25,6 @@ class Player:
     
     
     
-
     def update(self, teamId:int=None, color:common.Color=None, position:common.Position=None, size:common.Size=None):
         """Updates the player with the given parameters. If a parameter is not given, it will keep the old value.
 
