@@ -270,7 +270,16 @@ def states(pseudo:str):
             if READY[key]:
                 rlist.append(key) # List of ready players' username
         
-        out = "LOBBY " + str(rlist).replace(" ", "") + " "
+        n = len(rlist)
+        strList = "["
+        for i in range(n):
+            if i != n - 1:
+                strList += rlist[i] + ","
+            else:
+                strList += rlist[i]
+        strList += "]"
+        
+        out = "LOBBY " + strList + " "
         
         out += "STATE "+(str(liste)).replace(" ","")+" END"
         
