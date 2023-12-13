@@ -154,14 +154,6 @@ def display():
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
         
         
-        # Teams display
-        if LOBBY:
-            for id in TEAMS_NAMES:
-                SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
-            
-            TEAMS = {0 : [], 1 : [], 2 : []}
-        
-        
         # Players
         for player in PLAYERS:
             pg.draw.rect(SCREEN, player.color.color, [player.position.x*SCALE_FACTOR[0], player.position.y*SCALE_FACTOR[1], player.size.w*SCALE_FACTOR[0], player.size.h*SCALE_FACTOR[1]])
@@ -195,7 +187,16 @@ def display():
             pg.draw.rect(SCREEN, (255,255,0), [200*SCALE_FACTOR[0], 200*SCALE_FACTOR[1], 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500*SCALE_FACTOR[0], 800*SCALE_FACTOR[1], 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500*SCALE_FACTOR[0], 500*SCALE_FACTOR[1], 10, 10])
- 
+        
+
+        # Teams display
+        if LOBBY:
+            for id in TEAMS_NAMES:
+                SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
+            
+            TEAMS = {0 : [], 1 : [], 2 : []}
+        
+        
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
@@ -486,7 +487,6 @@ def update(state="STATE [] END"):
     ### Concatenated commands
     
     else:
-        print(messages)
         # dictionary representing the known keywords and the number of parameters in <content> they take
         keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1}
         
@@ -503,9 +503,7 @@ def update(state="STATE [] END"):
                     command += conc[1 + i] + " "
                 command += "END"
                 
-                print(conc[0:1 + n])
                 conc[0:1 + n] = []
-                print(conc)
                 
                 m = len(conc)
                 remains = ""
