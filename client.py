@@ -448,6 +448,8 @@ def update(state="STATE [] END"):
     
     messages = state.split(" ")
     
+    ### Simple commands : KEYWORD <content> END
+    
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         
         players = Player.toPlayers(messages[1],DEBUG)
@@ -480,20 +482,47 @@ def update(state="STATE [] END"):
         GAME_TIME = interp(messages[1], time=0.0)["time"]
         LOBBY = False
         return False
+    
+    ### Concatenated commands
+    
+    else:
+        print(messages)
+        # dictionary representing the known keywords and the number of parameters in <content> they take
+        keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1}
         
-    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4] == "END":
-        LOBBY = False
-        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
-    
-    elif len(messages) == 7 and messages[0] == "GAME" and messages[2] == "STATE" and messages[4] == "SHADES" and messages[6] == "END":
-        LOBBY = False
-        return update(messages[0]+" "+messages[1]+" "+messages[6]) or update(messages[2]+" "+messages[3]+" "+messages[6]) or update(messages[4]+" "+messages[5]+" "+messages[6])
-    
-    elif len(messages) == 5 and messages[0] == "LOBBY" and messages[2] == "STATE" and messages[4] == "END":
-        LOBBY = True
-        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
-    
-    return True
+        if len(messages) >= 3:
+            conc = messages
+            
+            if conc[0] in keywords:
+                # generate partial command
+                command = conc[0] + " "
+                
+                n = keywords[conc[0]]
+                
+                for i in range(n):
+                    command += conc[1 + i] + " "
+                command += "END"
+                
+                print(conc[0:1 + n])
+                conc[0:1 + n] = []
+                print(conc)
+                
+                m = len(conc)
+                remains = ""
+                for i in range(m):
+                    if i != m - 1:
+                        remains += conc[i] + " "
+                    else:
+                        remains += conc[i]
+                
+                return update(command) or update(remains)
+            else:
+                return True
+            
+        elif conc == ["END"]:
+            return False
+        
+        return True
 
 
 
