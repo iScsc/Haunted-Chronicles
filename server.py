@@ -237,7 +237,7 @@ def states(pseudo:str):
     
     
     if not LOBBY:
-        out += "GAME " + "{time:.2f} ".format(time=CURRENT_TIME)
+        out += "GAME " + "{time:.1f} ".format(time=CURRENT_TIME)
         
         if not DEAD[pseudo]:
             
@@ -361,7 +361,7 @@ def rules(inputLetter:str,pseudo:str):
         dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
-    switchGameState(checkReady())
+    switchGameState(checkReady() and noEmptyTeams())
     return
 
 
@@ -393,7 +393,24 @@ def checkReady():
     
     return True
 
-  
+
+def noEmptyTeams():
+    teamCounts = {TEAMSID[i] : 0 for i in TEAMSID}
+    n = len(teamCounts)
+    
+    # problem with the server variables, TEAMSID should always have at least 3 different teams
+    if n <= 2:
+        return False
+    
+    for pseudo in dicoJoueur:
+        teamId, _, _, _, _ = dicoJoueur[pseudo].toList()
+        
+        if teamId in teamCounts:
+            teamCounts[teamId] += 1
+    
+    return teamCounts[TEAMSID["Hidders"]] > 0 and teamCounts[TEAMSID["Seekers"]] > 0
+
+
 def switchGameState(ready:bool):
     """Switch from lobby to game or vice-versa"""
     global LOBBY
