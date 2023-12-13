@@ -71,13 +71,14 @@ TEAMSID = {"Not assigned" : 0, "Seekers" : 1, "Hidders" : 2}
 READY = {}
 
 # In-game
+FINISHED = False
 DEAD = {}
 
 SEEKING_TIME = 20 # Time to seek for the hidders - in seconds
 CURRENT_INGAME_TIME = None # Current in-game time left - in seconds
 game_start_time = None
 
-TRANSITION_TIME = 10 # Time to wait for transitions from LOBBY to GAME and vice-versa - in seconds
+TRANSITION_TIME = 5 # Time to wait for transitions from LOBBY to GAME and vice-versa - in seconds
 CURRENT_TRANSITION_TIME = None # Current transition time left - in seconds
 transition_start_time = None
 
@@ -240,8 +241,13 @@ def states(pseudo:str):
             listOfAlivePlayers.append(p)
     
     
+    # In-game messages
     if not LOBBY:
-        out += "GAME " + "{time:.1f} ".format(time=CURRENT_INGAME_TIME)
+        # In a transition state from Game to Lobby
+        if not None in [TRANSITION_TIME, transition_start_time]:
+            out += "TRANSITION_GAME_LOBBY " + checkForWin().replace(" ", "_") + "_Going_back_to_lobby_in_{time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)
+        else:
+            out += "GAME " + "{time:.1f} ".format(time=CURRENT_INGAME_TIME)
         
         if not DEAD[pseudo]:
             
@@ -265,25 +271,30 @@ def states(pseudo:str):
             out += "STATE "+(str(liste)).replace(" ","")+" SHADES [] END"
 
         return out
+    # Lobby messages
     else:
+        # In a transition state from Lobby to Game
+        if not None in [TRANSITION_TIME, transition_start_time]:
+            out += "TRANSITION_LOBBY_GAME Entering_game_in_{time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)
+        else:
+            rlist = []
+            for key in READY:
+                if READY[key]:
+                    rlist.append(key) # List of ready players' username
+            
+            n = len(rlist)
+            strList = "["
+            for i in range(n):
+                if i != n - 1:
+                    strList += rlist[i] + ","
+                else:
+                    strList += rlist[i]
+            strList += "]"
+            
+            out += "LOBBY " + strList + " "
+        
         for p in listOfPlayers:
             liste.append(str(p))
-        
-        rlist = []
-        for key in READY:
-            if READY[key]:
-                rlist.append(key) # List of ready players' username
-        
-        n = len(rlist)
-        strList = "["
-        for i in range(n):
-            if i != n - 1:
-                strList += rlist[i] + ","
-            else:
-                strList += rlist[i]
-        strList += "]"
-        
-        out = "LOBBY " + strList + " "
         
         out += "STATE "+(str(liste)).replace(" ","")+" END"
         
@@ -458,6 +469,9 @@ def launchGame():
     """Set the basic state of the game when launching a new game"""
     global CURRENT_INGAME_TIME
     global game_start_time
+    global FINISHED
+    
+    FINISHED = False
 
     CURRENT_INGAME_TIME = SEEKING_TIME
     game_start_time = time.time()
@@ -531,13 +545,13 @@ def collision(pseudo:str, x:int, y:int, dx:int, dy:int):
             return True
     
     for key in dicoJoueur.keys():
-        if key != pseudo:
+        if key != pseudo and not DEAD.get(key, False):
             pid, username, _, position, size = dicoJoueur[key].toList()
             
             if abs(c[0] - position.x - size.w/2) < (dx + size.w)/2 and abs(c[1] - position.y - size.h/2) < (dy + size.h)/2:
                 
                 # players should be able to catch others only if the game started (LOBBY = False)
-                if (not LOBBY and id != pid):
+                if (not LOBBY and not FINISHED and id != pid):
                     
                     if id == TEAMSID["Seekers"] and pid == TEAMSID["Hidders"]:
                         DEAD[username] = True
@@ -723,6 +737,8 @@ def listen_old():
     global CURRENT_INGAME_TIME
     global CURRENT_TRANSITION_TIME
     
+    global FINISHED
+    
     while not STOP:
         while MANAGING and not STOP:
             
@@ -782,8 +798,12 @@ def listen_old():
                 # In game
                 if not (None in [CURRENT_INGAME_TIME, game_start_time]):
                     CURRENT_INGAME_TIME = SEEKING_TIME - (time.time() - game_start_time)
+                    if CURRENT_INGAME_TIME < 0:
+                        CURRENT_INGAME_TIME = 0
                 
+                # game finished
                 if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
+                    FINISHED = True
                     waitForTransition()
             
             # In a transition state

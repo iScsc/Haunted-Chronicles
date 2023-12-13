@@ -79,6 +79,11 @@ WALL_VISIBLE = True
 # In-game variables
 GAME_TIME = None
 
+# Transitions variables
+IN_TRANSITION = False
+TRANSITION_TEXT = ""
+FONT_SIZE_TRANSITION = 40
+
 # ----------------------- Threads -----------------------
 
 def display():
@@ -119,6 +124,7 @@ def display():
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     teamFont = pg.font.SysFont(FONT, FONT_SIZE_TEAMS)
     timeFont = teamFont
+    transitionFont = pg.font.SysFont(FONT, FONT_SIZE_TRANSITION)
     
     # set teams display parameters
     baseHeight = TEAM_DISPLAY_HEIGHT
@@ -128,7 +134,7 @@ def display():
         baseHeight = TEAM_DISPLAY_HEIGHT + teamSize[1]
         
         TEAMS_TEXTS[id] = pg.font.Font.render(teamFont, TEAMS_NAMES[id], False, TEAMS_COLOR[id].color)
-        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] - teamSize[0]) / 2 * TEAMS_POSITIONS[id]
+        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] - teamSize[0]) // 2 * TEAMS_POSITIONS[id]
     
     
     clock = pg.time.Clock()
@@ -169,9 +175,9 @@ def display():
                     TEAMS[player.teamId].append(player)
                     h = baseHeight + (len(TEAMS[player.teamId]) - 1) * usernameSize[1]
                 
-                usernamePosition = (SIZE[0] - usernameSize[0]) / 2
+                usernamePosition = (SIZE[0] - usernameSize[0]) // 2
                 if player.teamId in TEAMS_POSITIONS:
-                    usernamePosition = (SIZE[0] - usernameSize[0]) / 2 * TEAMS_POSITIONS[player.teamId]
+                    usernamePosition = (SIZE[0] - usernameSize[0]) // 2 * TEAMS_POSITIONS[player.teamId]
                 
                 font_color = DEFAULT_LOBBY_COLOR
                 
@@ -214,6 +220,15 @@ def display():
             timeSurface = pg.font.Font.render(timeFont, timeText, False, WHITE.color)
             
             SCREEN.blit(timeSurface, (TEAMS_FINAL_POSITIONS[0], TEAM_DISPLAY_HEIGHT))
+        
+        
+        # In Transition state
+        if IN_TRANSITION:
+            transitionSize = pg.font.Font.size(transitionFont, TRANSITION_TEXT)
+            
+            transitionSurface = pg.font.Font.render(transitionFont, TRANSITION_TEXT, False, WHITE.color)
+            
+            SCREEN.blit(transitionSurface, ((SIZE[0] - transitionSize[0]) // 2, (SIZE[1] - transitionSize[1]) // 2))
         
         
         # End
@@ -443,6 +458,8 @@ def update(state="STATE [] END"):
     global readyPlayers
     global LOBBY
     global GAME_TIME
+    global IN_TRANSITION
+    global TRANSITION_TEXT
 
     if state == None or type(state) != str or state == "":
         return False
@@ -476,19 +493,31 @@ def update(state="STATE [] END"):
         
     elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
         readyPlayers = interp(messages[1], list=["", 0])["list"]
+        IN_TRANSITION = False
         LOBBY = True
         return False
     
     elif len(messages) == 3 and messages[0] == "GAME" and messages[2] == "END":
         GAME_TIME = interp(messages[1], time=0.0)["time"]
+        IN_TRANSITION = False
         LOBBY = False
+        return False
+    
+    elif(len(messages) == 3 and messages[0] == "TRANSITION_GAME_LOBBY" and messages[2] == "END"):
+        TRANSITION_TEXT = interp(messages[1], text="")["text"].replace("_", " ")
+        IN_TRANSITION = True
+        return False
+    
+    elif(len(messages) == 3 and messages[0] == "TRANSITION_LOBBY_GAME" and messages[2] == "END"):
+        TRANSITION_TEXT = interp(messages[1], text="")["text"].replace("_", " ")
+        IN_TRANSITION = True
         return False
     
     ### Concatenated commands
     
     else:
         # dictionary representing the known keywords and the number of parameters in <content> they take
-        keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1}
+        keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
         
         if len(messages) >= 3:
             conc = messages
