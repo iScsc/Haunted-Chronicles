@@ -74,8 +74,12 @@ READY = {}
 DEAD = {}
 
 SEEKING_TIME = 20 # Time to seek for the hidders - in seconds
-CURRENT_TIME = None # Current in-game time left - in seconds
+CURRENT_INGAME_TIME = None # Current in-game time left - in seconds
 game_start_time = None
+
+TRANSITION_TIME = 10 # Time to wait for transitions from LOBBY to GAME and vice-versa - in seconds
+CURRENT_TRANSITION_TIME = None # Current transition time left - in seconds
+transition_start_time = None
 
 # ----------------------- Variables -----------------------
 
@@ -237,7 +241,7 @@ def states(pseudo:str):
     
     
     if not LOBBY:
-        out += "GAME " + "{time:.1f} ".format(time=CURRENT_TIME)
+        out += "GAME " + "{time:.1f} ".format(time=CURRENT_INGAME_TIME)
         
         if not DEAD[pseudo]:
             
@@ -361,7 +365,10 @@ def rules(inputLetter:str,pseudo:str):
         dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
-    switchGameState(checkReady() and noEmptyTeams())
+    
+    # rules can launch transition only from LOBBY to GAME
+    if LOBBY:
+        waitForTransition(cancel=(not (checkReady() and noEmptyTeams())))
     return
 
 
@@ -370,7 +377,7 @@ def checkForWin():
     if LOBBY:
         return ""
     else:
-        if CURRENT_TIME <= 0:
+        if CURRENT_INGAME_TIME <= 0:
             return "The hidders won the game!"
         else:
             every1dead = True # by default, but updated right afterwards
@@ -395,6 +402,7 @@ def checkReady():
 
 
 def noEmptyTeams():
+    """Are both Seekers and Hidders teams not empty?"""
     teamCounts = {TEAMSID[i] : 0 for i in TEAMSID}
     n = len(teamCounts)
     
@@ -411,9 +419,12 @@ def noEmptyTeams():
     return teamCounts[TEAMSID["Hidders"]] > 0 and teamCounts[TEAMSID["Seekers"]] > 0
 
 
-def switchGameState(ready:bool):
-    """Switch from lobby to game or vice-versa"""
+def switchGameState(ready:bool=None):
+    """Switch from lobby to game or vice-versa. If no parameters are used, it will switch to the other state automatically"""
     global LOBBY
+    
+    if ready == None:
+        ready = LOBBY
     
     if LOBBY == ready:
         LOBBY=not ready
@@ -424,26 +435,43 @@ def switchGameState(ready:bool):
         # in lobby
         else:
             resetGameState()
+    
+    # stop transition state
+    waitForTransition(cancel=True)
+
+
+def waitForTransition(cancel=False):
+    """Start a transition timer before switching lobby <-> game (not done in the function itself) or cancel a current timer if cancel = True"""
+    global CURRENT_TRANSITION_TIME
+    global transition_start_time
+    
+    if cancel:
+        CURRENT_TRANSITION_TIME = None
+        transition_start_time = None
+    
+    elif not cancel and None in [CURRENT_TRANSITION_TIME, transition_start_time]:
+        CURRENT_TRANSITION_TIME = TRANSITION_TIME
+        transition_start_time = time.time()
 
 
 def launchGame():
     """Set the basic state of the game when launching a new game"""
-    global CURRENT_TIME
+    global CURRENT_INGAME_TIME
     global game_start_time
 
-    CURRENT_TIME = SEEKING_TIME
+    CURRENT_INGAME_TIME = SEEKING_TIME
     game_start_time = time.time()
 
 
 def resetGameState():
     """Reset the current state of the game to get ready for a new game"""
-    global CURRENT_TIME
+    global CURRENT_INGAME_TIME
     global game_start_time
     
     global READY
     global DEAD
     
-    CURRENT_TIME = None
+    CURRENT_INGAME_TIME = None
     game_start_time = None
     for pseudo in dicoJoueur:
         _, _, _, _, size = dicoJoueur[pseudo].toList()
@@ -692,7 +720,8 @@ def listen_old():
     
     global waitingDisconnectionList
     
-    global CURRENT_TIME
+    global CURRENT_INGAME_TIME
+    global CURRENT_TRANSITION_TIME
     
     while not STOP:
         while MANAGING and not STOP:
@@ -747,11 +776,22 @@ def listen_old():
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
             
-            if not (None in [CURRENT_TIME, game_start_time]):
-                CURRENT_TIME = SEEKING_TIME - (time.time() - game_start_time)
+            # Not in a transition state
+            if None in [CURRENT_TRANSITION_TIME, transition_start_time]:
+                
+                # In game
+                if not (None in [CURRENT_INGAME_TIME, game_start_time]):
+                    CURRENT_INGAME_TIME = SEEKING_TIME - (time.time() - game_start_time)
+                
+                if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
+                    waitForTransition()
             
-            if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
-                switchGameState(False)
+            # In a transition state
+            else:
+                CURRENT_TRANSITION_TIME = TRANSITION_TIME - (time.time() - transition_start_time)
+                
+                if CURRENT_TRANSITION_TIME <= 0:
+                    switchGameState()
             
             time.sleep(WAITING_TIME)
         
