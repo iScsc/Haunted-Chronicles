@@ -78,6 +78,10 @@ WALL_VISIBLE = True
 
 # In-game variables
 GAME_TIME = None
+# Transitions variables
+IN_TRANSITION = False
+TRANSITION_TEXT = ""
+FONT_SIZE_TRANSITION = 40
 
 # ----------------------- Threads -----------------------
 
@@ -119,6 +123,7 @@ def display():
     usernameFont = pg.font.SysFont(FONT, FONT_SIZE_USERNAME)
     teamFont = pg.font.SysFont(FONT, FONT_SIZE_TEAMS)
     timeFont = teamFont
+    transitionFont = pg.font.SysFont(FONT, FONT_SIZE_TRANSITION)
     
     # set teams display parameters
     baseHeight = TEAM_DISPLAY_HEIGHT
@@ -128,7 +133,7 @@ def display():
         baseHeight = TEAM_DISPLAY_HEIGHT + teamSize[1]
         
         TEAMS_TEXTS[id] = pg.font.Font.render(teamFont, TEAMS_NAMES[id], False, TEAMS_COLOR[id].color)
-        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] - teamSize[0]) / 2 * TEAMS_POSITIONS[id]
+        TEAMS_FINAL_POSITIONS[id] = (SIZE[0] - teamSize[0]) // 2 * TEAMS_POSITIONS[id]
     
     
     clock = pg.time.Clock()
@@ -152,7 +157,7 @@ def display():
         #Unvisible
         if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2: #draw shades on top of the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
-        
+
         
         # Teams display
         if LOBBY:
@@ -177,9 +182,9 @@ def display():
                     TEAMS[player.teamId].append(player)
                     h = baseHeight + (len(TEAMS[player.teamId]) - 1) * usernameSize[1]
                 
-                usernamePosition = (SIZE[0] - usernameSize[0]) / 2
+                usernamePosition = (SIZE[0] - usernameSize[0]) // 2
                 if player.teamId in TEAMS_POSITIONS:
-                    usernamePosition = (SIZE[0] - usernameSize[0]) / 2 * TEAMS_POSITIONS[player.teamId]
+                    usernamePosition = (SIZE[0] - usernameSize[0]) // 2 * TEAMS_POSITIONS[player.teamId]
                 
                 font_color = DEFAULT_LOBBY_COLOR
                 
@@ -195,7 +200,16 @@ def display():
             pg.draw.rect(SCREEN, (255,255,0), [200*SCALE_FACTOR[0], 200*SCALE_FACTOR[1], 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [500*SCALE_FACTOR[0], 800*SCALE_FACTOR[1], 10, 10])
             pg.draw.rect(SCREEN, (255,255,0), [1500*SCALE_FACTOR[0], 500*SCALE_FACTOR[1], 10, 10])
- 
+        
+
+        # Teams display
+        if LOBBY:
+            for id in TEAMS_NAMES:
+                SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
+            
+            TEAMS = {0 : [], 1 : [], 2 : []}
+        
+        
         # Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
@@ -213,6 +227,15 @@ def display():
             timeSurface = pg.font.Font.render(timeFont, timeText, False, WHITE.color)
             
             SCREEN.blit(timeSurface, (TEAMS_FINAL_POSITIONS[0], TEAM_DISPLAY_HEIGHT))
+        
+        
+        # In Transition state
+        if IN_TRANSITION:
+            transitionSize = pg.font.Font.size(transitionFont, TRANSITION_TEXT)
+            
+            transitionSurface = pg.font.Font.render(transitionFont, TRANSITION_TEXT, False, WHITE.color)
+            
+            SCREEN.blit(transitionSurface, ((SIZE[0] - transitionSize[0]) // 2, (SIZE[1] - transitionSize[1]) // 2))
         
         
         # End
@@ -442,11 +465,15 @@ def update(state="STATE [] END"):
     global readyPlayers
     global LOBBY
     global GAME_TIME
+    global IN_TRANSITION
+    global TRANSITION_TEXT
 
     if state == None or type(state) != str or state == "":
         return False
     
     messages = state.split(" ")
+    
+    ### Simple commands : KEYWORD <content> END
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         
@@ -473,27 +500,63 @@ def update(state="STATE [] END"):
         
     elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
         readyPlayers = interp(messages[1], list=["", 0])["list"]
+        IN_TRANSITION = False
         LOBBY = True
         return False
     
     elif len(messages) == 3 and messages[0] == "GAME" and messages[2] == "END":
         GAME_TIME = interp(messages[1], time=0.0)["time"]
+        IN_TRANSITION = False
         LOBBY = False
         return False
+    
+    elif(len(messages) == 3 and messages[0] == "TRANSITION_GAME_LOBBY" and messages[2] == "END"):
+        TRANSITION_TEXT = interp(messages[1], text="")["text"].replace("_", " ")
+        IN_TRANSITION = True
+        return False
+    
+    elif(len(messages) == 3 and messages[0] == "TRANSITION_LOBBY_GAME" and messages[2] == "END"):
+        TRANSITION_TEXT = interp(messages[1], text="")["text"].replace("_", " ")
+        IN_TRANSITION = True
+        return False
+    
+    ### Concatenated commands
+    
+    else:
+        # dictionary representing the known keywords and the number of parameters in <content> they take
+        keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
         
-    elif len(messages) == 5 and messages[0] == "STATE" and messages[2] == "SHADES" and messages[4] == "END":
-        LOBBY = False
-        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
-    
-    elif len(messages) == 7 and messages[0] == "GAME" and messages[2] == "STATE" and messages[4] == "SHADES" and messages[6] == "END":
-        LOBBY = False
-        return update(messages[0]+" "+messages[1]+" "+messages[6]) or update(messages[2]+" "+messages[3]+" "+messages[6]) or update(messages[4]+" "+messages[5]+" "+messages[6])
-    
-    elif len(messages) == 5 and messages[0] == "LOBBY" and messages[2] == "STATE" and messages[4] == "END":
-        LOBBY = True
-        return update(messages[0]+" "+messages[1]+" "+messages[4]) or update(messages[2]+" "+messages[3]+" "+messages[4])
-    
-    return True
+        if len(messages) >= 3:
+            conc = messages
+            
+            if conc[0] in keywords:
+                # generate partial command
+                command = conc[0] + " "
+                
+                n = keywords[conc[0]]
+                
+                for i in range(n):
+                    command += conc[1 + i] + " "
+                command += "END"
+                
+                conc[0:1 + n] = []
+                
+                m = len(conc)
+                remains = ""
+                for i in range(m):
+                    if i != m - 1:
+                        remains += conc[i] + " "
+                    else:
+                        remains += conc[i]
+                
+                return update(command) or update(remains)
+            else:
+                return True
+            
+        elif conc == ["END"]:
+            return False
+        
+        return True
 
 
 
