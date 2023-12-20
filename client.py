@@ -408,7 +408,7 @@ def send(input="INPUT " + USERNAME + " . END"):
     
     # Initialization
     if (SOCKET == None and input[0:7] == "CONNECT"):
-        SOCKET = socket(AF_INET, SOCK_STREAM)
+        SOCKET = socket(AF_INET, SOCK_DGRAM)
         SOCKET.settimeout(SOCKET_TIMEOUT)
         try:
             SOCKET.connect((SERVER_IP, SERVER_PORT))

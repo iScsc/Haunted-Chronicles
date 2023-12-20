@@ -889,10 +889,9 @@ def main():
     # Initialization
     baseInit()
     if MAINSOCKET == None:
-        MAINSOCKET = socket(AF_INET, SOCK_STREAM)
+        MAINSOCKET = socket(AF_INET, SOCK_DGRAM)
         MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         MAINSOCKET.bind((HOST, PORT))
-        MAINSOCKET.listen(BACKLOG)
     
     if LOCK == None:
         LOCK = Lock()
