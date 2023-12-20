@@ -78,7 +78,6 @@ WALL_VISIBLE = True
 
 # In-game variables
 GAME_TIME = None
-
 # Transitions variables
 IN_TRANSITION = False
 TRANSITION_TEXT = ""
@@ -158,6 +157,14 @@ def display():
         #Unvisible
         if not LOBBY and not(WALL_VISIBLE) and len(UNVISIBLE) > 2: #draw shades on top of the walls
             pg.draw.polygon(SCREEN, BLACK.color, [(x*SCALE_FACTOR[0],y*SCALE_FACTOR[1]) for (x,y) in UNVISIBLE])
+
+        
+        # Teams display
+        if LOBBY:
+            for id in TEAMS_NAMES:
+                SCREEN.blit(TEAMS_TEXTS[id], (TEAMS_FINAL_POSITIONS[id], TEAM_DISPLAY_HEIGHT))
+            
+            TEAMS = {0 : [], 1 : [], 2 : []}
         
         
         # Players

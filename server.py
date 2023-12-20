@@ -411,7 +411,6 @@ def checkReady():
     
     return True
 
-
 def noEmptyTeams():
     """Are both Seekers and Hidders teams not empty?"""
     teamCounts = {TEAMSID[i] : 0 for i in TEAMSID}
@@ -436,7 +435,7 @@ def switchGameState(ready:bool=None):
     
     if ready == None:
         ready = LOBBY
-    
+
     if LOBBY == ready:
         LOBBY=not ready
         
@@ -446,7 +445,6 @@ def switchGameState(ready:bool=None):
         # in lobby
         else:
             resetGameState()
-    
     # stop transition state
     waitForTransition(cancel=True)
 
@@ -826,7 +824,8 @@ def dummyLights():
     l1 = Light(Position(int(500),int(800)))
     l2 = Light(Position(int(1500),int(500)))
     #l01 = Light(Position(int(100),int(800)))
-    return([l0,l1,l2])
+    L = [dicoMur[l] for l in dicoMur if dicoMur[l].color == Light.BASE_COLOR]
+    return(L)#[l0,l1,l2])
 
 def baseInit():
     global dicoMur
@@ -863,10 +862,16 @@ def baseInit():
     dicoMur[17] = Wall(17, Color(30, 30, 30), Position(1150, 0), Size(10, 350))
     dicoMur[18] = Wall(18, Color(30, 30, 30), Position(1000, 450), Size(310, 10))
 
+    dicoMur[19] = Wall(17, Light.BASE_COLOR, Position(200,200), Light.BASE_SIZE)
+    dicoMur[20] = Wall(18, Light.BASE_COLOR, Position(500,800), Light.BASE_SIZE)
+    dicoMur[21] = Wall(17, Light.BASE_COLOR, Position(1500, 500), Light.BASE_SIZE)
+
+
     # list of walls
     for key in dicoMur:
-        WALLS.append(dicoMur[key]) 
-
+        if dicoMur[key].color != Light.BASE_COLOR:
+            WALLS.append(dicoMur[key])
+    
     t1 = time.time()
     LIGHTS = dummyLights()
     STATIC_SHADOW = AllSources(LIGHTS, WALLS, SIZE_X, SIZE_Y)

@@ -68,7 +68,7 @@ def pointBorder(l:Light,point:tuple[int],sizex:int,sizey:int):
     Returns:
         tuple[int]: the projected point
     """
-    lx,ly = l.position.x, l.position.y
+    lx,ly = l.position.x+Light.BASE_SIZE.w/2, l.position.y+ Light.BASE_SIZE.h/2
     px,py = point
     wallx = 0
     wally = 0
