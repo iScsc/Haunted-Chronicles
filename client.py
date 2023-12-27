@@ -292,20 +292,26 @@ def connect():
         bool: is the connection successful ?
     """
     
+    global SERVER_PORT
     global SIZE
     
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <New_Port> <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
-    if message!=None: messages = message.split(" ")
-    else: messages=None
+    if message != None:
+        messages = message.split(" ")
+    else:
+        messages = None
     
     if DEBUG:
         print("messages: ", messages)
     
-    if (messages!=None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
+    if (messages != None and len(messages) == 11 and messages[0] == "CONNECTED" and messages[2] == USERNAME and messages[4] == "WALLS" and messages[6] == "LOBBY" and messages[8] == "STATE" and messages[10] == "END"):
         
         # get serveur default screen size
         try:
+            portStr = "" + messages[1]
+            SERVER_PORT = int(portStr)
+
             sizeStr = "" + messages[2]
             sizeStr = sizeStr.replace("(", "")
             sizeStr = sizeStr.replace(")", "")
@@ -325,7 +331,7 @@ def connect():
         return True
     
     # Manage failed connections
-    elif messages!=None and "CONNECTED" not in messages:
+    elif messages != None and "CONNECTED" not in messages:
         askNewPseudo(message)
         
         global SOCKET
@@ -417,7 +423,7 @@ def send(input="INPUT " + USERNAME + " . END"):
                 traceback.print_exc()
             exitError("Connection attempt failed, retrying...")
             SOCKET=None
-            
+    
     # Usual behavior
     if SOCKET != None:
         t = time.time()
@@ -426,7 +432,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             if DEBUG:
                 print("input: ",input)
-            SOCKET.sendall(bytes(input, "utf-8"))
+            SOCKET.sendto(bytes(input, "utf-8"), (SERVER_IP, SERVER_PORT))
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
