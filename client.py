@@ -18,9 +18,9 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
-SERVER_IP = "192.168.1.34" #"localhost"
+SERVER_IP = ""
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
@@ -312,7 +312,7 @@ def connect():
             portStr = "" + messages[1]
             SERVER_PORT = int(portStr)
 
-            sizeStr = "" + messages[2]
+            sizeStr = "" + messages[3]
             sizeStr = sizeStr.replace("(", "")
             sizeStr = sizeStr.replace(")", "")
             
@@ -431,18 +431,27 @@ def send(input="INPUT " + USERNAME + " . END"):
         # send data
         try:
             if DEBUG:
+                print("sending to: ", (SERVER_IP, SERVER_PORT))
                 print("input: ",input)
+            
             SOCKET.sendto(bytes(input, "utf-8"), (SERVER_IP, SERVER_PORT))
+            
+            if DEBUG:
+                print("input sent!")
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
             return
-            
+        
         # receive answer
         try:
-            answer = str(SOCKET.recv(1024*16), "utf-8")
             if DEBUG:
+                print("listening for answer")
+            data, addr = SOCKET.recvfrom(1024)
+            answer = str(data.strip(), "utf-8")
+            if DEBUG:
+                print("receiving from: ", addr)
                 print("answer: ",answer)
              
             PING = int((time.time() - t) * 1000)
