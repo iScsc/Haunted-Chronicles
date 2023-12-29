@@ -51,14 +51,10 @@ WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying t
 HOST = str(IP)
 PORT = 9998
 
-# Sockets main variables
+# Sockets main variable
 MAINSOCKET = None
 LOCK = None
 BACKLOG = 1
-
-MAX_NUMBER_OF_PLAYERS = 10
-
-PLAYERS_BEGIN_PORT = 9000
 
 # Server managing variables
 LISTENING = True
@@ -89,10 +85,9 @@ transition_start_time = None
 # ----------------------- Variables -----------------------
 
 dicoJoueur = {} # Store players' Player structure
+
 dicoSocket = {} # Store clients' (sock, addr) structures where sock is the socket used for communicating, and addr = (ip, port)
 waitingDisconnectionList = []
-
-availablePorts = [] # Store available ports for new players
 
 dicoMur = {}
 WALLS = [] # List of walls
@@ -133,9 +128,7 @@ def processConnect(s:str):
         A string representing the connection of the player and the state of the server or why the connection request was invalid
     """
 
-    if len(dicoSocket) >= MAX_NUMBER_OF_PLAYERS:
-        return("The game is already full")
-    elif not LOBBY:
+    if not LOBBY:
         return("The game has already started")
 
     pseudo = extractPseudo(s)
@@ -673,61 +666,51 @@ def manage_server():
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
                 print("LOBBY = ", LOBBY)
-
-
+                
+                
 def listen_new():
     """Manage first connections and connection request"""
     global STOP
     global LISTENING
-
-    global availablePorts
     
     while not STOP:
         while LISTENING and not STOP:
             try:
-                in_data, addr = MAINSOCKET.recvfrom(1024).strip()
+                sock, addr = MAINSOCKET.accept()
                 in_ip = addr[0]
                 
-                try:
-                    if DEBUG:
-                        print("{} wrote:".format(in_ip))
-                        print(in_data)
-                    
-                    out = processRequest(in_ip ,in_data)
-                    message = out.split(' ')
-
-                    # out = CONNECTED <username> <size> WALLS <wallstring> STATE <statestring> SHADES <shadestring> END
-                    if message[0]=="CONNECTED":
-                        LOCK.acquire()
-
-                        sock = socket(AF_INET, SOCK_DGRAM)
-                        sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-
-                        port = availablePorts[0]
-                        out = message[0] + str(port)
-                        for s in message[1:]:
-                            out += (" " + s)
-
-                        sock.bind((HOST, port))
-                        availablePorts.remove(port)
-
-                        username = message[1]
-                        dicoSocket[username] = (sock, addr)
-                        LOCK.release()
-
-                    if DEBUG:
-                        print(">>> ",out,"\n")
-                    
+                if(LISTENING):
                     try:
-                        sock.sendto(bytes(out,'utf-8'), addr)
+                        data = sock.recv(1024).strip()
+                        
+                        in_data = str(data,'utf-8')
+                        
+                        if DEBUG:
+                            print("{} wrote:".format(in_ip))
+                            print(in_data)
+                        
+                        out = processRequest(in_ip ,in_data)
+                        message = out.split(' ')
+                        
+                        if message[0]=="CONNECTED":
+                            LOCK.acquire()
+                            username = message[1]
+                            dicoSocket[username] = (sock, addr)
+                            LOCK.release()
+
+                        if DEBUG:
+                            print(">>> ",out,"\n")
+                        
+                        try:
+                            sock.sendall(bytes(out,'utf-8'))
+                        except (OSError):
+                            if DEBUG:
+                                traceback.print_exc()
+                            print("New connection from " + str(in_ip) + " failed!")
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("New connection from " + str(in_ip) + " failed!")
-                except (OSError):
-                    if DEBUG:
-                        traceback.print_exc()
-                    print("New connection from " + str(in_ip) + " failed!")
                 
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
@@ -740,14 +723,12 @@ def listen_new():
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
-
+        
 
 def listen_old():
     """Manage already connected sockets and inputs or disconnection request"""
     global STOP
     global MANAGING
-
-    global availablePorts
     
     global waitingDisconnectionList
     
@@ -763,18 +744,12 @@ def listen_old():
                 username, sock, addr = elt[0], elt[1], elt[2]
                 
                 if username in dicoSocket and dicoSocket[username] == (sock, addr):
-                    sock, addr = dicoSocket[username]
-                    
-                    host, port = sock.getsockname()
-                    availablePorts.append(port)
-
-                    sock.close()
-
                     dicoSocket.pop(username)
                     dicoJoueur.pop(username)
                     READY.pop(username)
                     DEAD.pop(username)
                 
+                sock.close()
             waitingDisconnectionList = []
 
             LOCK.acquire()
@@ -802,7 +777,7 @@ def listen_old():
                     if DEBUG:
                         print(">>> ",out,"\n")
                     try:
-                        sock.sendto(bytes(out,'utf-8'), addr)
+                        sock.sendall(bytes(out,'utf-8'))
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()
@@ -839,7 +814,7 @@ def listen_old():
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
-
+    
 
 
 # Some static lights
@@ -852,7 +827,7 @@ def dummyLights():
     L = [dicoMur[l] for l in dicoMur if dicoMur[l].color == Light.BASE_COLOR]
     return(L)#[l0,l1,l2])
 
-def baseMapInit():
+def baseInit():
     global dicoMur
     global WALLS
     global LIGHTS
@@ -904,17 +879,6 @@ def baseMapInit():
     t2 = time.time()
     print("time of precalculation : ",t2-t1," s")
 
-def baseSocketInit():
-    global MAINSOCKET
-    global availablePorts
-
-    availablePorts = [PLAYERS_BEGIN_PORT + i for i in range(MAX_NUMBER_OF_PLAYERS)]
-
-    if MAINSOCKET == None:
-        MAINSOCKET = socket(AF_INET, SOCK_DGRAM)
-        MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        MAINSOCKET.bind((HOST, PORT))
-
 # ----------------------- Main -----------------------
 def main():
     """Main function launching the parallel threads to manage the different aspects of the server.
@@ -923,8 +887,12 @@ def main():
     global LOCK
     
     # Initialization
-    baseMapInit()
-    baseSocketInit()
+    baseInit()
+    if MAINSOCKET == None:
+        MAINSOCKET = socket(AF_INET, SOCK_STREAM)
+        MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        MAINSOCKET.bind((HOST, PORT))
+        MAINSOCKET.listen(BACKLOG)
     
     if LOCK == None:
         LOCK = Lock()
@@ -941,4 +909,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
