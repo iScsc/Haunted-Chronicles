@@ -806,7 +806,7 @@ def listen_new():
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
                     
-            except (TimeoutError):
+            except (BlockingIOError):
                 pass
             except (OSError):
                 if DEBUG:
@@ -860,7 +860,7 @@ def manage_client(username, socket, address):
                 else:
                     if DEBUG:
                         print("Received message from address " + str(remote_address) + " different from known address : " + str(address))
-            except (TimeoutError):
+            except (BlockingIOError):
                 pass
             except (OSError):
                 if DEBUG:
@@ -946,7 +946,7 @@ def listen_old():
                             traceback.print_exc()
                         print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                         waitingDisconnectionList.append((username, sock, addr))
-                except (TimeoutError):
+                except (BlockingIOError):
                     pass
                 except (OSError):
                     if DEBUG:

@@ -418,7 +418,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         SOCKET.settimeout(SOCKET_TIMEOUT)
         # try:
         #     SOCKET.connect((SERVER_IP, SERVER_PORT))
-        # except TimeoutError or ConnectionError:
+        # except BlockingIOError or ConnectionError:
         #     if DEBUG:
         #         traceback.print_exc()
         #     exitError("Connection attempt failed, retrying...")
@@ -457,7 +457,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except (TimeoutError):
+        except (BlockingIOError):
             pass
         except (OSError):
             if DEBUG:
