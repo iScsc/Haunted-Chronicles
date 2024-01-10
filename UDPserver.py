@@ -62,6 +62,8 @@ PLAYERS_BEGIN_PORT = 9000
 
 MESSAGES_LENGTH = 1024 * 3
 
+TIMEOUT = 0 # socket set to non-blocking mode
+
 # Server managing variables
 LISTENING = True
 MANAGING = True
@@ -765,6 +767,7 @@ def listen_new():
 
                             sock = socket(AF_INET, SOCK_DGRAM)
                             sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+                            sock.settimeout(TIMEOUT)
                             
                             # port attribution
                             if DEBUG:
@@ -901,11 +904,14 @@ def listen_old():
             waitingDisconnectionList = []
 
             LOCK.acquire()
+            print("acquired!")
             for username in dicoSocket:
                 sock, local_addr = dicoSocket[username]
 
                 try:
+                    print("listening for " + str(username) +"...")
                     data, remote_addr = sock.recvfrom(MESSAGES_LENGTH)
+                    print("listened!")
                     
                     if remote_addr == local_addr:
                         addr = remote_addr
@@ -928,7 +934,9 @@ def listen_old():
                     if DEBUG:
                         print(">>> ",out,"\n")
                     try:
+                        print("Sending...")
                         sock.sendto(bytes(out,'utf-8'), addr)
+                        print("Sent!")
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()
@@ -940,6 +948,7 @@ def listen_old():
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
+            print("released!")
             
             # Not in a transition state
             if None in [CURRENT_TRANSITION_TIME, transition_start_time]:
@@ -1041,6 +1050,7 @@ def baseSocketInit():
     if MAINSOCKET == None:
         MAINSOCKET = socket(AF_INET, SOCK_DGRAM)
         MAINSOCKET.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        MAINSOCKET.settimeout(TIMEOUT)
         MAINSOCKET.bind((HOST, PORT))
 
 # ----------------------- Main -----------------------
