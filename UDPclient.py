@@ -52,7 +52,7 @@ UNVISIBLE = []
 
 SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
-SOCKET_TIMEOUT = 0.001 # in seconds - 0 when set to non blocking mode
+SOCKET_TIMEOUT = 0.050 # in seconds - 0 when set to non blocking mode
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected

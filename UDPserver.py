@@ -62,7 +62,7 @@ PLAYERS_BEGIN_PORT = 9000
 
 MESSAGES_LENGTH = 1024 * 3
 
-TIMEOUT = 0.001 # socket set to non-blocking mode
+TIMEOUT = 0.050 # socket set to non-blocking mode
 
 # Server managing variables
 LISTENING = True
