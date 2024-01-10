@@ -457,6 +457,8 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
+        except (TimeoutError):
+            pass
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
