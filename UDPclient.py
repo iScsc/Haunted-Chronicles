@@ -637,8 +637,8 @@ def main():
         displayer = Thread(target=display)
         gameUpdater = Thread(target=game)
         
-        displayer.setDaemon(True)
-        gameUpdater.setDaemon(True)
+        displayer.daemon = True
+        gameUpdater.daemon = True
         
         displayer.start()
         gameUpdater.start()

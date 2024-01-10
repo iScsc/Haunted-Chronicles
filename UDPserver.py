@@ -1063,9 +1063,9 @@ def main():
     manager_server = Thread(target=manage_server)
     listener_old = Thread(target=listen_old)
     
-    listener_new.setDaemon(True)
-    manager_server.setDaemon(True)
-    listener_old.setDaemon(True)
+    listener_new.daemon = True
+    manager_server.daemon = True
+    listener_old.daemon = True
     
     listener_new.start()
     manager_server.start()
