@@ -553,7 +553,7 @@ def update(state="STATE [] END"):
             else:
                 return True
             
-        elif conc == ["END"]:
+        elif messages == ["END"]:
             return False
         
         return True
