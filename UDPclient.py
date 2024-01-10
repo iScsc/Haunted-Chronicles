@@ -326,8 +326,7 @@ def connect():
             SIZE = (400, 300)   # Some default size.
         
         # set walls players and shades
-        update(messages[3] + " " + messages[4] + " " + messages[9]) # Walls
-        update(messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9]) #Players and Shades
+        update(messages[4] + " " + messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9] + " END")
         
         return True
     
