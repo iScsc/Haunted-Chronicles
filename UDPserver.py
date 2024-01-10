@@ -761,7 +761,7 @@ def listen_new():
                 if LISTENING:
                     try:
                         if DEBUG:
-                            print("{} wrote:".format(addr))
+                            print("{} wrote to MAINSOCKET:".format(addr))
                             print(in_data)
                         
                         out = processRequest(in_ip ,in_data)
