@@ -416,13 +416,13 @@ def send(input="INPUT " + USERNAME + " . END"):
     if (SOCKET == None and input[0:7] == "CONNECT"):
         SOCKET = socket(AF_INET, SOCK_DGRAM)
         SOCKET.settimeout(SOCKET_TIMEOUT)
-        try:
-            SOCKET.connect((SERVER_IP, SERVER_PORT))
-        except TimeoutError or ConnectionError:
-            if DEBUG:
-                traceback.print_exc()
-            exitError("Connection attempt failed, retrying...")
-            SOCKET=None
+        # try:
+        #     SOCKET.connect((SERVER_IP, SERVER_PORT))
+        # except TimeoutError or ConnectionError:
+        #     if DEBUG:
+        #         traceback.print_exc()
+        #     exitError("Connection attempt failed, retrying...")
+        #     SOCKET=None
     
     # Usual behavior
     if SOCKET != None:
