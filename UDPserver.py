@@ -670,6 +670,8 @@ def manage_server():
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
                 print("LOBBY = ", LOBBY)
+    
+    return
 
 
 def manage_game_state():
@@ -807,6 +809,8 @@ def listen_new():
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
+    
+    return
 
 
 def manage_client(username, socket, address):
@@ -959,6 +963,8 @@ def listen_old():
             time.sleep(WAITING_TIME)
         
         time.sleep(WAITING_TIME)
+    
+    return
 
 
 
@@ -1055,9 +1061,16 @@ def main():
     manager_server = Thread(target=manage_server)
     listener_old = Thread(target=listen_old)
     
+    listener_new.setDaemon(True)
+    manager_server.setDaemon(True)
+    listener_old.setDaemon(True)
+    
     listener_new.start()
     manager_server.start()
     listener_old.start()
+    
+    while not STOP:
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()

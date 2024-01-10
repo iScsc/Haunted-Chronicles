@@ -636,8 +636,14 @@ def main():
         displayer = Thread(target=display)
         gameUpdater = Thread(target=game)
         
+        displayer.setDaemon(True)
+        gameUpdater.setDaemon(True)
+        
         displayer.start()
         gameUpdater.start()
+    
+    while CONNECTED:
+        time.sleep(1)
 
 
 
