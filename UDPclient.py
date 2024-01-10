@@ -52,7 +52,7 @@ UNVISIBLE = []
 
 SOCKET = None
 WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
-SOCKET_TIMEOUT = 0 # in seconds - 0 when set to non blocking mode
+SOCKET_TIMEOUT = 0.001 # in seconds - 0 when set to non blocking mode
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
@@ -418,7 +418,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         SOCKET.settimeout(SOCKET_TIMEOUT)
         # try:
         #     SOCKET.connect((SERVER_IP, SERVER_PORT))
-        # except BlockingIOError or ConnectionError:
+        # except (BlockingIOError, TimeoutError, ConnectionError):
         #     if DEBUG:
         #         traceback.print_exc()
         #     exitError("Connection attempt failed, retrying...")
@@ -457,7 +457,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             PING = int((time.time() - t) * 1000)
             
             return answer
-        except (BlockingIOError):
+        except (BlockingIOError, TimeoutError):
             pass
         except (OSError):
             if DEBUG:

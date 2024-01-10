@@ -62,7 +62,7 @@ PLAYERS_BEGIN_PORT = 9000
 
 MESSAGES_LENGTH = 1024 * 3
 
-TIMEOUT = 0 # socket set to non-blocking mode
+TIMEOUT = 0.001 # socket set to non-blocking mode
 
 # Server managing variables
 LISTENING = True
@@ -746,8 +746,6 @@ def listen_new():
     while not STOP:
         while LISTENING and not STOP:
             try:
-                if DEBUG:
-                    print("listening for client\n")
                 data, addr = MAINSOCKET.recvfrom(MESSAGES_LENGTH)
                 in_data = str(data.strip(), "utf-8")
                 in_ip = addr[0]
@@ -806,7 +804,7 @@ def listen_new():
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
                     
-            except (BlockingIOError):
+            except (BlockingIOError, TimeoutError):
                 pass
             except (OSError):
                 if DEBUG:
@@ -860,7 +858,7 @@ def manage_client(username, socket, address):
                 else:
                     if DEBUG:
                         print("Received message from address " + str(remote_address) + " different from known address : " + str(address))
-            except (BlockingIOError):
+            except (BlockingIOError, TimeoutError):
                 pass
             except (OSError):
                 if DEBUG:
@@ -908,14 +906,11 @@ def listen_old():
             waitingDisconnectionList = []
 
             LOCK.acquire()
-            print("acquired!")
             for username in dicoSocket:
                 sock, local_addr = dicoSocket[username]
 
                 try:
-                    print("listening for " + str(username) +"...")
                     data, remote_addr = sock.recvfrom(MESSAGES_LENGTH)
-                    print("listened!")
                     
                     if remote_addr == local_addr:
                         addr = remote_addr
@@ -938,15 +933,13 @@ def listen_old():
                     if DEBUG:
                         print(">>> ",out,"\n")
                     try:
-                        print("Sending...")
                         sock.sendto(bytes(out,'utf-8'), addr)
-                        print("Sent!")
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()
                         print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                         waitingDisconnectionList.append((username, sock, addr))
-                except (BlockingIOError):
+                except (BlockingIOError, TimeoutError):
                     pass
                 except (OSError):
                     if DEBUG:
@@ -954,7 +947,6 @@ def listen_old():
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")
                     waitingDisconnectionList.append((username, sock, addr))
             LOCK.release()
-            print("released!")
             
             # Not in a transition state
             if None in [CURRENT_TRANSITION_TIME, transition_start_time]:
