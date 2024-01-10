@@ -60,6 +60,8 @@ MAX_NUMBER_OF_PLAYERS = 10
 
 PLAYERS_BEGIN_PORT = 9000
 
+MESSAGES_LENGTH = 1024 * 3
+
 # Server managing variables
 LISTENING = True
 MANAGING = True
@@ -744,7 +746,7 @@ def listen_new():
             try:
                 if DEBUG:
                     print("listening for client\n")
-                data, addr = MAINSOCKET.recvfrom(1024)
+                data, addr = MAINSOCKET.recvfrom(MESSAGES_LENGTH)
                 in_data = str(data.strip(), "utf-8")
                 in_ip = addr[0]
                 
@@ -823,7 +825,7 @@ def manage_client(username, socket, address):
         while MANAGING and not STOP:
             # client processing
             try:
-                data, remote_address = socket.recvfrom(1024)
+                data, remote_address = socket.recvfrom(MESSAGES_LENGTH)
                 
                 if remote_address == address:
                     
@@ -903,7 +905,7 @@ def listen_old():
                 sock, local_addr = dicoSocket[username]
 
                 try:
-                    data, remote_addr = sock.recvfrom(1024)
+                    data, remote_addr = sock.recvfrom(MESSAGES_LENGTH)
                     
                     if remote_addr == local_addr:
                         addr = remote_addr

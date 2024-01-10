@@ -25,6 +25,7 @@ SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
 MAX_REQUESTS = 10 # number of requests without proper response before force disconnect
+MESSAGES_LENGTH = 1024 * 3
 
 FPS = 60
 
@@ -448,7 +449,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             if DEBUG:
                 print("listening for answer")
-            data, addr = SOCKET.recvfrom(1024)
+            data, addr = SOCKET.recvfrom(MESSAGES_LENGTH)
             answer = str(data.strip(), "utf-8")
             if DEBUG:
                 print("receiving from: ", addr)
