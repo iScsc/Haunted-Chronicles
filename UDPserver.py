@@ -3,6 +3,7 @@
 
 from socket import *
 from random import randint
+import select
 
 from threading import *
 import time
@@ -46,7 +47,7 @@ SIZE_MAX_PSEUDO = 10
 PLAYER_SIZE = Size(20, 20)
 
 # Maybe not mandatory
-WAITING_TIME = 0.0001 # in seconds - period of connection requests when trying to connect to the host
+WAITING_TIME = 0.005 # in seconds - period of connection requests when trying to connect to the host - must be < TIMEOUT
 
 HOST = str(IP)
 PORT = 9998
@@ -62,7 +63,7 @@ PLAYERS_BEGIN_PORT = 9000
 
 MESSAGES_LENGTH = 1024 * 3
 
-TIMEOUT = 0.050 # socket set to non-blocking mode
+TIMEOUT = 0.010 # socket set to non-blocking mode - must be > waiting time
 
 # Server managing variables
 LISTENING = True
@@ -106,11 +107,11 @@ STATIC_SHADOW = None
 LIST_STATIC_SHADOW = []
 
 # -------------------- Processing a Request -----------------------
-def processRequest(ip:int, s:str):
+def processRequest(addr:int, s:str):
     """Calls the right function according to process a request
 
     Args:
-        ip : player IP
+        addr : player address
         s (str): the request to process
         
     Returns:
@@ -118,16 +119,16 @@ def processRequest(ip:int, s:str):
     """
     type = typeOfRequest(s)
     if type == "CONNECT":
-        return(processConnect(ip, s))
+        return(processConnect(addr, s))
     elif type == "INPUT":
-        return(processInput(ip, s))
+        return(processInput(addr, s))
     elif type == "DISCONNECTION":
-        return(processDisconnection(ip, s))
+        return(processDisconnection(addr, s))
     else :
         return("Invalid Request")
 
 
-def processConnect(ip:int, s:str):
+def processConnect(addr:int, s:str):
     """Process a connection request
 
     Args:
@@ -169,11 +170,11 @@ def processConnect(ip:int, s:str):
         return(firstConnection(pseudo))
     
     
-def processInput(ip:int, s:str):
+def processInput(addr:int, s:str):
     """Process an 'input' request
 
     Args:
-        ip : player IP
+        addr : player address
         s (str): the input request ("INPUT <username> <input> END")
         
     Returns:
@@ -182,14 +183,14 @@ def processInput(ip:int, s:str):
     pseudo = extractPseudo(s)
     if not(doPseudoExist(pseudo)):
         return("No player of that name")
-    if not(validIp(ip, pseudo)):
+    if not(validIp(addr, pseudo)):
         return("You are impersonating someone else !")
     inputWord = extractWord(s)
     rules(inputWord,pseudo)
     return(states(pseudo))
 
 
-def processDisconnection(ip, s:str):
+def processDisconnection(addr, s:str):
     """Process a disconnection request
 
     Args:
@@ -199,7 +200,7 @@ def processDisconnection(ip, s:str):
         "DISCONNECTED <username> END" or why the connection request was invalid
     """
     pseudo = extractPseudo(s)
-    if not(validIp(ip, pseudo)):
+    if not(validIp(addr, pseudo)):
         return("You are impersonating someone else !")
     return("DISCONNECTED " + pseudo + " END")
 
@@ -342,9 +343,9 @@ def doPseudoExist(pseudo:str):
     return(pseudo in dicoJoueur.keys())
 
 
-def validIp(ip, pseudo:str):
-    """If the pseudo and a socket with the ip exist and they are associated"""
-    return (pseudo in dicoJoueur.keys() and pseudo in dicoSocket.keys() and dicoSocket[pseudo][0] == str(ip))
+def validIp(addr, pseudo:str):
+    """If the pseudo and a socket with the address exist and they are associated"""
+    return (pseudo in dicoJoueur.keys() and addr in dicoSocket.keys() and dicoSocket[addr][1] == pseudo)
 
 
 
@@ -689,84 +690,134 @@ def manage_game_state():
     global FINISHED
 
     while not STOP:
-                    
+        
         # listens for clients
-        try:
-            data, addr = MAINSOCKET.recvfrom(MESSAGES_LENGTH)
-            in_data = str(data.strip(), "utf-8")
-            in_ip = addr[0]
-            
-            if DEBUG:
-                print("{} wrote to MAINSOCKET:".format(addr))
-                print(in_data)
-            
-            if MANAGING or LISTENING:
-                out = processRequest(in_ip, in_data)
+        if LISTENING:
+            try:
+                data, addr = MAINSOCKET.recvfrom(MESSAGES_LENGTH)
+                in_data = str(data.strip(), "utf-8")
+                in_ip = addr[0]
+                
+                if DEBUG:
+                    print("{} wrote to MAINSOCKET:".format(addr))
+                    print(in_data)
+                
+                out = processRequest(addr, in_data)
                 message = out.split(" ")
                 username = message[1]
                 
-                # already connected clients
-                if (username, addr) in dicoSocket.items():
-                    if MANAGING:
-                        
-                        if message[0]=="DISCONNECTED":
-                            username = message[1]
-                            waitingDisconnectionList.append((username, addr))
-                        
-                        if DEBUG:
-                            print(">>> ",out,"\n")
-                        try:
-                            MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
-                        except (OSError):
-                            if DEBUG:
-                                traceback.print_exc()
-                            print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
-                            waitingDisconnectionList.append((username, addr))
-                
-                # new connections
-                else:
-                    if LISTENING:
-                        
-                        if message[0]=="CONNECTED":
-                            dicoSocket[username] = addr
+                if message[0]=="CONNECTED":
+                    sock = socket(AF_INET, SOCK_DGRAM)
+                    sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+                    sock.settimeout(TIMEOUT)
+                    
+                    # port attribution
+                    if DEBUG:
+                        print("available ports = ", availablePorts)
+                    
+                    port = availablePorts[0]
+                    out = message[0] + " " + str(port)
+                    for s in message[1:]:
+                        out += (" " + s)
+                    # out = CONNECTED <port> <username> <size> WALLS <wallstring> STATE <statestring> SHADES <shadestring> END
 
-                        if DEBUG:
-                            print("sending to: ", addr)
-                            print(">>> ",out)
+                    sock.bind((HOST, port))
+                    availablePorts.remove(port)
+
+                    username = message[1]
+                    dicoSocket[addr] = (sock, username)
+
+                if DEBUG:
+                    print("sending to: ", addr)
+                    print(">>> ",out)
+                
+                try:
+                    MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
+                    
+                    if DEBUG:
+                        print("answer sent!\n")
+                except (OSError):
+                    if DEBUG:
+                        traceback.print_exc()
+                    print("New connection from " + str(in_ip) + " failed!")
+                    waitingDisconnectionList.append((addr, sock, username))
+                    
+            except (BlockingIOError, TimeoutError):
+                pass
+            except (OSError):
+                if DEBUG:
+                    traceback.print_exc()
+                print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
+        
+        else:
+            print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
+        
+        
+        
+        # already connected clients
+        if MANAGING:
+            sockets = [dicoSocket[addr][0] for addr in dicoSocket]
+            
+            if sockets != []:
+                tselect = time.time()
+                inSockets, _, _ = select.select(sockets, [], [], TIMEOUT)
+                print(time.time() - tselect)
+                
+                for sock in inSockets:
+                    host, port = sock.getsockname()
+                    
+                    try:
+                        data, addr = sock.recvfrom(MESSAGES_LENGTH)
+                        in_data = str(data.strip(), "utf-8")
+                        in_ip = addr[0]
                         
-                        try:
-                            MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
+                        if DEBUG:
+                            print("{} wrote to sock with port {}:".format(addr, port))
+                            print(in_data)
+                        
+                        out = processRequest(addr, in_data)
+                        message = out.split(" ")
+                        
+                        if addr in dicoSocket and dicoSocket[addr][0] == sock:
+                            username = dicoSocket[addr][1]
+                            
+                            if message[0]=="DISCONNECTED":
+                                username = message[1]
+                                waitingDisconnectionList.append((addr, sock, username))
                             
                             if DEBUG:
-                                print("answer sent!\n")
-                        except (OSError):
-                            if DEBUG:
-                                traceback.print_exc()
-                            print("New connection from " + str(in_ip) + " failed!")
-                    else:
-                        print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
-            
-        except (BlockingIOError, TimeoutError):
-            pass
-        except (OSError):
-            if DEBUG:
-                traceback.print_exc()
-            print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
-        
-        
+                                print("sock with port {} for player {} wrote back to {} :".format(port, username, addr))
+                                print(">>> ",out,"\n")
+                            try:
+                                sock.sendto(bytes(out,'utf-8'), addr)
+                            except (OSError):
+                                if DEBUG:
+                                    traceback.print_exc()
+                                print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
+                                waitingDisconnectionList.append((addr, sock, username))
+                    
+                    except (BlockingIOError, TimeoutError):
+                        pass
+                    except (OSError):
+                        if DEBUG:
+                            traceback.print_exc()
+                        print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
         
         # process disconnections
-        LOCK.acquire()
         for elt in waitingDisconnectionList:
-            username, addr = elt[0], elt[1]
+            addr, sock, username = elt[0], elt[1], elt[2]
             
-            if username in dicoSocket and dicoSocket[username] == addr:
-                dicoSocket.pop(username)
+            if addr in dicoSocket and dicoSocket[addr] == (sock, username):
+                host, port = sock.getsockname()
+                availablePorts.append(port)
+
+                sock.close()
+                
+                dicoSocket.pop(addr)
                 dicoJoueur.pop(username)
                 READY.pop(username)
                 DEAD.pop(username)
-        LOCK.release()
-            
+        
         waitingDisconnectionList = []
         
         # Not in a transition state
@@ -810,7 +861,7 @@ def listen_new():
                             print("{} wrote to MAINSOCKET:".format(addr))
                             print(in_data)
                         
-                        out = processRequest(in_ip ,in_data)
+                        out = processRequest(addr ,in_data)
                         message = out.split(' ')
 
                         # out = CONNECTED <username> <size> WALLS <wallstring> STATE <statestring> SHADES <shadestring> END
@@ -835,7 +886,7 @@ def listen_new():
                             availablePorts.remove(port)
 
                             username = message[1]
-                            dicoSocket[username] = (sock, addr)
+                            dicoSocket[addr] = (sock, username)
                             LOCK.release()
 
                         if DEBUG:
@@ -922,7 +973,7 @@ def listen_old():
                         print("Player {} with ip {} wrote:".format(username, in_ip))
                         print(in_data)
                     
-                    out = processRequest(in_ip ,in_data)
+                    out = processRequest(addr ,in_data)
                     message = out.split(" ")
                             
                     if message[0]=="DISCONNECTED":

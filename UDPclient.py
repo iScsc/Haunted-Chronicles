@@ -18,7 +18,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=True
+DEBUG=False
 
 SERVER_IP = ""
 SERVER_PORT = 9998
@@ -51,8 +51,8 @@ WALLS = []
 UNVISIBLE = []
 
 SOCKET = None
-WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
-SOCKET_TIMEOUT = 0.050 # in seconds - 0 when set to non blocking mode
+WAITING_TIME = 0.100 # in seconds - period of connection requests when trying to connect to the host - must be < TIMEOUT
+SOCKET_TIMEOUT = 0.100 # in seconds - 0 when set to non blocking mode - must be > waiting time
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
@@ -296,7 +296,7 @@ def connect():
     global SERVER_PORT
     global SIZE
     
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <New_Port> <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
     if message != None:
         messages = message.split(" ")
@@ -306,11 +306,14 @@ def connect():
     if DEBUG:
         print("messages: ", messages)
     
-    if (messages != None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
+    if (messages != None and len(messages) == 11 and messages[0] == "CONNECTED" and messages[2] == USERNAME and messages[4] == "WALLS" and messages[6] == "LOBBY" and messages[8] == "STATE" and messages[10] == "END"):
         
         # get serveur default screen size
         try:
-            sizeStr = "" + messages[2]
+            portStr = "" + messages[1]
+            SERVER_PORT = int(portStr)
+
+            sizeStr = "" + messages[3]
             sizeStr = sizeStr.replace("(", "")
             sizeStr = sizeStr.replace(")", "")
             
@@ -323,7 +326,7 @@ def connect():
             SIZE = (400, 300)   # Some default size.
         
         # set walls players and shades
-        update(messages[3] + " " + messages[4] + " " + messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " END")
+        update(messages[4] + " " + messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9] + " END")
         
         return True
     
