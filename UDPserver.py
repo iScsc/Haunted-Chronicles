@@ -124,6 +124,8 @@ def processRequest(addr:int, s:str):
         return(processInput(addr, s))
     elif type == "DISCONNECTION":
         return(processDisconnection(addr, s))
+    elif type == "PING":
+        return(processPing(s))
     else :
         return("Invalid Request")
 
@@ -178,7 +180,7 @@ def processInput(addr:int, s:str):
         s (str): the input request ("INPUT <username> <input> END")
         
     Returns:
-        A string representing the state of the server or why the connection request was invalid
+        A string representing the state of the server or why the input request was invalid
     """
     pseudo = extractPseudo(s)
     if not(doPseudoExist(pseudo)):
@@ -197,13 +199,24 @@ def processDisconnection(addr, s:str):
         s (str): the disconnection request ("DISCONNECT <username> END")
         
     Returns:
-        "DISCONNECTED <username> END" or why the connection request was invalid
+        "DISCONNECTED <username> END" or why the disconnection request was invalid
     """
     pseudo = extractPseudo(s)
     if not(validIp(addr, pseudo)):
         return("You are impersonating someone else !")
     return("DISCONNECTED " + pseudo + " END")
 
+def processPing(s:str):
+    """Process a ping request
+
+    Args:
+        s (str): the time ("PING <clock time> END")
+        
+    Returns:
+        "PING <clock time> END"
+    """
+    Clock = extractClock(s)
+    return("PING " + Clock + " END")
 
 def typeOfRequest(s:str):
     """The type of a request (CONNECT,INPUT,DISCONNECT)"""
@@ -234,6 +247,11 @@ def extractWord(s):
     """The input word from the 's' input request string"""
     parts = s.split(" ")
     return(parts[2])
+
+def extractClock(s):
+    """The clock time from the 's' ping request string"""
+    parts = s.split(" ")
+    return(parts[1])
   
 
 def states(pseudo:str):
