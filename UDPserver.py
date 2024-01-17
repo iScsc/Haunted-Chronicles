@@ -779,7 +779,6 @@ def manage_game_state():
             if sockets != []:
                 tselect = time.time()
                 inSockets, _, _ = select.select(sockets, [], [], TIMEOUT)
-                print(time.time() - tselect)
                 
                 for sock in inSockets:
                     host, port = sock.getsockname()
