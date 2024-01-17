@@ -57,7 +57,7 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 LAST_PING_TIME = None # in seconds - time when last ping was sent
-PING_FREQUENCY = 1000 # in loops
+PING_FREQUENCY = 10000 # in loops
 
 LOBBY = True
 readyPlayers = []
@@ -271,7 +271,7 @@ def game():
         
         if i%PING_FREQUENCY:
             t = LAST_PING_TIME = time.time()
-            sendPing(t)
+            update(sendPing(t))
         
         state = send(inputs)
         
@@ -378,7 +378,7 @@ def sendPing(time):
         time (float): time when the ping message was sent
     """
     
-    send("PING " + str(time) + " END")
+    return send("PING " + str(time) + " END")
 
 
 
@@ -445,8 +445,6 @@ def send(input="INPUT " + USERNAME + " . END"):
     
     # Usual behavior
     if SOCKET != None:
-        t = time.time()
-
         # send data
         try:
             if DEBUG:
@@ -514,9 +512,11 @@ def update(state="STATE [] END"):
         try:
             timeping = float(messages[1])
             if timeping == LAST_PING_TIME:
-                PING = time.time() - LAST_PING_TIME
+                PING = int((time.time() - LAST_PING_TIME) * 1000)
+            
+            return False
         except:
-            pass
+            return True
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         
