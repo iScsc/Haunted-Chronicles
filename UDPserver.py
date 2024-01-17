@@ -344,7 +344,7 @@ def doPseudoExist(pseudo:str):
 
 def validIp(ip, pseudo:str):
     """If the pseudo and a socket with the ip exist and they are associated"""
-    return (pseudo in dicoJoueur.keys() and pseudo in dicoSocket.keys() and dicoSocket[pseudo][1][0] == str(ip))
+    return (pseudo in dicoJoueur.keys() and pseudo in dicoSocket.keys() and dicoSocket[pseudo][0] == str(ip))
 
 
 
@@ -680,7 +680,6 @@ def manage_server():
 
 def manage_game_state():
     """Thread to manage the current state of the game."""
-    global availablePorts
     
     global waitingDisconnectionList
     
@@ -690,54 +689,109 @@ def manage_game_state():
     global FINISHED
 
     while not STOP:
-        while MANAGING and not STOP:
-            
-            # process disconnections
-            LOCK.acquire()
-            for elt in waitingDisconnectionList:
-                username, sock, addr = elt[0], elt[1], elt[2]
-                
-                if username in dicoSocket and dicoSocket[username] == (sock, addr):
-                    sock, addr = dicoSocket[username]
                     
-                    host, port = sock.getsockname()
-                    availablePorts.append(port)
+        # listens for clients
+        try:
+            data, addr = MAINSOCKET.recvfrom(MESSAGES_LENGTH)
+            in_data = str(data.strip(), "utf-8")
+            in_ip = addr[0]
+            
+            if DEBUG:
+                print("{} wrote to MAINSOCKET:".format(addr))
+                print(in_data)
+            
+            if MANAGING or LISTENING:
+                out = processRequest(in_ip, in_data)
+                message = out.split(" ")
+                username = message[1]
+                
+                # already connected clients
+                if (username, addr) in dicoSocket.items():
+                    if MANAGING:
+                        
+                        if message[0]=="DISCONNECTED":
+                            username = message[1]
+                            waitingDisconnectionList.append((username, addr))
+                        
+                        if DEBUG:
+                            print(">>> ",out,"\n")
+                        try:
+                            MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
+                        except (OSError):
+                            if DEBUG:
+                                traceback.print_exc()
+                            print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
+                            waitingDisconnectionList.append((username, addr))
+                
+                # new connections
+                else:
+                    if LISTENING:
+                        
+                        if message[0]=="CONNECTED":
+                            dicoSocket[username] = addr
 
-                    sock.close()
-
-                    dicoSocket.pop(username)
-                    dicoJoueur.pop(username)
-                    READY.pop(username)
-                    DEAD.pop(username)
-            LOCK.release()
-                
-            waitingDisconnectionList = []
+                        if DEBUG:
+                            print("sending to: ", addr)
+                            print(">>> ",out)
+                        
+                        try:
+                            MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
+                            
+                            if DEBUG:
+                                print("answer sent!\n")
+                        except (OSError):
+                            if DEBUG:
+                                traceback.print_exc()
+                            print("New connection from " + str(in_ip) + " failed!")
+                    else:
+                        print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
             
-            # Not in a transition state
-            if None in [CURRENT_TRANSITION_TIME, transition_start_time]:
-                
-                # In game
-                if not (None in [CURRENT_INGAME_TIME, game_start_time]):
-                    CURRENT_INGAME_TIME = SEEKING_TIME - (time.time() - game_start_time)
-                    if CURRENT_INGAME_TIME < 0:
-                        CURRENT_INGAME_TIME = 0
-                
-                # game finished
-                if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
-                    FINISHED = True
-                    waitForTransition()
+        except (BlockingIOError, TimeoutError):
+            pass
+        except (OSError):
+            if DEBUG:
+                traceback.print_exc()
+            print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
+        
+        
+        
+        # process disconnections
+        LOCK.acquire()
+        for elt in waitingDisconnectionList:
+            username, addr = elt[0], elt[1]
             
-            # In a transition state
-            else:
-                CURRENT_TRANSITION_TIME = TRANSITION_TIME - (time.time() - transition_start_time)
-                
-                if CURRENT_TRANSITION_TIME <= 0:
-                    switchGameState()
+            if username in dicoSocket and dicoSocket[username] == addr:
+                dicoSocket.pop(username)
+                dicoJoueur.pop(username)
+                READY.pop(username)
+                DEAD.pop(username)
+        LOCK.release()
             
-            time.sleep(WAITING_TIME)
+        waitingDisconnectionList = []
+        
+        # Not in a transition state
+        if None in [CURRENT_TRANSITION_TIME, transition_start_time]:
+            
+            # In game
+            if not (None in [CURRENT_INGAME_TIME, game_start_time]):
+                CURRENT_INGAME_TIME = SEEKING_TIME - (time.time() - game_start_time)
+                if CURRENT_INGAME_TIME < 0:
+                    CURRENT_INGAME_TIME = 0
+            
+            # game finished
+            if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
+                FINISHED = True
+                waitForTransition()
+        
+        # In a transition state
+        else:
+            CURRENT_TRANSITION_TIME = TRANSITION_TIME - (time.time() - transition_start_time)
+            
+            if CURRENT_TRANSITION_TIME <= 0:
+                switchGameState()
         
         time.sleep(WAITING_TIME)
-            
+
 
 def listen_new():
     """Manage first connections and connection request"""
@@ -816,61 +870,6 @@ def listen_new():
         time.sleep(WAITING_TIME)
     
     return
-
-
-def manage_client(username, socket, address):
-    """Thread linked to a given socket to manage the related client"""
-    global availablePorts
-    
-    global waitingDisconnectionList
-    
-    while not STOP:
-        while MANAGING and not STOP:
-            # client processing
-            try:
-                data, remote_address = socket.recvfrom(MESSAGES_LENGTH)
-                
-                if remote_address == address:
-                    
-                    in_ip = address[0]
-
-                    in_data = str(data.strip(),'utf-8')
-                    
-                    if DEBUG:
-                        print("Player {} with address {} wrote:".format(username, address))
-                        print(in_data)
-                    
-                    out = processRequest(in_ip ,in_data)
-                    message = out.split(" ")
-                            
-                    if message[0]=="DISCONNECTED":
-                        waitingDisconnectionList.append((username, socket, address))
-                    
-                    if DEBUG:
-                        print(">>> ",out,"\n")
-                    try:
-                        socket.sendto(bytes(out,'utf-8'), address)
-                    except (OSError):
-                        if DEBUG:
-                            traceback.print_exc()
-                        print("Loss connection while sending data with player " + username + " (address = " + str(address) + ")")
-                        waitingDisconnectionList.append((username, socket, address))
-                else:
-                    if DEBUG:
-                        print("Received message from address " + str(remote_address) + " different from known address : " + str(address))
-            except (BlockingIOError, TimeoutError):
-                pass
-            except (OSError):
-                if DEBUG:
-                    traceback.print_exc()
-                print("Loss connection while receiving data with player " + username + " (address = " + str(address) + ")")
-                waitingDisconnectionList.append((username, socket, address))
-            
-            time.sleep(WAITING_TIME)
-        
-        time.sleep(WAITING_TIME)
-    
-    socket.close()
 
 
 def listen_old():
@@ -1067,17 +1066,20 @@ def main():
     
     print("Server opened with :\n    - ip = " + str(IP) + "\n    - port = " + str(PORT))
     
-    listener_new = Thread(target=listen_new)
     manager_server = Thread(target=manage_server)
-    listener_old = Thread(target=listen_old)
+    # listener_new = Thread(target=listen_new)
+    # listener_old = Thread(target=listen_old)
+    manager_game = Thread(target=manage_game_state)
     
-    listener_new.daemon = True
     manager_server.daemon = True
-    listener_old.daemon = True
+    # listener_new.daemon = True
+    # listener_old.daemon = True
+    manager_game.daemon = True
     
-    listener_new.start()
     manager_server.start()
-    listener_old.start()
+    # listener_new.start()
+    # listener_old.start()
+    manager_game.start()
     
     while not STOP:
         time.sleep(1)
