@@ -65,30 +65,30 @@ class Player:
 
 
 
-    def toPlayers(playersString:str, DEBUG=False):
-        """Generate the list of players described by the playersString variable.
+    # def toPlayers(playersString:str, DEBUG=False):
+    #     """Generate the list of players described by the playersString variable.
 
-        Args:
-            playersString (str): string representation of the list of players.
-            It shall be of the format : "[player1, player2, player3, ...]
-            where a player is : (username, (color.r, color.g, color.b), (position.x, position.y), (width, height))
+    #     Args:
+    #         playersString (str): string representation of the list of players.
+    #         It shall be of the format : "[player1, player2, player3, ...]
+    #         where a player is : (username, (color.r, color.g, color.b), (position.x, position.y), (width, height))
 
-        Returns:
-            list[Player]: list of players to display on the client side.
-        """
-        try :
-            playersList = []
+    #     Returns:
+    #         list[Player]: list of players to display on the client side.
+    #     """
+    #     try :
+    #         playersList = []
 
-            string=interpretor.spc(playersString)
+    #         string=interpretor.spc(playersString)
             
-            for s in string:
-                s='('+s+')'
-                playersList.append(interpretor.interp(s,player=Player())['player'])
+    #         for s in string:
+    #             s='('+s+')'
+    #             playersList.append(interpretor.interp(s,player=Player())['player'])
 
-            return playersList
+    #         return playersList
         
-        except Exception as e:
-            if DEBUG:
-                print(e)
-            return None
+    #     except Exception as e:
+    #         if DEBUG:
+    #             print(e)
+    #         return None
 

@@ -1,5 +1,9 @@
 import common
+import math
+from player import Player
+from wall import Wall
 
+### ----- String Parsing ----- ###
 
 def spc(string:str, strip=False):
     """Splits a given string on parenthesis and commas, taking just into acount first level parenthesis.
@@ -94,10 +98,6 @@ def interp(string, **kwargs):
         dict[str|Any]: updated kwargs
     """
     
-    # local imports to avoid circular imports
-    from player import Player
-    from wall import Wall
-    
     # splits the given string
     values=spc(string)
     
@@ -172,3 +172,188 @@ def interp(string, **kwargs):
         i+=1
         
     return kwargs
+
+
+### ----- Byte Messages ----- ###
+
+KEY=bytes("key","utf-16")
+
+COMMANDS_TO_BYTES = {
+    "CONNECT":bytes([0]),
+    "INPUT":bytes([1]),
+    "DISCONNECTION":bytes([2]),
+    "CONNECTED":bytes([10]),
+    "STATE":bytes([11]),
+    "WALLS":bytes([12]),
+    "SHADOWS":bytes([13]),
+    "LOBBY":bytes([14]),
+    "":bytes(0),
+    "VARIABLE":bytes(1),
+    "CONTINUE":bytes(2),
+    "END":bytes(3)
+    }
+
+BYTES_TO_COMMAND = {
+    bytes([0]):"CONNECT",
+    bytes([1]):"INPUT",
+    bytes([2]):"DISCONNECTION",
+    bytes([10]):"CONNECTED",
+    bytes([11]):"STATE",
+    bytes([12]):"WALLS",
+    bytes([13]):"SHADOWS",
+    bytes([14]):"LOBBY",
+    }
+
+TYPES_TO_BYTES = {
+    int:bytes([0]),
+    float:bytes([1]),
+    str:bytes([2]),
+    bool:bytes([3]),
+    list:bytes([10]),
+    tuple:bytes([11]),
+    Player:bytes([20]),
+    Wall:bytes([21])
+}
+
+BYTES_TO_TYPE = {
+    bytes([0]):int,
+    bytes([1]):float,
+    bytes([2]):str,
+    bytes([3]):bool,
+    bytes([10]):list,
+    bytes([11]):tuple,
+    bytes([20]):Player,
+    bytes([21]):Wall
+}
+
+def byteMessage(command:str,listOfParam:list,end="END"):
+    """Transforms a message into custom byte string
+
+    Args:
+        command (str): type of message, either "CONNECT", "INPUT", "DISCONNECTION", "CONNECTED", "STATE", "WALS", "SHADOWS" or "LOBBY"
+        listOfParam (list): list of parameters linked to the type of the message
+        end (str, optional): how this message ends. Defaults to "END".
+    """
+    
+    byteMsg=bytes(0)
+    
+    byteMsg+=COMMANDS_TO_BYTES[command]
+    
+    for x in listOfParam:
+        byteMsg=paramBytes(x)
+    
+    byteMsg+=COMMANDS_TO_BYTES[end]
+    
+    return byteMsg
+
+
+def bytesParam(param):
+    """Transform a variable into bytes
+
+    Args:
+        param (_type_): a variable
+    """
+    
+    byteParam=bytes(0)
+    byteParam+=TYPES_TO_BYTES[type(param)]
+    
+    
+    # classic types
+    
+    if type(param)==int:
+        byteParam+=bytes([param])
+        
+    elif type(param==float):
+        byteParam+=bytes([math.floor(param)])+\
+            COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytes([math.floor((param-math.floor(param))*100)])
+    
+    elif type(param)==bool:
+        byteParam+=bytes([param])
+        
+    elif type(param)==str:
+        byteParam+=bytes(param,"utf-8")    
+            
+    
+    # common types
+        
+    elif type(param)==common.Color:
+        byteParam+=bytes(param.color)
+    
+    elif type(param)==common.Position:
+        byteParam+=bytes((param.x,param.y))
+    
+    elif type(param)==common.Size:
+        byteParam+=bytes((param.h,param.w))
+    
+    
+    # complex types
+    
+    elif type(param)==Player:
+        byteParam+=bytesParam(param.teamId)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.username)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.color)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.position)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.size)
+    
+    elif type(param)==Wall:
+            bytesParam(param.id)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.color)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.position)+COMMANDS_TO_BYTES["VARIABLE"]+\
+            bytesParam(param.size)
+    
+    
+    # list and tuples
+    elif type(param)==list:
+        for x in param:
+            byteParam+=bytesParam(x)+COMMANDS_TO_BYTES["VARIABLE"]
+    
+    elif type(param)==tuple:
+        for x in param:
+            byteParam+=bytesParam(x)+COMMANDS_TO_BYTES["VARIABLE"]
+        
+    byteParam+=COMMANDS_TO_BYTES["VARIABLE"]
+
+def messageBytes(byteMsg:bytes):
+    """gets the message from a byte string
+
+    Args:
+        byteMsg (bytes): a byte string
+    """
+    
+    temp=byteMsg
+    
+    message=[]
+    
+    message.append(BYTES_TO_COMMAND[temp[0:1]])
+    temp=temp[1:]
+    
+    while temp!=bytes(0):
+        x,temp=paramBytes(temp)
+        message.append(x)
+    
+    return message
+
+
+def paramBytes(byteParam:bytes):
+    """_summary_
+
+    Args:
+        byteParam (bytes): _description_
+    """
+    
+
+def extractVariable(byteVar:bytes):
+    """_summary_
+
+    Args:
+        byteVar (bytes): _description_
+    """
+    
+
+def splitCommand(byteMessage:bytes):
+    """_summary_
+
+    Args:
+        byteMessage (bytes): _description_
+    """
