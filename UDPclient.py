@@ -56,6 +56,8 @@ SOCKET_TIMEOUT = 0.100 # in seconds - 0 when set to non blocking mode - must be
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
+LAST_PING_TIME = None # in seconds - time when last ping was sent
+PING_FREQUENCY = 1000 # in loops
 
 LOBBY = True
 readyPlayers = []
@@ -256,14 +258,20 @@ def game():
     global SOCKET
     global LOBBY
     
+    global LAST_PING_TIME
     
     requestNumber=0
     
     clock = pg.time.Clock()
     
+    i = 0
     while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
+        
+        if i%PING_FREQUENCY:
+            t = LAST_PING_TIME = time.time()
+            sendPing(t)
         
         state = send(inputs)
         
@@ -275,7 +283,7 @@ def game():
         if requestNumber>=MAX_REQUESTS:
             exitError("Max number of request has been passed for inputs!")
 
-        
+        i += 1
         clock.tick(FPS)
     
     if SOCKET != None:
@@ -360,6 +368,17 @@ def askNewPseudo(errorMessage:str):
         username = input()
     
     USERNAME = username
+
+
+
+def sendPing(time):
+    """Send a ping message to the server to identify the client ping
+
+    Args:
+        time (float): time when the ping message was sent
+    """
+    
+    send("PING " + str(time) + " END")
 
 
 
@@ -453,8 +472,6 @@ def send(input="INPUT " + USERNAME + " . END"):
             if DEBUG:
                 print("receiving from: ", addr)
                 print("answer: ",answer)
-             
-            PING = int((time.time() - t) * 1000)
             
             return answer
         except (BlockingIOError, TimeoutError):
@@ -475,7 +492,8 @@ def update(state="STATE [] END"):
     Returns:
         bool: was there a problem in updating variables ?
     """
-        
+    
+    global PING
     global WALLS
     global PLAYERS
     global UNVISIBLE
@@ -491,6 +509,14 @@ def update(state="STATE [] END"):
     messages = state.split(" ")
     
     ### Simple commands : KEYWORD <content> END
+    
+    if len(messages) == 3 and messages[0] == "PING" and messages[2] == "END":
+        try:
+            timeping = float(messages[1])
+            if timeping == LAST_PING_TIME:
+                PING = time.time() - LAST_PING_TIME
+        except:
+            pass
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         
@@ -541,7 +567,7 @@ def update(state="STATE [] END"):
     
     else:
         # dictionary representing the known keywords and the number of parameters in <content> they take
-        keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
+        keywords = {"PING" : 1, "STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
         
         if len(messages) >= 3:
             conc = messages
