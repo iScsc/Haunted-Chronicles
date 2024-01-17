@@ -27,7 +27,8 @@ DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection wi
 MAX_REQUESTS = 10 # number of requests without proper response before force disconnect
 MESSAGES_LENGTH = 1024 * 3
 
-FPS = 60
+FPS_GOAL = 60
+FPS = None
 
 SIZE = None
 SCALE_FACTOR = None
@@ -57,7 +58,7 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 LAST_PING_TIME = None # in seconds - time when last ping was sent
-PING_FREQUENCY = 10000 # in loops
+PING_FREQUENCY = 1000 # in loops
 
 LOBBY = True
 readyPlayers = []
@@ -91,6 +92,8 @@ FONT_SIZE_TRANSITION = 40
 def display():
     """Thread to display the current state of the game given by the server.
     """
+    
+    global FPS
     
     global SCREEN
     global PLAYERS
@@ -141,6 +144,7 @@ def display():
     
     clock = pg.time.Clock()
     
+    last_fps_time = time.time()
     
     while CONNECTED:
         
@@ -212,15 +216,22 @@ def display():
             
             TEAMS = {0 : [], 1 : [], 2 : []}
         
+        # FPS
+        fpsText = "FPS : " + str(FPS)
+        fpsSize = pg.font.Font.size(pingFont, fpsText)
         
-        # Ping
+        fpsSurface = pg.font.Font.render(pingFont, fpsText, False, WHITE.color)
+        
+        # and Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
         
         pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE.color)
         
-        SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
+        offset = max(pingSize[0], fpsSize[0])
         
+        SCREEN.blit(fpsSurface, (SIZE[0] - offset, 0))
+        SCREEN.blit(pingSurface, (SIZE[0] - offset, fpsSize[1] + pingSize[1] // 2))
         
         # Remaining game time
         if not LOBBY:
@@ -244,7 +255,11 @@ def display():
         # End
         pg.display.update()
         
-        clock.tick(FPS)
+        t = time.time()
+        FPS = int(1/(t - last_fps_time))
+        last_fps_time = t
+        
+        clock.tick(FPS_GOAL)
 
 
 
@@ -284,7 +299,7 @@ def game():
             exitError("Max number of request has been passed for inputs!")
 
         i += 1
-        clock.tick(FPS)
+        clock.tick(FPS_GOAL)
     
     if SOCKET != None:
         SOCKET.close()
