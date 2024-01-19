@@ -1,5 +1,4 @@
 import common
-import interpretor
 
 class Wall:
     
@@ -45,30 +44,30 @@ class Wall:
     
     
     
-    def toWalls(wallsString:str, DEBUG=False):
-        """Generate the list of walls described by the wallsString variable.
+    # def toWalls(wallsString:str, DEBUG=False):
+    #     """Generate the list of walls described by the wallsString variable.
 
-        Args:
-            wallsString (str): string representation of the list of walls.
-            It shall be of the format : "[wall1, wall2, wall3, ...]
-            where a wall is : (id, (color.r, color.g, color.b), (position.x, position.y), (width, height))
+    #     Args:
+    #         wallsString (str): string representation of the list of walls.
+    #         It shall be of the format : "[wall1, wall2, wall3, ...]
+    #         where a wall is : (id, (color.r, color.g, color.b), (position.x, position.y), (width, height))
 
-        Returns:
-            list[Wall]: list of walls to display on the client side.
-        """
+    #     Returns:
+    #         list[Wall]: list of walls to display on the client side.
+    #     """
         
-        try :
-            wallsList = []
+    #     try :
+    #         wallsList = []
             
-            string=interpretor.spc(wallsString)
+    #         string=interpretor.spc(wallsString)
             
-            for s in string:
-                s='('+s+')'
-                wallsList.append(interpretor.interp(s,wall=Wall())['wall'])
+    #         for s in string:
+    #             s='('+s+')'
+    #             wallsList.append(interpretor.interp(s,wall=Wall())['wall'])
 
-            return wallsList
+    #         return wallsList
         
-        except Exception as e:
-            if DEBUG:
-                print(e)
-            return None
+    #     except Exception as e:
+    #         if DEBUG:
+    #             print(e)
+    #         return None

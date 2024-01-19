@@ -1,5 +1,4 @@
 import common
-import interpretor
 
 class Player:
     
