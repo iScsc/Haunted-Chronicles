@@ -1,4 +1,5 @@
 import common
+import math
 from player import Player
 from wall import Wall
 
@@ -261,8 +262,15 @@ def bytesParam(param):
     
     # classic types
     
-    if type(param)==int: #TODO
-        byteParam+=bytes([param])
+    if type(param)==int: 
+        n=int(math.log(param,256))
+        byteParam+=bytes([n])
+        intl=[]
+        for _ in range(n):
+            intl.append(param%256)
+            param//=256
+        intl.reverse()
+        byteParam+=bytes(intl)
         
     elif type(param)==float:
         byteParam+=bytesParam(int(param*FLOAT_PRECISION))[:-1]
