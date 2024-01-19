@@ -285,40 +285,49 @@ def bytesParam(param):
     # common types
         
     elif type(param)==common.Color:
-        byteParam+=bytes(param.color)
+        byteParam+=bytesParam(param.color[0])
+        byteParam+=bytesParam(param.color[1])
+        byteParam+=bytesParam(param.color[2])
+        byteParam=byteParam[:-1]
     
-    elif type(param)==common.Position: #TODO
-        byteParam+=bytes((param.x,param.y))
+    elif type(param)==common.Position: 
+        byteParam+=bytesParam(param.x)
+        byteParam+=bytesParam(param.y)
+        byteParam=byteParam[:-1]
     
-    elif type(param)==common.Size: #TODO
-        byteParam+=bytes((param.h,param.w))
+    elif type(param)==common.Size: 
+        byteParam+=bytesParam(param.w)
+        byteParam+=bytesParam(param.h)
+        byteParam=byteParam[:-1]
     
     
     # complex types
     
     elif type(param)==Player:
-        byteParam+=bytesParam(param.teamId)+COMMANDS_TO_BYTES["VARIABLE"]+\
-            bytesParam(param.username)+COMMANDS_TO_BYTES["VARIABLE"]+\
-            bytesParam(param.color)+COMMANDS_TO_BYTES["VARIABLE"]+\
-            bytesParam(param.position)+COMMANDS_TO_BYTES["VARIABLE"]+\
+        byteParam+=bytesParam(param.teamId)+\
+            bytesParam(param.username)+\
+            bytesParam(param.color)+\
+            bytesParam(param.position)+\
             bytesParam(param.size)
+        byteParam=byteParam[:-1]
     
     elif type(param)==Wall:
-            bytesParam(param.id)+COMMANDS_TO_BYTES["VARIABLE"]+\
-            bytesParam(param.color)+COMMANDS_TO_BYTES["VARIABLE"]+\
-            bytesParam(param.position)+COMMANDS_TO_BYTES["VARIABLE"]+\
+        byteParam+=bytesParam(param.id)+\
+            bytesParam(param.color)+\
+            bytesParam(param.position)+\
             bytesParam(param.size)
+        byteParam=byteParam[:-1]
     
     
     # list and tuples
     elif type(param)==list:
         for x in param:
-            byteParam+=bytesParam(x)+COMMANDS_TO_BYTES["VARIABLE"]
+            byteParam+=bytesParam(x)
         byteParam=byteParam[:-1]
     
     elif type(param)==tuple:
         for x in param:
-            byteParam+=bytesParam(x)+COMMANDS_TO_BYTES["VARIABLE"]
+            byteParam+=bytesParam(x)
         byteParam=byteParam[:-1]
         
     byteParam+=COMMANDS_TO_BYTES["VARIABLE"]
