@@ -13,6 +13,7 @@ from wall import Wall
 from light import Light
 from inlight import *
 from common import *
+from interpretor import byteMessages, getMessages
 
 # ----------------------- IP -----------------------
 
@@ -97,12 +98,12 @@ STATIC_SHADOW = None
 LIST_STATIC_SHADOW = []
 
 # -------------------- Processing a Request -----------------------
-def processRequest(ip, s:str):
+def processRequest(ip, s:list):
     """Calls the right function according to process a request
 
     Args:
         ip : player IP
-        s (str): the request to process
+        s (list): the request to process
         
     Returns:
         A string representing the connection of the player and/or the state of the server or why the request was invalid
@@ -115,50 +116,48 @@ def processRequest(ip, s:str):
     elif type == "DISCONNECTION":
         return(processDisconnection(ip, s))
     else :
-        return("Invalid Request")
+        return(["Invalid Request"])
 
 
-def processConnect(s:str):
+def processConnect(s:list):
     """Process a connection request
 
     Args:
-        s (str): the connection request ("CONNECT <username> END")
+        s (list): the connection request ("CONNECT <username> END")
         
     Returns:
-        A string representing the connection of the player and the state of the server or why the connection request was invalid
+        A list representing the connection of the player and the state of the server or why the connection request was invalid
     """
 
     if not LOBBY:
-        return("The game has already started")
+        return(["The game has already started"])
 
     pseudo = extractPseudo(s)
     
     if validPseudo(pseudo):
-        return("This Pseudo already exists")
+        return(["This Pseudo already exists"])
     elif len(pseudo)>SIZE_MAX_PSEUDO:
-        return("Your pseudo is too big !")
-    elif [c for c in pseudo if c in [" ", ",", "(", ")"]] != []:
-        return("Don't use ' ' or ',' or '(' or ')' in your pseudo !")
+        return(["Your pseudo is too big !"])
     else :
         initNewPlayer(pseudo)
         return(firstConnection(pseudo))
     
     
-def processInput(ip, s:str):
+def processInput(ip, s:list):
     """Process an 'input' request
 
     Args:
         ip : player IP
-        s (str): the input request ("INPUT <username> <input> END")
+        s (list): the input request ("INPUT <username> <input> END")
         
     Returns:
-        A string representing the state of the server or why the connection request was invalid
+        A list representing the state of the server or why the connection request was invalid
     """
     pseudo = extractPseudo(s)
     if not(validPseudo(pseudo)):
-        return("No player of that name")
+        return(["No player of that name"])
     if not(validIp(ip, pseudo)):
-        return("You are impersonating someone else !")
+        return(["You are impersonating someone else !"])
     inputWord = extractWord(s)
     rules(inputWord,pseudo)
     return(states(pseudo))
@@ -168,51 +167,30 @@ def processDisconnection(ip, s:str):
     """Process a disconnection request
 
     Args:
-        s (str): the disconnection request ("DISCONNECT <username> END")
+        s (list): the disconnection request ("DISCONNECT <username> END")
         
     Returns:
-        "DISCONNECTED <username> END" or why the connection request was invalid
+        ["DISCONNECTED", <username>, "END"] or why the connection request was invalid
     """
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
-        return("You are impersonating someone else !")
-    return("DISCONNECTED " + pseudo + " END")
+        return(["You are impersonating someone else !"])
+    return(["DISCONNECTED", pseudo, "END"])
 
 
-def typeOfRequest(s:str):
+def typeOfRequest(s:list):
     """The type of a request (CONNECT,INPUT,DISCONNECT)"""
-    type = ""
-    i = 0
-    n = len(s)
-    while i<n and s[i]!=" ":
-        type+=s[i]
-        i+=1
-    return(type)
+    return s[0]
 
 
-def extractPseudo(s:str):
+def extractPseudo(s:list):
     """The pseudo of a player from a connection request"""
-    pseudo = ""
-    parts = s.split(" ")
-    
-    if parts[0] == "CONNECT":
-        i = 1
-        
-        while parts[i] != "END" and i < len(parts) - 1:
-            pseudo += parts[i] + " "
-            i+=1
-        
-        pseudo = pseudo[:-1]
-    else:
-        pseudo = parts[1]
-    
-    return(pseudo)
+    return s[1]
 
   
-def extractWord(s):
+def extractWord(s:list):
     """The input word from the 's' input request string"""
-    parts = s.split(" ")
-    return(parts[2])
+    return(s[2])
   
 
 def states(pseudo:str):
@@ -222,14 +200,14 @@ def states(pseudo:str):
         pseudo (str): player pseudo
         
     Returns:
-        A string representing the state of the server
+        A list representing the state of the server
     """
     player = 0 # the player
     liste = [] # list of player strings
     listOfPlayers = [] # list of all players
     listOfAlivePlayers = [] # list of players that have not been caught yet
     
-    out="" # string to send back
+    out=[] # list of info to send back
     
     # gets all player
     for key in dicoJoueur:
@@ -245,15 +223,15 @@ def states(pseudo:str):
     if not LOBBY:
         # In a transition state from Game to Lobby
         if not None in [TRANSITION_TIME, transition_start_time]:
-            out += "TRANSITION_GAME_LOBBY " + checkForWin().replace(" ", "_") + "_Going_back_to_lobby_in_{time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)
+            out += ["TRANSITION_GAME_LOBBY"] + [checkForWin().replace(" ", "_") + "_Going_back_to_lobby_in_{time:.1f}s".format(time=CURRENT_TRANSITION_TIME)]
         else:
-            out += "GAME " + "{time:.1f} ".format(time=CURRENT_INGAME_TIME)
+            out += ["GAME"] + ["{time:.1f}".format(time=CURRENT_INGAME_TIME)]
         
         if not DEAD[pseudo]:
             
             shadows = Visible(player, LIGHTS, listOfAlivePlayers, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
             visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
-            formatShadows = sendingFormat(shadows)
+            formatShadows = sendingFormat(shadows) #TODO
 
             # gets visible player strings
             liste.append(str(player))
@@ -262,58 +240,49 @@ def states(pseudo:str):
                 if key != pseudo:
                     liste.append(str(p))
 
-            out += "STATE "+(str(liste)).replace(" ","")+" SHADES "+formatShadows+" END"
+            out += ["STATE"]+[liste]+["SHADES"]+formatShadows+["END"]
             
         else:            
             for p in listOfAlivePlayers:
                 liste.append(str(p))
                     
-            out += "STATE "+(str(liste)).replace(" ","")+" SHADES [] END"
+            out += ["STATE"]+[liste]+["SHADES",[]]+["END"]
 
         return out
     # Lobby messages
     else:
         # In a transition state from Lobby to Game
         if not None in [TRANSITION_TIME, transition_start_time]:
-            out += "TRANSITION_LOBBY_GAME Entering_game_in_{time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)
+            out += ["TRANSITION_LOBBY_GAME"] + ["Entering_game_in_{time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)]
         else:
             rlist = []
             for key in READY:
                 if READY[key]:
                     rlist.append(key) # List of ready players' username
             
-            n = len(rlist)
-            strList = "["
-            for i in range(n):
-                if i != n - 1:
-                    strList += rlist[i] + ","
-                else:
-                    strList += rlist[i]
-            strList += "]"
-            
-            out += "LOBBY " + strList + " "
+            out += ["LOBBY"] + [rlist]
         
         for p in listOfPlayers:
             liste.append(str(p))
         
-        out += "STATE "+(str(liste)).replace(" ","")+" END"
+        out += ["STATE"]+[liste]+["END"]
         
         return out
 
 
 def walls():
-    """Formated wall string "WALLS <wallstring> END" """
+    """Formated wall list ["WALLS", <wallslist>, "END"] """
     liste = []
     for key in dicoMur:
         liste.append(str(dicoMur[key]))
-    out = "WALLS " + (str(liste)).replace(" ","") + " END"
+    out = ["WALLS", liste, "END"]
     return(out)
 
 
 def firstConnection(pseudo:str):
-    """Formated string for first connections:
-        "CONNECTED <username> <size> WALLS <wallstring> STATE <statestring> SHADES <shadestring> END" """
-    out = "CONNECTED " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
+    """Formated list for first connections:
+        ["CONNECTED", <username>, <size>, "WALLS", <wallslist>, "STATE", <statelist>, "SHADES", <shadelist>, "END"] """
+    out = ["CONNECTED " , pseudo , SIZE] + walls()[:-1] + states(pseudo)
     return(out)
 
 
@@ -683,7 +652,7 @@ def listen_new():
                     try:
                         data = sock.recv(1024).strip()
                         
-                        in_data = str(data,'utf-8')
+                        in_data = getMessages(data)
                         
                         if DEBUG:
                             print("{} wrote:".format(in_ip))
@@ -702,7 +671,7 @@ def listen_new():
                             print(">>> ",out,"\n")
                         
                         try:
-                            sock.sendall(bytes(out,'utf-8'))
+                            sock.sendall(byteMessages(out))
                         except (OSError):
                             if DEBUG:
                                 traceback.print_exc()
@@ -761,23 +730,22 @@ def listen_old():
                     
                     in_ip = addr[0]
 
-                    in_data = str(data,'utf-8')
+                    in_data = getMessages(data)
                     
                     if DEBUG:
                         print("Player {} with ip {} wrote:".format(username, in_ip))
                         print(in_data)
                     
                     out = processRequest(in_ip ,in_data)
-                    message = out.split(" ")
                             
-                    if message[0]=="DISCONNECTED":
-                        username = message[1]
+                    if out[0]=="DISCONNECTED":
+                        username = out[1]
                         waitingDisconnectionList.append((username, sock, addr))
                     
                     if DEBUG:
                         print(">>> ",out,"\n")
                     try:
-                        sock.sendall(bytes(out,'utf-8'))
+                        sock.sendall(byteMessages(out))
                     except (OSError):
                         if DEBUG:
                             traceback.print_exc()

@@ -187,6 +187,8 @@ COMMANDS_TO_BYTES = {
     "WALLS":bytes([12]),
     "SHADOWS":bytes([13]),
     "LOBBY":bytes([14]),
+    "TRANSITION_GAME_LOBBY":bytes([15]),
+    "GAME":bytes([16]),
     "":bytes(0),
     "VARIABLE":bytes(1),
     "CONTINUE":bytes(2),
@@ -202,6 +204,8 @@ BYTES_TO_COMMAND = {
     bytes([12]):"WALLS",
     bytes([13]):"SHADOWS",
     bytes([14]):"LOBBY",
+    bytes([15]):"TRANSITION_GAME_LOBBY",
+    bytes([16]):"GAME"
     }
 
 TYPES_TO_BYTES = {
@@ -237,7 +241,7 @@ def byteMessage(command:str,listOfParam:list,end="END"):
         end (str, optional): how this message ends. Defaults to "END".
     """
     
-    byteMsg=bytes(0)
+    byteMsg:bytes=bytes(0)
     
     byteMsg+=COMMANDS_TO_BYTES[command]
     
@@ -247,6 +251,30 @@ def byteMessage(command:str,listOfParam:list,end="END"):
     byteMsg+=COMMANDS_TO_BYTES[end]
     
     return byteMsg
+
+
+def byteMessages(commands:list):
+    """creates a formatted byte string encoding a series of commands
+
+    Args:
+        commands (list): a list of commands or messages
+
+    Returns:
+        bytes: the formatted byte string
+    """
+    temp=[]
+    byteMsgs:bytes=bytes(0)
+    
+    byteMsgs+=KEY
+    
+    for x in commands:
+        if x!="END":
+            if x in COMMANDS_TO_BYTES.keys() and temp!=[]:
+                byteMsgs+=byteMessage(temp[0],temp[1:],end="CONTINUE")
+                temp.clear()
+            temp.append(x)
+    byteMsgs+=byteMessage(temp[0],temp[1:])
+    return byteMsgs
 
 
 def bytesParam(param):
@@ -519,6 +547,8 @@ def getMessages(byteMessages:bytes):
     Returns:
         list[list[str,Any...]]: a list of commands
     """
+    if byteMessages[:len(KEY)]!=KEY:
+        raise Exception("Unformatted message: key failed")
     byteMsgs=splitCommand(byteMessages)
     commands=[]
     for x in byteMsgs:
