@@ -1,5 +1,4 @@
 import common
-import math
 from player import Player
 from wall import Wall
 
@@ -226,6 +225,8 @@ BYTES_TO_TYPE = {
     bytes([21]):Wall
 }
 
+FLOAT_PRECISION=100
+
 def byteMessage(command:str,listOfParam:list,end="END"):
     """Transforms a message into custom byte string
 
@@ -260,13 +261,11 @@ def bytesParam(param):
     
     # classic types
     
-    if type(param)==int:
+    if type(param)==int: #TODO
         byteParam+=bytes([param])
         
-    elif type(param==float):
-        byteParam+=bytes([math.floor(param)])+\
-            COMMANDS_TO_BYTES["VARIABLE"]+\
-            bytes([math.floor((param-math.floor(param))*100)])
+    elif type(param)==float:
+        byteParam+=bytesParam(int(param*FLOAT_PRECISION))[:-1]
     
     elif type(param)==bool:
         byteParam+=bytes([param])
@@ -280,10 +279,10 @@ def bytesParam(param):
     elif type(param)==common.Color:
         byteParam+=bytes(param.color)
     
-    elif type(param)==common.Position:
+    elif type(param)==common.Position: #TODO
         byteParam+=bytes((param.x,param.y))
     
-    elif type(param)==common.Size:
+    elif type(param)==common.Size: #TODO
         byteParam+=bytes((param.h,param.w))
     
     
@@ -307,12 +306,15 @@ def bytesParam(param):
     elif type(param)==list:
         for x in param:
             byteParam+=bytesParam(x)+COMMANDS_TO_BYTES["VARIABLE"]
+        byteParam=byteParam[:-1]
     
     elif type(param)==tuple:
         for x in param:
             byteParam+=bytesParam(x)+COMMANDS_TO_BYTES["VARIABLE"]
+        byteParam=byteParam[:-1]
         
     byteParam+=COMMANDS_TO_BYTES["VARIABLE"]
+
 
 def messageBytes(byteMsg:bytes):
     """gets the message from a byte string
@@ -336,24 +338,156 @@ def messageBytes(byteMsg:bytes):
 
 
 def paramBytes(byteParam:bytes):
-    """_summary_
+    """gets the first parameter from a formatted bytes string
 
     Args:
-        byteParam (bytes): _description_
+        byteParam (bytes): a formatted byte string
+
+    Returns:
+        tuple[Any|bytes]: the parameter and the bytes left
     """
     
+    paramType=BYTES_TO_TYPE[byteParam[0:1]]
+    temp=byteParam[1:]
+    
+    # classic types
+    
+    if paramType==int:
+        param:int=0
+        n=temp[0]
+        temp=temp[1:]
+        var,temp=extractVariable(temp,min=n)
+        for i in range(n):
+            param*=256
+            param+=var[i]
+        return param, temp
+        
+    elif paramType==float:
+        fparam:float
+        fparam,temp=paramBytes(temp)
+        fparam/=FLOAT_PRECISION
+        return fparam,temp
+    
+    elif paramType==bool:
+        return bool(var[0]), temp
+        
+    elif paramType==str:
+        param:str=str(param,"utf-8")    
+        return param, temp
+            
+    
+    # common types
+        
+    elif paramType==common.Color:
+        r,temp=paramBytes(temp)
+        g,temp=paramBytes(temp)
+        b,temp=paramBytes(temp)
+        return common.Color(r,g,b),temp
+    
+    elif paramType==common.Position:
+        x,temp=paramBytes(temp)
+        y,temp=paramBytes(temp)
+        return common.Position(x,y),temp
+    
+    elif paramType==common.Size:
+        w,temp=paramBytes(temp)
+        h,temp=paramBytes(temp)
+        return common.Size(w,h),temp
+    
+    
+    # complex types
+    
+    elif paramType==Player:            
+        teamID,temp=paramBytes(temp)
+        username,temp=paramBytes(temp)
+        color,temp=paramBytes(temp)
+        position,temp=paramBytes(temp)
+        size,temp=paramBytes(temp)
+        return Player(teamID,username,color,position,size),temp
+    
+    elif paramType==Wall:     
+        id,temp=paramBytes(temp)
+        color,temp=paramBytes(temp)
+        position,temp=paramBytes(temp)
+        size,temp=paramBytes(temp)
+        return Wall(id,color,position,size), temp
+    
+    
+    # list and tuples
+    elif paramType==list:
+        l=[]
+        n=temp[0]
+        temp=temp[1:]
+        for _ in range(n):
+            var,temp=paramBytes(temp)
+            l.append(var)
+        return l,temp
+    
+    elif paramType==tuple:
+        l=[]
+        n=temp[0]
+        temp=temp[1:]
+        for _ in range(n):
+            var,temp=paramBytes(temp)
+            l.append(var)
+        return tuple(l),temp
 
-def extractVariable(byteVar:bytes):
-    """_summary_
+
+def extractVariable(byteVar:bytes,min=1):
+    """extract a variable from a byte string (up to a null byte after a min nbr of bytes)
 
     Args:
-        byteVar (bytes): _description_
+        byteVar (bytes): a formatted byte string
+        min (int, optional): the minimum number of bytes. Defaults to 1.
+
+    Returns:
+        tuple[Any,bytes]: a variable and the bytes left
     """
+    
+    res=bytes(0)
+    i=0
+    while i<min or byteVar[i:i+1]!=COMMANDS_TO_BYTES["VARIABLE"]:
+        res+=byteVar[i:i+1]
+    return res, byteVar[i+1:]
     
 
 def splitCommand(byteMessage:bytes):
-    """_summary_
+    """split a byte message into byte commands
 
     Args:
-        byteMessage (bytes): _description_
+        byteMessage (bytes): a formatted byte string
+
+    Returns:
+        list[bytes]: the list of byte commands
     """
+    commands=[]
+    temp=byteMessage
+    while temp != bytes(1):
+        command,temp=extractCommand(temp)
+        commands.append(command)
+    return commands
+
+
+def extractCommand(byteMessage:bytes):
+    """extract a single command from a formatted byte string cntaining concatenated commands
+
+    Args:
+        byteMessage (bytes): a formatted byte string
+
+    Returns:
+        tuple[bytes,bytes]: the byte command and the left bytes
+    """
+    fstNull=False
+    temp=byteMessage
+    command=bytes(0)
+    while not fstNull or temp[0]!=0:
+        if fstNull:
+            command+=COMMANDS_TO_BYTES["VARIABLE"]+temp[0:1]
+            fstNull=False
+        elif temp[0]==0:
+            fstNull=True
+        else:
+            command+=temp[0:1]
+        temp=temp[1:]
+    command+=COMMANDS_TO_BYTES["END"]
+    return command, temp[1:]
