@@ -179,9 +179,9 @@ def interp(string, **kwargs):
 KEY=bytes("key","utf-16")
 
 COMMANDS_TO_BYTES = {
-    "CONNECT":bytes([0]),
-    "INPUT":bytes([1]),
-    "DISCONNECTION":bytes([2]),
+    "CONNECT":bytes([1]),
+    "INPUT":bytes([2]),
+    "DISCONNECTION":bytes([3]),
     "CONNECTED":bytes([10]),
     "STATE":bytes([11]),
     "WALLS":bytes([12]),
@@ -196,9 +196,9 @@ COMMANDS_TO_BYTES = {
     }
 
 BYTES_TO_COMMAND = {
-    bytes([0]):"CONNECT",
-    bytes([1]):"INPUT",
-    bytes([2]):"DISCONNECTION",
+    bytes([1]):"CONNECT",
+    bytes([2]):"INPUT",
+    bytes([3]):"DISCONNECTION",
     bytes([10]):"CONNECTED",
     bytes([11]):"STATE",
     bytes([12]):"WALLS",
@@ -209,25 +209,31 @@ BYTES_TO_COMMAND = {
     }
 
 TYPES_TO_BYTES = {
-    int:bytes([0]),
-    float:bytes([1]),
-    str:bytes([2]),
-    bool:bytes([3]),
+    int:bytes([1]),
+    float:bytes([2]),
+    str:bytes([3]),
+    bool:bytes([4]),
     list:bytes([10]),
     tuple:bytes([11]),
     Player:bytes([20]),
-    Wall:bytes([21])
+    Wall:bytes([21]),
+    common.Color:bytes([30]),
+    common.Position:bytes([31]),
+    common.Size:bytes([32])
 }
 
 BYTES_TO_TYPE = {
-    bytes([0]):int,
-    bytes([1]):float,
-    bytes([2]):str,
-    bytes([3]):bool,
+    bytes([1]):int,
+    bytes([2]):float,
+    bytes([3]):str,
+    bytes([4]):bool,
     bytes([10]):list,
     bytes([11]):tuple,
     bytes([20]):Player,
-    bytes([21]):Wall
+    bytes([21]):Wall,
+    bytes([30]):common.Color,
+    bytes([31]):common.Position,
+    bytes([32]):common.Size
 }
 
 FLOAT_PRECISION=100
@@ -269,7 +275,7 @@ def byteMessages(commands:list):
     
     for x in commands:
         if x!="END":
-            if x in COMMANDS_TO_BYTES.keys() and temp!=[]:
+            if type(x)==str and x in COMMANDS_TO_BYTES.keys() and temp!=[]:
                 byteMsgs+=byteMessage(temp[0],temp[1:],end="CONTINUE")
                 temp.clear()
             temp.append(x)
@@ -291,7 +297,9 @@ def bytesParam(param):
     # classic types
     
     if type(param)==int: 
-        n=int(math.log(param,256))
+        if param!=0:
+            n=int(math.log(param,256))+1
+        else: n=1
         byteParam+=bytes([n])
         intl=[]
         for _ in range(n):
@@ -349,11 +357,13 @@ def bytesParam(param):
     
     # list and tuples
     elif type(param)==list:
+        byteParam+=bytes([len(param)]) # supposing it doesn't overpass 256
         for x in param:
             byteParam+=bytesParam(x)
         byteParam=byteParam[:-1]
     
     elif type(param)==tuple:
+        byteParam+=bytes([len(param)]) # supposing it doesn't overpass 256
         for x in param:
             byteParam+=bytesParam(x)
         byteParam=byteParam[:-1]
