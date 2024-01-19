@@ -508,3 +508,19 @@ def extractCommand(byteMessage:bytes):
         temp=temp[1:]
     command+=COMMANDS_TO_BYTES["END"]
     return command, temp[1:]
+
+
+def getMessages(byteMessages:bytes):
+    """gets command and messages from a formatted byte string
+
+    Args:
+        byteMessages (bytes): a formatted byte string
+
+    Returns:
+        list[list[str,Any...]]: a list of commands
+    """
+    byteMsgs=splitCommand(byteMessages)
+    commands=[]
+    for x in byteMsgs:
+        commands.append(messageBytes(x))
+    return commands
