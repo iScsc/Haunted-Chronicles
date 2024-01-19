@@ -246,9 +246,9 @@ def byteMessage(command:str,listOfParam:list,end="END"):
     byteMsg+=COMMANDS_TO_BYTES[command]
     
     for x in listOfParam:
-        byteMsg=paramBytes(x)
+        byteMsg+=bytesParam(x)
     
-    byteMsg+=COMMANDS_TO_BYTES[end]
+    byteMsg=byteMsg[:-1]+COMMANDS_TO_BYTES[end]
     
     return byteMsg
 
@@ -359,6 +359,8 @@ def bytesParam(param):
         byteParam=byteParam[:-1]
         
     byteParam+=COMMANDS_TO_BYTES["VARIABLE"]
+    
+    return byteParam
 
 
 def messageBytes(byteMsg:bytes):
@@ -375,9 +377,10 @@ def messageBytes(byteMsg:bytes):
     message.append(BYTES_TO_COMMAND[temp[0:1]])
     temp=temp[1:]
     
-    while temp!=bytes(0):
+    while temp!=COMMANDS_TO_BYTES["END"] and temp!=COMMANDS_TO_BYTES["CONTINUE"] and temp!=COMMANDS_TO_BYTES["VARIABLE"] and temp!=COMMANDS_TO_BYTES[""]:
         x,temp=paramBytes(temp)
         message.append(x)
+    message.append("END")
     
     return message
 
@@ -414,10 +417,11 @@ def paramBytes(byteParam:bytes):
         return fparam,temp
     
     elif paramType==bool:
-        return bool(var[0]), temp
+        return bool(temp[0]), temp[1:]
         
     elif paramType==str:
-        param:str=str(param,"utf-8")    
+        var,temp=extractVariable(temp)
+        param:str=str(var,"utf-8")    
         return param, temp
             
     
@@ -491,8 +495,9 @@ def extractVariable(byteVar:bytes,min=1):
     
     res=bytes(0)
     i=0
-    while i<min or byteVar[i:i+1]!=COMMANDS_TO_BYTES["VARIABLE"]:
+    while i<min or (byteVar[i:i+1]!=COMMANDS_TO_BYTES["VARIABLE"]):
         res+=byteVar[i:i+1]
+        i+=1
     return res, byteVar[i+1:]
     
 
@@ -549,7 +554,7 @@ def getMessages(byteMessages:bytes):
     """
     if byteMessages[:len(KEY)]!=KEY:
         raise Exception("Unformatted message: key failed")
-    byteMsgs=splitCommand(byteMessages)
+    byteMsgs=splitCommand(byteMessages[len(KEY):])
     commands=[]
     for x in byteMsgs:
         commands.append(messageBytes(x))
