@@ -296,17 +296,17 @@ def bytesParam(param):
     
     # classic types
     
-    if type(param)==int: 
-        if param!=0:
-            n=int(math.log(param,256))+1
-        else: n=1
-        byteParam+=bytes([n])
-        intl=[]
-        for _ in range(n):
-            intl.append(param%256)
-            param//=256
-        intl.reverse()
-        byteParam+=bytes(intl)
+    if type(param)==int: # unsigned int
+        if param==0:
+            byteParam+=bytes([1,1])
+        else:
+            intl=[]
+            while param>0: 
+                intl.append(param%255+1) #so that it never equals 0
+                param//=255
+            intl.reverse()
+            byteParam+=bytes([len(intl)])
+            byteParam+=bytes(intl)
         
     elif type(param)==float:
         byteParam+=bytesParam(int(param*FLOAT_PRECISION))[:-1]
@@ -315,7 +315,10 @@ def bytesParam(param):
         byteParam+=bytes([param])
         
     elif type(param)==str:
-        byteParam+=bytes(param,"utf-8")    
+        if param!="" : 
+            byteParam+=bytes(param,"utf-8")    
+        else:
+            byteParam+=b'\x03'
             
     
     # common types
@@ -340,33 +343,28 @@ def bytesParam(param):
     # complex types
     
     elif type(param)==Player:
-        byteParam+=bytesParam(param.teamId)+\
-            bytesParam(param.username)+\
-            bytesParam(param.color)+\
-            bytesParam(param.position)+\
-            bytesParam(param.size)
+        byteParam+=bytesParam(param.teamId)+bytesParam(param.username)+bytesParam(param.color)+bytesParam(param.position)+bytesParam(param.size)
         byteParam=byteParam[:-1]
     
     elif type(param)==Wall:
-        byteParam+=bytesParam(param.id)+\
-            bytesParam(param.color)+\
-            bytesParam(param.position)+\
-            bytesParam(param.size)
+        byteParam+=bytesParam(param.id)+bytesParam(param.color)+bytesParam(param.position)+bytesParam(param.size)
         byteParam=byteParam[:-1]
     
     
     # list and tuples
     elif type(param)==list:
-        byteParam+=bytes([len(param)]) # supposing it doesn't overpass 256
+        byteParam+=bytes([len(param)+1]) # supposing it doesn't overpass 255
         for x in param:
             byteParam+=bytesParam(x)
-        byteParam=byteParam[:-1]
+        if len(byteParam)>2:
+            byteParam=byteParam[:-1]
     
     elif type(param)==tuple:
-        byteParam+=bytes([len(param)]) # supposing it doesn't overpass 256
+        byteParam+=bytes([len(param)+1]) # supposing it doesn't overpass 256
         for x in param:
             byteParam+=bytesParam(x)
-        byteParam=byteParam[:-1]
+        if len(byteParam)>2:
+            byteParam=byteParam[:-1]
         
     byteParam+=COMMANDS_TO_BYTES["VARIABLE"]
     
@@ -388,6 +386,7 @@ def messageBytes(byteMsg:bytes):
     temp=temp[1:]
     
     while temp!=COMMANDS_TO_BYTES["END"] and temp!=COMMANDS_TO_BYTES["CONTINUE"] and temp!=COMMANDS_TO_BYTES["VARIABLE"] and temp!=COMMANDS_TO_BYTES[""]:
+        #print(temp)
         x,temp=paramBytes(temp)
         message.append(x)
     message.append("END")
@@ -416,8 +415,8 @@ def paramBytes(byteParam:bytes):
         temp=temp[1:]
         var,temp=extractVariable(temp,min=n)
         for i in range(n):
-            param*=256
-            param+=var[i]
+            param*=255
+            param+=var[i]-1
         return param, temp
         
     elif paramType==float:
@@ -431,7 +430,9 @@ def paramBytes(byteParam:bytes):
         
     elif paramType==str:
         var,temp=extractVariable(temp)
-        param:str=str(var,"utf-8")    
+        param:str=""
+        if var!=b'\x03':
+            param=str(var,"utf-8")    
         return param, temp
             
     
@@ -475,7 +476,7 @@ def paramBytes(byteParam:bytes):
     # list and tuples
     elif paramType==list:
         l=[]
-        n=temp[0]
+        n=temp[0]-1
         temp=temp[1:]
         for _ in range(n):
             var,temp=paramBytes(temp)
@@ -484,7 +485,7 @@ def paramBytes(byteParam:bytes):
     
     elif paramType==tuple:
         l=[]
-        n=temp[0]
+        n=temp[0]-1
         temp=temp[1:]
         for _ in range(n):
             var,temp=paramBytes(temp)
@@ -540,7 +541,7 @@ def extractCommand(byteMessage:bytes):
     fstNull=False
     temp=byteMessage
     command=bytes(0)
-    while not fstNull or temp[0]!=0:
+    while not (fstNull and temp[0]==0): # two Null following
         if fstNull:
             command+=COMMANDS_TO_BYTES["VARIABLE"]+temp[0:1]
             fstNull=False
