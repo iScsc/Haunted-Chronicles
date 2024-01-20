@@ -554,7 +554,7 @@ def exit():
     
     t = time.time()
     while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
-        if send(["DISCONNECTION", USERNAME, "END"]) == ["DISCONNECTED", USERNAME, "END"]:
+        if send(["DISCONNECTION", USERNAME, "END"])[0] == ["DISCONNECTED", USERNAME, "END"]:
             CONNECTED = False
             SOCKET.close()
             SOCKET = None
@@ -577,8 +577,9 @@ def exitError(errorMessage="Sorry a problem occured..."):
     print(errorMessage)
     
     CONNECTED=False
-    SOCKET.close()
-    SOCKET = None
+    if SOCKET!=None:
+        SOCKET.close()
+        SOCKET = None
 
 
 

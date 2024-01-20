@@ -190,6 +190,7 @@ COMMANDS_TO_BYTES = {
     "TRANSITION_GAME_LOBBY":bytes([15]),
     "TRANSITION_LOBBY_GAME":bytes([16]),
     "GAME":bytes([17]),
+    "DISCONNECTED":bytes([18]),
     "ERROR":bytes([20]),
     "":bytes(0),
     "VARIABLE":bytes(1),
@@ -209,6 +210,7 @@ BYTES_TO_COMMAND = {
     bytes([15]):"TRANSITION_GAME_LOBBY",
     bytes([16]):"TRANSITION_LOBBY_GAME",
     bytes([17]):"GAME",
+    bytes([18]):"DISCONNECTED",
     bytes([20]):"ERROR"
     }
 
