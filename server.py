@@ -223,9 +223,9 @@ def states(pseudo:str):
     if not LOBBY:
         # In a transition state from Game to Lobby
         if not None in [TRANSITION_TIME, transition_start_time]:
-            out += ["TRANSITION_GAME_LOBBY"] + [checkForWin().replace(" ", "_") + "_Going_back_to_lobby_in_{time:.1f}s".format(time=CURRENT_TRANSITION_TIME)]
+            out += ["TRANSITION_GAME_LOBBY"] + [checkForWin() + " Going back to lobby in {time:.1f}s".format(time=CURRENT_TRANSITION_TIME)]
         else:
-            out += ["GAME"] + ["{time:.1f}".format(time=CURRENT_INGAME_TIME)]
+            out += ["GAME"] + [CURRENT_INGAME_TIME]
         
         if not DEAD[pseudo]:
             
