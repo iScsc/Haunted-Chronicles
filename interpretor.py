@@ -322,7 +322,7 @@ def bytesParam(param):
         byteParam+=bytesParam(int(param*FLOAT_PRECISION))[:-1]
     
     elif type(param)==bool:
-        byteParam+=bytes([param])
+        byteParam+=bytes([param+1])
         
     elif type(param)==str:
         if param!="" : 
@@ -436,7 +436,7 @@ def paramBytes(byteParam:bytes):
         return fparam,temp
     
     elif paramType==bool:
-        return bool(temp[0]), temp[1:]
+        return bool(temp[0]-1), temp[1:]
         
     elif paramType==str:
         var,temp=extractVariable(temp)
