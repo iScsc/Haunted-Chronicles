@@ -234,17 +234,17 @@ def states(pseudo:str):
             formatShadows = sendingFormat(shadows) #TODO
 
             # gets visible player strings
-            liste.append(str(player))
+            liste.append(player)
             for key in visiblePlayer:
                 p = dicoJoueur[key]
                 if key != pseudo:
-                    liste.append(str(p))
+                    liste.append(p)
 
             out += ["STATE"]+[liste]+["SHADES"]+formatShadows+["END"]
             
         else:            
             for p in listOfAlivePlayers:
-                liste.append(str(p))
+                liste.append(p)
                     
             out += ["STATE"]+[liste]+["SHADES",[]]+["END"]
 
@@ -263,7 +263,7 @@ def states(pseudo:str):
             out += ["LOBBY"] + [rlist]
         
         for p in listOfPlayers:
-            liste.append(str(p))
+            liste.append(p)
         
         out += ["STATE"]+[liste]+["END"]
         
@@ -274,7 +274,7 @@ def walls():
     """Formated wall list ["WALLS", <wallslist>, "END"] """
     liste = []
     for key in dicoMur:
-        liste.append(str(dicoMur[key]))
+        liste.append(dicoMur[key])
     out = ["WALLS", liste, "END"]
     return(out)
 
