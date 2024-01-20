@@ -478,6 +478,8 @@ def paramBytes(byteParam:bytes):
         l=[]
         n=temp[0]-1
         temp=temp[1:]
+        if n==0:
+            temp=temp[1:]
         for _ in range(n):
             var,temp=paramBytes(temp)
             l.append(var)
@@ -487,6 +489,8 @@ def paramBytes(byteParam:bytes):
         l=[]
         n=temp[0]-1
         temp=temp[1:]
+        if n==0:
+            temp=temp[1:]
         for _ in range(n):
             var,temp=paramBytes(temp)
             l.append(var)
