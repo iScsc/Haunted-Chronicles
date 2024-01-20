@@ -18,7 +18,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
@@ -299,25 +299,25 @@ def connect():
     if DEBUG:
         print("messages: ", messages)
     
-    if (messages!=None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
+    if (messages!=None and len(messages) == 4 and len(messages[0])==4 and messages[0][0] == "CONNECTED" and messages[0][1] == USERNAME and len(messages[1])==3 and messages[1][0] == "WALLS" and len(messages[2])==3 and messages[2][0] == "LOBBY" and len(messages[3])==3 and messages[3][0] == "STATE"):
         
         # get serveur default screen size
-        if type(messages[2]) and len(messages[2])==2 and type(messages[2][0])==int and type(messages[2][1])==int:            
-            SIZE = (messages[2])
+        if type(messages[0][2]) and len(messages[0][2])==2 and type(messages[0][2][0])==int and type(messages[0][2][1])==int:            
+            SIZE = (messages[0][2])
         else:
             if DEBUG:
                 print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
         # set walls players and shades
-        update(messages[3:5] + [messages[9]]) # Walls
-        update(messages[5:]) #Players and Shades
+        update(messages[1]) # Walls
+        update(messages[3]) # Players
         
         return True
     
     # Manage failed connections
-    elif messages!=None and "CONNECTED" not in messages:
-        askNewPseudo(messages[0])
+    elif messages!=None and "CONNECTED" not in messages[0]:
+        askNewPseudo(messages[0][1])
         
         global SOCKET
         
@@ -336,7 +336,7 @@ def askNewPseudo(errorMessage:str):
     """
     global USERNAME
     
-    print("Server sent back : " + errorMessage)
+    print("Server sent back : ", errorMessage)
     print("Please try a new pseudo. (Your previous one was " + USERNAME + ")")
     
     username = ""

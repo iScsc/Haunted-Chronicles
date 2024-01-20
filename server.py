@@ -27,7 +27,7 @@ def extractingIP():
 
 # ----------------------- Constants-----------------------
 
-DEBUG=False
+DEBUG=True
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -282,7 +282,7 @@ def walls():
 def firstConnection(pseudo:str):
     """Formated list for first connections:
         ["CONNECTED", <username>, <size>, "WALLS", <wallslist>, "STATE", <statelist>, "SHADES", <shadelist>, "END"] """
-    out = ["CONNECTED " , pseudo , SIZE] + walls()[:-1] + states(pseudo)
+    out = ["CONNECTED" , pseudo , SIZE] + walls()[:-1] + states(pseudo)
     return(out)
 
 
@@ -658,7 +658,7 @@ def listen_new():
                             print("{} wrote:".format(in_ip))
                             print(in_data)
                         
-                        out = processRequest(in_ip ,in_data)
+                        out = processRequest(in_ip ,in_data[0])
                         
                         if out[0]=="CONNECTED":
                             LOCK.acquire()
@@ -735,7 +735,7 @@ def listen_old():
                         print("Player {} with ip {} wrote:".format(username, in_ip))
                         print(in_data)
                     
-                    out = processRequest(in_ip ,in_data)
+                    out = processRequest(in_ip ,in_data[0])
                             
                     if out[0]=="DISCONNECTED":
                         username = out[1]
