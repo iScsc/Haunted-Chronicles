@@ -10,11 +10,8 @@ import traceback
 
 from platform import system
 
-from player import Player
-from wall import Wall
 from common import *
 from interpretor import *
-from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
@@ -487,7 +484,7 @@ def update(state=["STATE", [], "END"]):
         else: return True
         
     elif len(state) == 3 and state[0] == "SHADES" and state[2] == "END":
-        unvisible = toVisible(state[1],DEBUG) #TODO
+        unvisible = state[1]
         if (unvisible != None):
             UNVISIBLE=unvisible
             return False
@@ -524,7 +521,7 @@ def update(state=["STATE", [], "END"]):
         if len(state) >= 3:
             conc = state
             
-            if conc[0] in keywords:
+            if type(conc[0])==str and conc[0] in keywords:
                 # generate partial command
                 command = [conc[0]]
                 

@@ -309,7 +309,7 @@ def sendingFormat(shadows:Polygon|MultiPolygon):
             endl=[l2[0]]
             startNotFound = False
         l+= [l2[0]] + endl
-    return "["+str(l+endl).replace("[","(").replace("]",")").replace(" ","")[1:-1]+"]"
+    return [l+endl]
 
 def extractGeoms(poly:Polygon):
     """Returns the list of points
@@ -336,30 +336,30 @@ def extractGeoms(poly:Polygon):
     return Geoms
 
 
-def toVisible(visibleString:str,DEBUG:bool):
-    """Returns a list of points from a formatted string
+# def toVisible(visibleString:str,DEBUG:bool):
+#     """Returns a list of points from a formatted string
 
-    Args:
-        visibleString (str): the string representing the list of points
-        DEBUG (bool): a debug boolean
+#     Args:
+#         visibleString (str): the string representing the list of points
+#         DEBUG (bool): a debug boolean
 
-    Returns:
-        list[list[float]]: the list of points
-    """
-    try :
-        visibleList = []
+#     Returns:
+#         list[list[float]]: the list of points
+#     """
+#     try :
+#         visibleList = []
         
-        string=interpretor.spc(visibleString)
+#         string=interpretor.spc(visibleString)
         
-        for s in string:
-            visibleList.append(interpretor.interp(s,liste=[0.,2])['liste'])
+#         for s in string:
+#             visibleList.append(interpretor.interp(s,liste=[0.,2])['liste'])
 
-        return visibleList
+#         return visibleList
         
-    except Exception as e:
-        if DEBUG:
-            print(e)
-        return None
+#     except Exception as e:
+#         if DEBUG:
+#             print(e)
+#         return None
 
 
 
