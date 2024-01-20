@@ -116,7 +116,7 @@ def processRequest(ip, s:list):
     elif type == "DISCONNECTION":
         return(processDisconnection(ip, s))
     else :
-        return(["Invalid Request"])
+        return(["ERROR","Invalid Request"])
 
 
 def processConnect(s:list):
@@ -130,14 +130,14 @@ def processConnect(s:list):
     """
 
     if not LOBBY:
-        return(["The game has already started"])
+        return(["ERROR","The game has already started"])
 
     pseudo = extractPseudo(s)
     
     if validPseudo(pseudo):
-        return(["This Pseudo already exists"])
+        return(["ERROR","This Pseudo already exists"])
     elif len(pseudo)>SIZE_MAX_PSEUDO:
-        return(["Your pseudo is too big !"])
+        return(["ERROR","Your pseudo is too big !"])
     else :
         initNewPlayer(pseudo)
         return(firstConnection(pseudo))
@@ -155,9 +155,9 @@ def processInput(ip, s:list):
     """
     pseudo = extractPseudo(s)
     if not(validPseudo(pseudo)):
-        return(["No player of that name"])
+        return(["ERROR","No player of that name"])
     if not(validIp(ip, pseudo)):
-        return(["You are impersonating someone else !"])
+        return(["ERROR","You are impersonating someone else !"])
     inputWord = extractWord(s)
     rules(inputWord,pseudo)
     return(states(pseudo))
@@ -174,7 +174,7 @@ def processDisconnection(ip, s:str):
     """
     pseudo = extractPseudo(s)
     if not(validIp(ip, pseudo)):
-        return(["You are impersonating someone else !"])
+        return(["ERROR","You are impersonating someone else !"])
     return(["DISCONNECTED", pseudo, "END"])
 
 
@@ -306,7 +306,7 @@ def rules(inputLetter:str,pseudo:str):
         inputLetter (char): input letter
         pseudo (str): player pseudo
     Returns:
-        "Invalid Input" if the input did not respect the rules, else None
+        ["ERROR","Invalid Input"] if the input did not respect the rules, else None
     """
     
     global READY
@@ -340,7 +340,7 @@ def rules(inputLetter:str,pseudo:str):
             if LOBBY and id != 0:
                 READY[pseudo] = not READY[pseudo]
         case _ :
-            return("Invalid Input")
+            return(["ERROR","Invalid Input"])
     if tempId != id:
         dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
@@ -659,11 +659,10 @@ def listen_new():
                             print(in_data)
                         
                         out = processRequest(in_ip ,in_data)
-                        message = out.split(' ')
                         
-                        if message[0]=="CONNECTED":
+                        if out[0]=="CONNECTED":
                             LOCK.acquire()
-                            username = message[1]
+                            username = out[1]
                             dicoSocket[username] = (sock, addr)
                             LOCK.release()
 
