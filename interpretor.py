@@ -176,6 +176,8 @@ def interp(string, **kwargs):
 
 ### ----- Byte Messages ----- ###
 
+class InterpretorError(Exception): ...
+
 KEY=bytes("key","utf-16")
 
 COMMANDS_TO_BYTES = {
@@ -304,7 +306,7 @@ def bytesParam(param):
     
     if type(param)==int: # unsigned int
         if param<0:
-            raise ValueError("Unsupported signed int: ",param)
+            raise InterpretorError("Unsupported signed int: ",param)
         if param==0:
             byteParam+=bytes([1,1])
         else:
@@ -575,10 +577,18 @@ def getMessages(byteMessages:bytes):
     Returns:
         list[list[str,Any...]]: a list of commands
     """
+    if byteMessages==None:
+        raise InterpretorError("Null byte string")
     if byteMessages[:len(KEY)]!=KEY:
-        raise Exception("Unformatted message: key failed")
-    byteMsgs=splitCommand(byteMessages[len(KEY):])
+        raise InterpretorError("Unformatted message: key failed",KEY,byteMessages[:len(KEY)])
+    try:
+        byteMsgs=splitCommand(byteMessages[len(KEY):])
+    except (KeyError):
+        raise InterpretorError("Unformatted message: ",byteMessages)
     commands=[]
     for x in byteMsgs:
-        commands.append(messageBytes(x))
+        try:
+            commands.append(messageBytes(x))
+        except (KeyError,ValueError):
+            raise InterpretorError("Unformatted command",x)
     return commands

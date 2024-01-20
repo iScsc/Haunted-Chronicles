@@ -13,7 +13,7 @@ from wall import Wall
 from light import Light
 from inlight import *
 from common import *
-from interpretor import byteMessages, getMessages
+from interpretor import byteMessages, getMessages, InterpretorError
 
 # ----------------------- IP -----------------------
 
@@ -679,7 +679,10 @@ def listen_new():
                         if DEBUG:
                             traceback.print_exc()
                         print("New connection from " + str(in_ip) + " failed!")
-                
+                    except (InterpretorError):
+                        if DEBUG:
+                            traceback.print_exc()
+                        print("New connection from " + str(in_ip) + " failed!")
                 else:
                     print("Connection attempt from " + str(in_ip) + " | Refused : LISTENING = " + str(LISTENING))
 
@@ -755,6 +758,10 @@ def listen_old():
                         traceback.print_exc()
                     print("Loss connection while receiving data with player " + username + " (ip = " + str(addr[0]) + ")")
                     waitingDisconnectionList.append((username, sock, addr))
+                except (InterpretorError):
+                    if DEBUG:
+                        traceback.print_exc()
+                    print("Could not interpret data from player " + username + " (ip = " + str(addr[0]) + ")")
             LOCK.release()
             
             # Not in a transition state
