@@ -801,7 +801,7 @@ def baseInit():
     global STATIC_SHADOW
     global LIST_STATIC_SHADOW
     
-    dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10))
+    # dicoMur[-1] = Wall(-1, Color(50, 50, 50), Position(350, 575), Size(225, 10)) : unsupported signed ints
     dicoMur[0] = Wall(0, Color(50, 50, 50), Position(150, 800), Size(200, 10))
     dicoMur[1] = Wall(1, Color(50, 50, 50), Position(350, 500), Size(10, 310))
     dicoMur[2] = Wall(2, Color(50, 50, 50), Position(250, 500), Size(100, 10))

@@ -301,6 +301,8 @@ def bytesParam(param):
     # classic types
     
     if type(param)==int: # unsigned int
+        if param<0:
+            raise ValueError("Unsupported signed int: ",param)
         if param==0:
             byteParam+=bytes([1,1])
         else:
