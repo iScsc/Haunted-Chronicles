@@ -231,7 +231,7 @@ def states(pseudo:str):
             
             shadows = Visible(player, LIGHTS, listOfAlivePlayers, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
             visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
-            formatShadows = sendingFormat(shadows) #TODO
+            formatShadows = sendingFormat(shadows)
 
             # gets visible player strings
             liste.append(player)
@@ -253,7 +253,7 @@ def states(pseudo:str):
     else:
         # In a transition state from Lobby to Game
         if not None in [TRANSITION_TIME, transition_start_time]:
-            out += ["TRANSITION_LOBBY_GAME"] + ["Entering_game_in_{time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)]
+            out += ["TRANSITION_LOBBY_GAME"] + ["Entering game in {time:.1f}s ".format(time=CURRENT_TRANSITION_TIME)]
         else:
             rlist = []
             for key in READY:
