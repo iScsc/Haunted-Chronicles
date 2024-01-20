@@ -15,7 +15,7 @@ from interpretor import *
 
 # ----------------------- Variables -----------------------
 
-DEBUG=True
+DEBUG=False
 
 SERVER_IP = "192.168.1.34" #"localhost"
 SERVER_PORT = 9998
