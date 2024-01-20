@@ -266,7 +266,7 @@ def game():
         
         state = send(inputs)
         
-        if (update(state)) : # request failed
+        if (state!=None and update(state[0])) : # request failed
             requestNumber+=1
         else :
             requestNumber=0
