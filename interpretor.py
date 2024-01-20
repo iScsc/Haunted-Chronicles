@@ -1,5 +1,5 @@
 import common
-import math
+import numpy
 from player import Player
 from wall import Wall
 
@@ -244,7 +244,7 @@ BYTES_TO_TYPE = {
     bytes([32]):common.Size
 }
 
-FLOAT_PRECISION=100
+FLOAT_PRECISION=10
 
 def byteMessage(command:str,listOfParam:list,end="END"):
     """Transforms a message into custom byte string
@@ -308,18 +308,17 @@ def bytesParam(param):
         if param<0:
             raise InterpretorError("Unsupported signed int: ",param)
         if param==0:
-            byteParam+=bytes([1,1])
+            byteParam+=bytes([1])
         else:
             intl=[]
             while param>0: 
                 intl.append(param%255+1) #so that it never equals 0
                 param//=255
             intl.reverse()
-            byteParam+=bytes([len(intl)])
             byteParam+=bytes(intl)
         
     elif type(param)==float:
-        byteParam+=bytesParam(int(param*FLOAT_PRECISION))[:-1]
+        byteParam+=bytesParam(int(numpy.round(param*FLOAT_PRECISION,0)))[1:-1]
     
     elif type(param)==bool:
         byteParam+=bytes([param+1])
@@ -334,30 +333,30 @@ def bytesParam(param):
     # common types
         
     elif type(param)==common.Color:
-        byteParam+=bytesParam(param.color[0])
-        byteParam+=bytesParam(param.color[1])
-        byteParam+=bytesParam(param.color[2])
+        byteParam+=bytesParam(param.color[0])[1:]
+        byteParam+=bytesParam(param.color[1])[1:]
+        byteParam+=bytesParam(param.color[2])[1:]
         byteParam=byteParam[:-1]
     
     elif type(param)==common.Position: 
-        byteParam+=bytesParam(param.x)
-        byteParam+=bytesParam(param.y)
+        byteParam+=bytesParam(param.x)[1:]
+        byteParam+=bytesParam(param.y)[1:]
         byteParam=byteParam[:-1]
     
     elif type(param)==common.Size: 
-        byteParam+=bytesParam(param.w)
-        byteParam+=bytesParam(param.h)
+        byteParam+=bytesParam(param.w)[1:]
+        byteParam+=bytesParam(param.h)[1:]
         byteParam=byteParam[:-1]
     
     
     # complex types
     
     elif type(param)==Player:
-        byteParam+=bytesParam(param.teamId)+bytesParam(param.username)+bytesParam(param.color)+bytesParam(param.position)+bytesParam(param.size)
+        byteParam+=bytesParam(param.teamId)[1:]+bytesParam(param.username)[1:]+bytesParam(param.color)[1:]+bytesParam(param.position)[1:]+bytesParam(param.size)[1:]
         byteParam=byteParam[:-1]
     
     elif type(param)==Wall:
-        byteParam+=bytesParam(param.id)+bytesParam(param.color)+bytesParam(param.position)+bytesParam(param.size)
+        byteParam+=bytesParam(param.id)[1:]+bytesParam(param.color)[1:]+bytesParam(param.position)[1:]+bytesParam(param.size)[1:]
         byteParam=byteParam[:-1]
     
     
@@ -421,17 +420,15 @@ def paramBytes(byteParam:bytes):
     
     if paramType==int:
         param:int=0
-        n=temp[0]
-        temp=temp[1:]
-        var,temp=extractVariable(temp,min=n)
-        for i in range(n):
+        var,temp=extractVariable(temp)
+        for i in range(len(var)):
             param*=255
             param+=var[i]-1
         return param, temp
         
     elif paramType==float:
         fparam:float
-        fparam,temp=paramBytes(temp)
+        fparam,temp=paramBytes(b'\x01'+temp)
         fparam/=FLOAT_PRECISION
         return fparam,temp
     
@@ -449,37 +446,37 @@ def paramBytes(byteParam:bytes):
     # common types
         
     elif paramType==common.Color:
-        r,temp=paramBytes(temp)
-        g,temp=paramBytes(temp)
-        b,temp=paramBytes(temp)
+        r,temp=paramBytes(b'\x01'+temp)
+        g,temp=paramBytes(b'\x01'+temp)
+        b,temp=paramBytes(b'\x01'+temp)
         return common.Color(r,g,b),temp
     
     elif paramType==common.Position:
-        x,temp=paramBytes(temp)
-        y,temp=paramBytes(temp)
+        x,temp=paramBytes(b'\x01'+temp)
+        y,temp=paramBytes(b'\x01'+temp)
         return common.Position(x,y),temp
     
     elif paramType==common.Size:
-        w,temp=paramBytes(temp)
-        h,temp=paramBytes(temp)
+        w,temp=paramBytes(b'\x01'+temp)
+        h,temp=paramBytes(b'\x01'+temp)
         return common.Size(w,h),temp
     
     
     # complex types
     
     elif paramType==Player:            
-        teamID,temp=paramBytes(temp)
-        username,temp=paramBytes(temp)
-        color,temp=paramBytes(temp)
-        position,temp=paramBytes(temp)
-        size,temp=paramBytes(temp)
+        teamID,temp=paramBytes(b'\x01'+temp)
+        username,temp=paramBytes(b'\x03'+temp)
+        color,temp=paramBytes(b'\x1e'+temp)
+        position,temp=paramBytes(b'\x1f'+temp)
+        size,temp=paramBytes(b'\x20'+temp)
         return Player(teamID,username,color,position,size),temp
     
     elif paramType==Wall:     
-        id,temp=paramBytes(temp)
-        color,temp=paramBytes(temp)
-        position,temp=paramBytes(temp)
-        size,temp=paramBytes(temp)
+        id,temp=paramBytes(b'\x01'+temp)
+        color,temp=paramBytes(b'\x1e'+temp)
+        position,temp=paramBytes(b'\x1f'+temp)
+        size,temp=paramBytes(b'\x20'+temp)
         return Wall(id,color,position,size), temp
     
     
