@@ -266,10 +266,14 @@ def game():
         
         state = send(inputs)
         
-        if (state!=None and update(state[0])) : # request failed
+        if state==None : # request failed
             requestNumber+=1
         else :
-            requestNumber=0
+            failed=False
+            for x in state:
+                failed=failed or update(x)
+            if not failed: requestNumber=0
+            else: requestNumber+=1
         
         if requestNumber>=MAX_REQUESTS:
             exitError("Max number of request has been passed for inputs!")
@@ -449,6 +453,8 @@ def update(state=["STATE", [], "END"]):
     Returns:
         bool: was there a problem in updating variables ?
     """
+    
+    print("updating: ",state)
         
     global WALLS
     global PLAYERS

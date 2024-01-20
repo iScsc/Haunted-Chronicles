@@ -303,7 +303,7 @@ def rules(inputLetter:str,pseudo:str):
     """Process an input for a player
 
     Args:
-        inputLetter (char): input letter
+        inputLetter (str): input string
         pseudo (str): player pseudo
     Returns:
         ["ERROR","Invalid Input"] if the input did not respect the rules, else None
