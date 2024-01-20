@@ -294,10 +294,7 @@ def connect():
     
     global SIZE
     
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
-    
-    if message!=None: messages = message.split(" ")
-    else: messages=None
+    messages = send(["CONNECT", USERNAME, "END"]) # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
     if DEBUG:
         print("messages: ", messages)
@@ -305,28 +302,22 @@ def connect():
     if (messages!=None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
         
         # get serveur default screen size
-        try:
-            sizeStr = "" + messages[2]
-            sizeStr = sizeStr.replace("(", "")
-            sizeStr = sizeStr.replace(")", "")
-            
-            sizeStr = sizeStr.split(",")
-            
-            SIZE = (int(sizeStr[0]), int(sizeStr[1]))
-        except ValueError:
+        if type(messages[2]) and len(messages[2])==2 and type(messages[2][0])==int and type(messages[2][1])==int:            
+            SIZE = (messages[2])
+        else:
             if DEBUG:
                 print("Size Error ! Size format was not correct !")
             SIZE = (400, 300)   # Some default size.
         
         # set walls players and shades
-        update(messages[3] + " " + messages[4] + " " + messages[9]) # Walls
-        update(messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9]) #Players and Shades
+        update(messages[3:5] + [messages[9]]) # Walls
+        update(messages[5:]) #Players and Shades
         
         return True
     
     # Manage failed connections
     elif messages!=None and "CONNECTED" not in messages:
-        askNewPseudo(message)
+        askNewPseudo(messages[0])
         
         global SOCKET
         
@@ -361,7 +352,7 @@ def getInputs():
     """Get inputs from the keyboard and generate the corresponding request to send to the server.
 
     Returns:
-        str: the normalized request to send to the server : "INPUT <Username> <Input> END"
+        list: the normalized request to send to the server : ["INPUT", <Username>, <Input>, "END"]
     """
     
     events = pg.event.get()
@@ -372,42 +363,42 @@ def getInputs():
         if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
             exit()
         elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-            return "INPUT " + USERNAME + " READY END"
+            return ["INPUT", USERNAME, "READY", "END"]
     
     if keys[pg.K_LEFT] or keys[pg.K_q]:
-        return "INPUT " + USERNAME + " LEFT END"
+        return ["INPUT", USERNAME, "LEFT", "END"]
     elif keys[pg.K_RIGHT] or keys[pg.K_d]:
-        return "INPUT " + USERNAME + " RIGHT END"
+        return ["INPUT", USERNAME, "RIGHT", "END"]
     elif keys[pg.K_UP] or keys[pg.K_z]:
-        return "INPUT " + USERNAME + " UP END"
+        return ["INPUT", USERNAME, "UP", "END"]
     elif keys[pg.K_DOWN] or keys[pg.K_s]:
-        return "INPUT " + USERNAME + " DOWN END"
+        return ["INPUT", USERNAME, "DOWN", "END"]
     elif keys[pg.K_r]:
-        return "INPUT " + USERNAME + " RED END"
+        return ["INPUT", USERNAME, "RED", "END"]
     elif keys[pg.K_b]:
-        return "INPUT " + USERNAME + " BLUE END"
+        return ["INPUT", USERNAME, "BLUE", "END"]
     elif keys[pg.K_n]:
-        return "INPUT " + USERNAME + " NEUTRAL END"
+        return ["INPUT", USERNAME, "NEUTRAL", "END"]
     
-    return "INPUT " + USERNAME + " . END"
+    return ["INPUT", USERNAME, ".", "END"]
 
 
 
-def send(input="INPUT " + USERNAME + " . END"):
+def send(input=["INPUT", USERNAME, ".", "END"]):
     """Send a normalized request to the server and listen for the normalized answer.
 
     Args:
-        input (str): Normalized request to send to the server. Defaults to "INPUT <Username> . END".
+        input (list): Normalized request to send to the server. Defaults to ["INPUT", <Username>, ".", "END"].
 
     Returns:
-        str: the normalized answer from the server.
+        list: the normalized answer from the server.
     """
     
     global PING
     global SOCKET
     
     # Initialization
-    if (SOCKET == None and input[0:7] == "CONNECT"):
+    if (SOCKET == None and input[0] == "CONNECT"):
         SOCKET = socket(AF_INET, SOCK_STREAM)
         SOCKET.settimeout(SOCKET_TIMEOUT)
         try:
@@ -426,7 +417,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         try:
             if DEBUG:
                 print("input: ",input)
-            SOCKET.sendall(bytes(input, "utf-8"))
+            SOCKET.sendall(byteMessages(input))
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
@@ -435,7 +426,7 @@ def send(input="INPUT " + USERNAME + " . END"):
             
         # receive answer
         try:
-            answer = str(SOCKET.recv(1024*16), "utf-8")
+            answer = getMessages(SOCKET.recv(1024*16))
             if DEBUG:
                 print("answer: ",answer)
              
@@ -450,11 +441,11 @@ def send(input="INPUT " + USERNAME + " . END"):
 
 
 
-def update(state="STATE [] END"):
+def update(state=["STATE", [], "END"]):
     """Update the local variables representing the current state of the game from the given state.
 
     Args:
-        state (str): The normalized state of the game. Defaults to "STATE [] END".
+        state (list): The normalized state of the game. Defaults to ["STATE", [], "END"].
     Returns:
         bool: was there a problem in updating variables ?
     """
@@ -468,55 +459,53 @@ def update(state="STATE [] END"):
     global IN_TRANSITION
     global TRANSITION_TEXT
 
-    if state == None or type(state) != str or state == "":
+    if state == None or type(state) != list or state == []:
         return False
-    
-    messages = state.split(" ")
     
     ### Simple commands : KEYWORD <content> END
     
-    if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
+    if len(state) == 3 and state[0] == "STATE" and state[2] == "END":
         
-        players = Player.toPlayers(messages[1],DEBUG)
+        players = state[1]
         
         if (players != None):
             PLAYERS=players
             return False
         else: return True
         
-    elif len(messages) == 3 and messages[0] == "WALLS" and messages[2] == "END":
-        walls = Wall.toWalls(messages[1],DEBUG)
+    elif len(state) == 3 and state[0] == "WALLS" and state[2] == "END":
+        walls = state[1]
         if (walls != None):
             WALLS=walls
             return False
         else: return True
         
-    elif len(messages) == 3 and messages[0] == "SHADES" and messages[2] == "END":
-        unvisible = toVisible(messages[1],DEBUG)
+    elif len(state) == 3 and state[0] == "SHADES" and state[2] == "END":
+        unvisible = toVisible(state[1],DEBUG) #TODO
         if (unvisible != None):
             UNVISIBLE=unvisible
             return False
         else: return True
         
-    elif len(messages) == 3 and messages[0] == "LOBBY" and messages[2] == "END":
-        readyPlayers = interp(messages[1], list=["", 0])["list"]
+    elif len(state) == 3 and state[0] == "LOBBY" and state[2] == "END":
+        readyPlayers = state[1]
         IN_TRANSITION = False
         LOBBY = True
         return False
     
-    elif len(messages) == 3 and messages[0] == "GAME" and messages[2] == "END":
-        GAME_TIME = interp(messages[1], time=0.0)["time"]
+    elif len(state) == 3 and state[0] == "GAME" and state[2] == "END":
+        GAME_TIME = state[1]
         IN_TRANSITION = False
         LOBBY = False
         return False
     
-    elif(len(messages) == 3 and messages[0] == "TRANSITION_GAME_LOBBY" and messages[2] == "END"):
-        TRANSITION_TEXT = interp(messages[1], text="")["text"].replace("_", " ")
+    elif(len(state) == 3 and state[0] == "TRANSITION_GAME_LOBBY" and state[2] == "END"):
+        TRANSITION_TEXT = state[1]
         IN_TRANSITION = True
         return False
     
-    elif(len(messages) == 3 and messages[0] == "TRANSITION_LOBBY_GAME" and messages[2] == "END"):
-        TRANSITION_TEXT = interp(messages[1], text="")["text"].replace("_", " ")
+    elif(len(state) == 3 and state[0] == "TRANSITION_LOBBY_GAME" and state[2] == "END"):
+        TRANSITION_TEXT = state[1]
         IN_TRANSITION = True
         return False
     
@@ -526,34 +515,26 @@ def update(state="STATE [] END"):
         # dictionary representing the known keywords and the number of parameters in <content> they take
         keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
         
-        if len(messages) >= 3:
-            conc = messages
+        if len(state) >= 3:
+            conc = state
             
             if conc[0] in keywords:
                 # generate partial command
-                command = conc[0] + " "
+                command = [conc[0]]
                 
                 n = keywords[conc[0]]
                 
                 for i in range(n):
-                    command += conc[1 + i] + " "
-                command += "END"
+                    command.append(conc[1 + i])
+                command.append("END")
                 
                 conc[0:1 + n] = []
                 
-                m = len(conc)
-                remains = ""
-                for i in range(m):
-                    if i != m - 1:
-                        remains += conc[i] + " "
-                    else:
-                        remains += conc[i]
-                
-                return update(command) or update(remains)
+                return update(command) or update(conc)
             else:
                 return True
             
-        elif messages == ["END"]:
+        elif state == ["END"]:
             return False
         
         return True
@@ -573,7 +554,7 @@ def exit():
     
     t = time.time()
     while time.time() - t < DISCONNECTION_WAITING_TIME and requestNumber<MAX_REQUESTS:
-        if send("DISCONNECTION " + USERNAME + " END") == "DISCONNECTED " + USERNAME + " END":
+        if send(["DISCONNECTION", USERNAME, "END"]) == ["DISCONNECTED", USERNAME, "END"]:
             CONNECTED = False
             SOCKET.close()
             SOCKET = None
