@@ -26,7 +26,7 @@ def extractingIP():
 
 # ----------------------- Constants and Global Variables -----------------------
 
-DEBUG=True
+DEBUG=False
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -353,13 +353,13 @@ def rules(inputLetter:str,pseudo:str,factor=1.):
         case ".":
             pass
         case "RIGHT":
-            x+=STEP_X[id]*factor
+            x+=int(STEP_X[id]*factor)
         case "LEFT":
-            x-=STEP_X[id]*factor
+            x-=int(STEP_X[id]*factor)
         case "UP":
-            y-=STEP_Y[id]*factor
+            y-=int(STEP_Y[id]*factor)
         case "DOWN":
-            y+=STEP_Y[id]*factor
+            y+=int(STEP_Y[id]*factor)
         case "RED":
             if LOBBY and not READY[pseudo]:
                 tempId = TEAMSID["Seekers"]
