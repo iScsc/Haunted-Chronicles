@@ -327,7 +327,6 @@ def connect():
         print("message characteristics:\n", len(messages),len(messages[0]))
     
     if (messages!=None and len(messages) == 4 and len(messages[0])==5 and messages[0][0] == "CONNECTED" and messages[0][2] == USERNAME and len(messages[1])==3 and messages[1][0] == "WALLS" and len(messages[2])==3 and messages[2][0] == "LOBBY" and len(messages[3])==3 and messages[3][0] == "STATE"):
-        print('ok')
         # get serveur default screen size
         if type(messages[0][3]==tuple) and len(messages[0][3])==2 and type(messages[0][3][0])==int and type(messages[0][3][1])==int:            
             SIZE = (messages[0][3])
@@ -492,7 +491,6 @@ def send(input=["INPUT", USERNAME, ".", "END"]):
 
 
 def update(state=["STATE", [], "END"]):
-    print(state)
     """Update the local variables representing the current state of the game from the given state.
 
     Args:
