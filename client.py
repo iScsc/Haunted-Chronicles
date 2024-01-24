@@ -54,6 +54,7 @@ UNVISIBLE = []
 SOCKET = None
 WAITING_TIME = 0.100 # in seconds - period of connection requests when trying to connect to the host - must be < TIMEOUT
 SOCKET_TIMEOUT = 0.500 # in seconds - 0 when set to non blocking mode - must be > waiting time
+COMM_FREQUENCY = 0.05 # in seconds - time between two communications with the server
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
@@ -277,8 +278,6 @@ def game():
     
     requestNumber=0
     
-    clock = pg.time.Clock()
-    
     i = 0
     while CONNECTED and requestNumber<MAX_REQUESTS:
         
@@ -300,7 +299,7 @@ def game():
             exitError("Max number of request has been passed for inputs!")
 
         i += 1
-        clock.tick(FPS_GOAL)
+        time.sleep(COMM_FREQUENCY)
     
     if SOCKET != None:
         SOCKET.close()
