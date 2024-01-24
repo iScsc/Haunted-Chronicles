@@ -184,6 +184,7 @@ COMMANDS_TO_BYTES = {
     "CONNECT":bytes([1]),
     "INPUT":bytes([2]),
     "DISCONNECTION":bytes([3]),
+    "PING":bytes([4]),
     "CONNECTED":bytes([10]),
     "STATE":bytes([11]),
     "WALLS":bytes([12]),
@@ -204,6 +205,7 @@ BYTES_TO_COMMAND = {
     bytes([1]):"CONNECT",
     bytes([2]):"INPUT",
     bytes([3]):"DISCONNECTION",
+    bytes([4]):"PING",
     bytes([10]):"CONNECTED",
     bytes([11]):"STATE",
     bytes([12]):"WALLS",
@@ -244,7 +246,7 @@ BYTES_TO_TYPE = {
     bytes([32]):common.Size
 }
 
-FLOAT_PRECISION=10
+FLOAT_PRECISION=10000
 
 def byteMessage(command:str,listOfParam:list,end="END"):
     """Transforms a message into custom byte string

@@ -28,7 +28,7 @@ def extractingIP():
 
 # ----------------------- Constants and Global Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -216,7 +216,7 @@ def processPing(s:list):
         ["PING", <clock time>, "END"]
     """
     Clock = extractClock(s)
-    return("PING " + Clock + " END")
+    return(["PING", Clock, "END"])
 
 def typeOfRequest(s:list):
     """The type of a request (CONNECT,INPUT,DISCONNECT)"""
@@ -699,7 +699,7 @@ def manage_game_state():
                         if LISTENING:
                             try:
                                 data, addr = MAINSOCKET.recvfrom(MESSAGES_LENGTH)
-                                in_data = getMessages(data.strip())
+                                in_data = getMessages(data.strip())[0]
                                 in_ip = addr[0]
                                 
                                 if DEBUG:
@@ -707,9 +707,9 @@ def manage_game_state():
                                     print(in_data)
                                 
                                 out = processRequest(addr, in_data)
-                                username = out[0][1]
+                                username = out[1]
                                 
-                                if message[0]=="CONNECTED":
+                                if out[0]=="CONNECTED":
                                     sock = socket(AF_INET, SOCK_DGRAM)
                                     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                                     sock.settimeout(TIMEOUT)
@@ -719,7 +719,7 @@ def manage_game_state():
                                         print("available ports = ", availablePorts)
                                     
                                     port = availablePorts[0]
-                                    out[0].insert(1,port)
+                                    out.insert(1,port)
 
                                     sock.bind((HOST, port))
                                     availablePorts.remove(port)
@@ -731,7 +731,7 @@ def manage_game_state():
                                     print(">>> ",out)
                                 
                                 try:
-                                    MAINSOCKET.sendto(bytesMessages(out), addr)
+                                    MAINSOCKET.sendto(byteMessages(out), addr)
                                     
                                     if DEBUG:
                                         print("answer sent!\n")
@@ -760,7 +760,7 @@ def manage_game_state():
                         
                         try:
                             data, addr = sock.recvfrom(MESSAGES_LENGTH)
-                            in_data = getMessages(data.strip())
+                            in_data = getMessages(data.strip())[0]
                             in_ip = addr[0]
                             
                             if DEBUG:
@@ -772,15 +772,15 @@ def manage_game_state():
                             if addr in dicoSocket and dicoSocket[addr][0] == sock:
                                 username = dicoSocket[addr][1]
                                 
-                                if message[0]=="DISCONNECTED":
-                                    username = message[1]
+                                if out[0]=="DISCONNECTED":
+                                    username = out[1]
                                     waitingDisconnectionList.append((addr, sock, username))
                                 
                                 if DEBUG:
                                     print("sock with port {} for player {} wrote back to {} :".format(port, username, addr))
                                     print(">>> ",out,"\n")
                                 try:
-                                    sock.sendto(bytesMessages(out), addr)
+                                    sock.sendto(byteMessages(out), addr)
                                 except (InterpretorError):
                                     if DEBUG:
                                         traceback.print_exc()

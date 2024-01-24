@@ -324,13 +324,13 @@ def connect():
     messages = send(["CONNECT", USERNAME, "END"]) # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
     if DEBUG:
-        print("messages: ", messages)
+        print("message characteristics:\n", len(messages),len(messages[0]))
     
-    if (messages!=None and len(messages) == 4 and len(messages[0])==4 and messages[0][0] == "CONNECTED" and messages[0][1] == USERNAME and len(messages[1])==3 and messages[1][0] == "WALLS" and len(messages[2])==3 and messages[2][0] == "LOBBY" and len(messages[3])==3 and messages[3][0] == "STATE"):
-        
+    if (messages!=None and len(messages) == 4 and len(messages[0])==5 and messages[0][0] == "CONNECTED" and messages[0][2] == USERNAME and len(messages[1])==3 and messages[1][0] == "WALLS" and len(messages[2])==3 and messages[2][0] == "LOBBY" and len(messages[3])==3 and messages[3][0] == "STATE"):
+        print('ok')
         # get serveur default screen size
-        if type(messages[0][2]==tuple) and len(messages[0][2])==2 and type(messages[0][2][0])==int and type(messages[0][2][1])==int:            
-            SIZE = (messages[0][2])
+        if type(messages[0][3]==tuple) and len(messages[0][3])==2 and type(messages[0][3][0])==int and type(messages[0][3][1])==int:            
+            SIZE = (messages[0][3])
         else:
             if DEBUG:
                 print("Size Error ! Size format was not correct !")
@@ -343,8 +343,7 @@ def connect():
         
         # set walls players and shades
         update(messages[1]) # Walls
-        update(messages[2]) # Players
-        update(messages[3]) # Shades
+        update(messages[3]) # Players
         
         return True
     
@@ -388,7 +387,7 @@ def sendPing(time):
         time (float): time when the ping message was sent
     """
     
-    return send("PING " + str(time) + " END")
+    return send(["PING", time, "END"])[0]
 
 
 
@@ -476,7 +475,7 @@ def send(input=["INPUT", USERNAME, ".", "END"]):
             if DEBUG:
                 print("listening for answer")
             data, addr = SOCKET.recvfrom(MESSAGES_LENGTH)
-            answer = getMessage(data.strip())
+            answer = getMessages(data.strip())
             if DEBUG:
                 print("receiving from: ", addr)
                 print("answer: ",answer)
@@ -493,6 +492,7 @@ def send(input=["INPUT", USERNAME, ".", "END"]):
 
 
 def update(state=["STATE", [], "END"]):
+    print(state)
     """Update the local variables representing the current state of the game from the given state.
 
     Args:
@@ -518,14 +518,10 @@ def update(state=["STATE", [], "END"]):
     ### Simple commands : KEYWORD <content> END
 
     if len(state) == 3 and state[0] == "PING" and state[2] == "END":
-        try:
-            timeping = float(messages[1])
-            if timeping == LAST_PING_TIME:
-                PING = int((time.time() - LAST_PING_TIME) * 1000)
-            
-            return False
-        except:
-            return True
+        timeping = state[1]
+        if abs((timeping - LAST_PING_TIME))<1/FLOAT_PRECISION:
+            PING = int((time.time() - LAST_PING_TIME) * 1000)
+        return False
     
     if len(state) == 3 and state[0] == "STATE" and state[2] == "END":
         
