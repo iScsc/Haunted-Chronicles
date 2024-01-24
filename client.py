@@ -20,13 +20,15 @@ from inlight import toVisible
 
 DEBUG=False
 
-SERVER_IP = "192.168.1.34" #"localhost"
+SERVER_IP = ""
 SERVER_PORT = 9998
 CONNECTED = False
 DISCONNECTION_WAITING_TIME = 5 # in seconds, time waited before disconnection without confirmation from the host
 MAX_REQUESTS = 10 # number of requests without proper response before force disconnect
+MESSAGES_LENGTH = 1024 * 3
 
-FPS = 60
+FPS_GOAL = 60
+FPS = None
 
 SIZE = None
 SCALE_FACTOR = None
@@ -50,11 +52,13 @@ WALLS = []
 UNVISIBLE = []
 
 SOCKET = None
-WAITING_TIME = 0.01 # in seconds - period of connection requests when trying to connect to the host
-SOCKET_TIMEOUT = 30 # in seconds
+WAITING_TIME = 0.100 # in seconds - period of connection requests when trying to connect to the host - must be < TIMEOUT
+SOCKET_TIMEOUT = 0.100 # in seconds - 0 when set to non blocking mode - must be > waiting time
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
+LAST_PING_TIME = None # in seconds - time when last ping was sent
+PING_FREQUENCY = 10 # in loops
 
 LOBBY = True
 readyPlayers = []
@@ -88,6 +92,8 @@ FONT_SIZE_TRANSITION = 40
 def display():
     """Thread to display the current state of the game given by the server.
     """
+    
+    global FPS
     
     global SCREEN
     global PLAYERS
@@ -138,6 +144,7 @@ def display():
     
     clock = pg.time.Clock()
     
+    last_fps_time = time.time()
     
     while CONNECTED:
         
@@ -209,15 +216,22 @@ def display():
             
             TEAMS = {0 : [], 1 : [], 2 : []}
         
+        # FPS
+        fpsText = "FPS : " + str(FPS)
+        fpsSize = pg.font.Font.size(pingFont, fpsText)
         
-        # Ping
+        fpsSurface = pg.font.Font.render(pingFont, fpsText, False, WHITE.color)
+        
+        # and Ping
         pingText = "Ping : " + str(PING) + " ms"
         pingSize = pg.font.Font.size(pingFont, pingText)
         
         pingSurface = pg.font.Font.render(pingFont, pingText, False, WHITE.color)
         
-        SCREEN.blit(pingSurface, (SIZE[0] - pingSize[0], 0))
+        offset = max(pingSize[0], fpsSize[0])
         
+        SCREEN.blit(fpsSurface, (SIZE[0] - offset, 0))
+        SCREEN.blit(pingSurface, (SIZE[0] - offset, fpsSize[1] + pingSize[1] // 2))
         
         # Remaining game time
         if not LOBBY:
@@ -241,7 +255,11 @@ def display():
         # End
         pg.display.update()
         
-        clock.tick(FPS)
+        t = time.time()
+        FPS = int(1/(t - last_fps_time))
+        last_fps_time = t
+        
+        clock.tick(FPS_GOAL)
 
 
 
@@ -255,14 +273,21 @@ def game():
     global SOCKET
     global LOBBY
     
+    global LAST_PING_TIME
     
     requestNumber=0
     
     clock = pg.time.Clock()
     
+    i = 0
     while CONNECTED and requestNumber<MAX_REQUESTS:
         
         inputs = getInputs()
+        
+        if i%PING_FREQUENCY == 0:
+            t = time.time()
+            LAST_PING_TIME = t
+            update(sendPing(t))
         
         state = send(inputs)
         
@@ -274,8 +299,8 @@ def game():
         if requestNumber>=MAX_REQUESTS:
             exitError("Max number of request has been passed for inputs!")
 
-        
-        clock.tick(FPS)
+        i += 1
+        clock.tick(FPS_GOAL)
     
     if SOCKET != None:
         SOCKET.close()
@@ -292,21 +317,27 @@ def connect():
         bool: is the connection successful ?
     """
     
+    global SERVER_PORT
     global SIZE
     
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
+    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <New_Port> <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
-    if message!=None: messages = message.split(" ")
-    else: messages=None
+    if message != None:
+        messages = message.split(" ")
+    else:
+        messages = None
     
     if DEBUG:
         print("messages: ", messages)
     
-    if (messages!=None and len(messages) == 10 and messages[0] == "CONNECTED" and messages[1] == USERNAME and messages[3] == "WALLS" and messages[5] == "LOBBY" and messages[7] == "STATE" and messages[9] == "END"):
+    if (messages != None and len(messages) == 11 and messages[0] == "CONNECTED" and messages[2] == USERNAME and messages[4] == "WALLS" and messages[6] == "LOBBY" and messages[8] == "STATE" and messages[10] == "END"):
         
         # get serveur default screen size
         try:
-            sizeStr = "" + messages[2]
+            portStr = "" + messages[1]
+            SERVER_PORT = int(portStr)
+
+            sizeStr = "" + messages[3]
             sizeStr = sizeStr.replace("(", "")
             sizeStr = sizeStr.replace(")", "")
             
@@ -319,13 +350,12 @@ def connect():
             SIZE = (400, 300)   # Some default size.
         
         # set walls players and shades
-        update(messages[3] + " " + messages[4] + " " + messages[9]) # Walls
-        update(messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9]) #Players and Shades
+        update(messages[4] + " " + messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9] + " END")
         
         return True
     
     # Manage failed connections
-    elif messages!=None and "CONNECTED" not in messages:
+    elif messages != None and "CONNECTED" not in messages:
         askNewPseudo(message)
         
         global SOCKET
@@ -354,6 +384,17 @@ def askNewPseudo(errorMessage:str):
         username = input()
     
     USERNAME = username
+
+
+
+def sendPing(time):
+    """Send a ping message to the server to identify the client ping
+
+    Args:
+        time (float): time when the ping message was sent
+    """
+    
+    return send("PING " + str(time) + " END")
 
 
 
@@ -408,40 +449,47 @@ def send(input="INPUT " + USERNAME + " . END"):
     
     # Initialization
     if (SOCKET == None and input[0:7] == "CONNECT"):
-        SOCKET = socket(AF_INET, SOCK_STREAM)
+        SOCKET = socket(AF_INET, SOCK_DGRAM)
         SOCKET.settimeout(SOCKET_TIMEOUT)
-        try:
-            SOCKET.connect((SERVER_IP, SERVER_PORT))
-        except TimeoutError or ConnectionError:
-            if DEBUG:
-                traceback.print_exc()
-            exitError("Connection attempt failed, retrying...")
-            SOCKET=None
-            
+        # try:
+        #     SOCKET.connect((SERVER_IP, SERVER_PORT))
+        # except (BlockingIOError, TimeoutError, ConnectionError):
+        #     if DEBUG:
+        #         traceback.print_exc()
+        #     exitError("Connection attempt failed, retrying...")
+        #     SOCKET=None
+    
     # Usual behavior
     if SOCKET != None:
-        t = time.time()
-
         # send data
         try:
             if DEBUG:
+                print("sending to: ", (SERVER_IP, SERVER_PORT))
                 print("input: ",input)
-            SOCKET.sendall(bytes(input, "utf-8"))
+            
+            SOCKET.sendto(bytes(input, "utf-8"), (SERVER_IP, SERVER_PORT))
+            
+            if DEBUG:
+                print("input sent!")
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
             return
-            
+        
         # receive answer
         try:
-            answer = str(SOCKET.recv(1024*16), "utf-8")
             if DEBUG:
+                print("listening for answer")
+            data, addr = SOCKET.recvfrom(MESSAGES_LENGTH)
+            answer = str(data.strip(), "utf-8")
+            if DEBUG:
+                print("receiving from: ", addr)
                 print("answer: ",answer)
-             
-            PING = int((time.time() - t) * 1000)
             
             return answer
+        except (BlockingIOError, TimeoutError):
+            pass
         except (OSError):
             if DEBUG:
                 traceback.print_exc()
@@ -458,7 +506,8 @@ def update(state="STATE [] END"):
     Returns:
         bool: was there a problem in updating variables ?
     """
-        
+    
+    global PING
     global WALLS
     global PLAYERS
     global UNVISIBLE
@@ -474,6 +523,16 @@ def update(state="STATE [] END"):
     messages = state.split(" ")
     
     ### Simple commands : KEYWORD <content> END
+    
+    if len(messages) == 3 and messages[0] == "PING" and messages[2] == "END":
+        try:
+            timeping = float(messages[1])
+            if timeping == LAST_PING_TIME:
+                PING = int((time.time() - LAST_PING_TIME) * 1000)
+            
+            return False
+        except:
+            return True
     
     if len(messages) == 3 and messages[0] == "STATE" and messages[2] == "END":
         
@@ -524,7 +583,7 @@ def update(state="STATE [] END"):
     
     else:
         # dictionary representing the known keywords and the number of parameters in <content> they take
-        keywords = {"STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
+        keywords = {"PING" : 1, "STATE" : 1, "WALLS" : 1, "SHADES" : 1, "LOBBY" : 1, "GAME" : 1, "TRANSITION_GAME_LOBBY" : 1, "TRANSITION_LOBBY_GAME" : 1}
         
         if len(messages) >= 3:
             conc = messages
@@ -621,8 +680,14 @@ def main():
         displayer = Thread(target=display)
         gameUpdater = Thread(target=game)
         
+        displayer.daemon = True
+        gameUpdater.daemon = True
+        
         displayer.start()
         gameUpdater.start()
+    
+    while CONNECTED:
+        time.sleep(1)
 
 
 
