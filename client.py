@@ -58,7 +58,7 @@ EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected
 LAST_PING_TIME = None # in seconds - time when last ping was sent
-PING_FREQUENCY = 1000 # in loops
+PING_FREQUENCY = 10 # in loops
 
 LOBBY = True
 readyPlayers = []
@@ -284,8 +284,9 @@ def game():
         
         inputs = getInputs()
         
-        if i%PING_FREQUENCY:
-            t = LAST_PING_TIME = time.time()
+        if i%PING_FREQUENCY == 0:
+            t = time.time()
+            LAST_PING_TIME = t
             update(sendPing(t))
         
         state = send(inputs)
