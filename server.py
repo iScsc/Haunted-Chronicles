@@ -24,7 +24,7 @@ def extractingIP():
     s.close()
     return(ip)
 
-# ----------------------- Constants-----------------------
+# ----------------------- Constants and Global Variables -----------------------
 
 DEBUG=False
 
@@ -36,6 +36,7 @@ SIZE = (SIZE_X,SIZE_Y)
 # Movements speeds differ depending on the player's team
 STEP_X = [10, 4, 3]
 STEP_Y = [10, 4, 3]
+STEP_PRECISION = 1
 
 # Server
 IP = extractingIP()
@@ -74,7 +75,7 @@ READY = {}
 FINISHED = False
 DEAD = {}
 
-SEEKING_TIME = 20 # Time to seek for the hidders - in seconds
+SEEKING_TIME = 200 # Time to seek for the hidders - in seconds
 CURRENT_INGAME_TIME = None # Current in-game time left - in seconds
 game_start_time = None
 
@@ -330,12 +331,13 @@ def validIp(ip, pseudo:str):
 
 # ----------------------- Games Rules -----------------------
 
-def rules(inputLetter:str,pseudo:str):
+def rules(inputLetter:str,pseudo:str,factor=1.):
     """Process an input for a player
 
     Args:
         inputLetter (char): input letter
         pseudo (str): player pseudo
+        factor (float): a factor applicated to steps. Less than one. Defaults to 1.
     Returns:
         "Invalid Input" if the input did not respect the rules, else None
     """
@@ -351,13 +353,13 @@ def rules(inputLetter:str,pseudo:str):
         case ".":
             pass
         case "RIGHT":
-            x+=STEP_X[id]
+            x+=int(STEP_X[id]*factor)
         case "LEFT":
-            x-=STEP_X[id]
+            x-=int(STEP_X[id]*factor)
         case "UP":
-            y-=STEP_Y[id]
+            y-=int(STEP_Y[id]*factor)
         case "DOWN":
-            y+=STEP_Y[id]
+            y+=int(STEP_Y[id]*factor)
         case "RED":
             if LOBBY and not READY[pseudo]:
                 tempId = TEAMSID["Seekers"]
@@ -376,6 +378,8 @@ def rules(inputLetter:str,pseudo:str):
         dicoJoueur[pseudo].update(teamId=tempId)
     if correctPosition(pseudo, x,y,size1.w,size1.h):
         dicoJoueur[pseudo].update(position=Position(x, y), size=Size(size1.w, size1.h))
+    elif abs(position1.x-x)>STEP_PRECISION or abs(position1.y-y)>STEP_PRECISION:
+        rules(inputLetter,pseudo,factor/2)
     
     # rules can launch transition only from LOBBY to GAME
     if LOBBY:
