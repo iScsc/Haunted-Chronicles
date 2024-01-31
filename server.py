@@ -64,7 +64,7 @@ PLAYERS_BEGIN_PORT = 9000
 
 MESSAGES_LENGTH = 1024 * 3
 
-TIMEOUT = 0.010 # socket set to non-blocking mode - must be > waiting time
+TIMEOUT = 0.050 # socket set to non-blocking mode - must be > waiting time
 
 # Server managing variables
 LISTENING = True
@@ -72,7 +72,7 @@ MANAGING = True
 STOP = False
 
 ### Game
-TIME_TO_SWITCH = 10 # Time before switching from lobby to the game when everyone is ready, and from game to lobby when the game is finished.
+TIME_TO_SWITCH = 5 # Time before switching from lobby to the game when everyone is ready, and from game to lobby when the game is finished.
 
 # Lobby
 LOBBY = True
@@ -291,9 +291,12 @@ def states(pseudo:str):
         
         if not DEAD[pseudo]:
             
+            #TEMPORAIRE
+            t = time.time()
             shadows = Visible(player, LIGHTS, listOfAlivePlayers, SIZE_X, SIZE_Y, STATIC_SHADOW, WALLS, LIST_STATIC_SHADOW)
             visiblePlayer = allVisiblePlayer(shadows,listOfAlivePlayers)
             formatShadows = sendingFormat(shadows)
+            print("Shadows calculation time : " + str(1000 * (time.time() - t)))
 
             # gets visible player strings
             liste.append(str(player))
@@ -515,6 +518,12 @@ def launchGame():
     FINISHED = False
 
     CURRENT_INGAME_TIME = SEEKING_TIME
+    
+    for pseudo in dicoJoueur:
+        _, _, _, _, size = dicoJoueur[pseudo].toList()
+        
+        dicoJoueur[pseudo].update(position=randomValidPosition(pseudo, size.w, size.h))
+    
     game_start_time = time.time()
 
 
