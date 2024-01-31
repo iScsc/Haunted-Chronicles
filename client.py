@@ -264,8 +264,37 @@ def display():
 
 
 
-def game():
-    """Thread to send inputs to the server, receive the current state of the game from it, and update the client-side variables.
+def game_manager():
+    """Thread to get inputs and send them to the server.
+    """
+    
+    global SOCKET
+    
+    global LAST_PING_TIME
+    
+    i = 0
+    while CONNECTED:
+        
+        inputs = getInputs()
+        
+        if i%PING_FREQUENCY == 0:
+            t = time.time()
+            LAST_PING_TIME = t
+            update(sendPing(t))
+        
+        send(inputs)
+
+        i += 1
+        time.sleep(COMM_FREQUENCY)
+    
+    if SOCKET != None:
+        SOCKET.close()
+        SOCKET = None
+
+
+
+def game_updater():
+    """Thread to receive messages from the server, and update the client-side variables.
     """
     
     global PLAYERS
@@ -278,17 +307,9 @@ def game():
     
     requestNumber=0
     
-    i = 0
     while CONNECTED and requestNumber<MAX_REQUESTS:
         
-        inputs = getInputs()
-        
-        if i%PING_FREQUENCY == 0:
-            t = time.time()
-            LAST_PING_TIME = t
-            update(sendPing(t))
-        
-        state = send(inputs)
+        state = receive()
         
         if (update(state)) : # request failed
             requestNumber+=1
@@ -298,7 +319,6 @@ def game():
         if requestNumber>=MAX_REQUESTS:
             exitError("Max number of request has been passed for inputs!")
 
-        i += 1
         time.sleep(COMM_FREQUENCY)
     
     if SOCKET != None:
@@ -316,10 +336,16 @@ def connect():
         bool: is the connection successful ?
     """
     
+    send("CONNECT " + USERNAME + " END")
+    message = receive() # Should be "CONNECTED <New_Port> <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
+    
+    return processConnect(message)
+
+
+
+def processConnect(message = None):
     global SERVER_PORT
     global SIZE
-    
-    message = send("CONNECT " + USERNAME + " END") # Should be "CONNECTED <New_Port> <Username> SIZE WALLS <WallsString> STATE <PlayersString> SHADES <ShadesString> END"
     
     if message != None:
         messages = message.split(" ")
@@ -329,9 +355,9 @@ def connect():
     if DEBUG:
         print("messages: ", messages)
     
-    if (messages != None and len(messages) == 11 and messages[0] == "CONNECTED" and messages[2] == USERNAME and messages[4] == "WALLS" and messages[6] == "LOBBY" and messages[8] == "STATE" and messages[10] == "END"):
+    if (messages != None and len(messages) == 11 and messages[0] in ["CONNECTED", "CONNECTED_BACK"] and messages[2] == USERNAME and messages[4] == "WALLS" and messages[6] == "LOBBY" and messages[8] == "STATE" and messages[10] == "END"):
         
-        # get serveur default screen size
+        # get server default screen size
         try:
             portStr = "" + messages[1]
             SERVER_PORT = int(portStr)
@@ -352,9 +378,11 @@ def connect():
         update(messages[4] + " " + messages[5] + " " + messages[6] + " " + messages[7] + " " + messages[8] + " " + messages[9] + " END")
         
         return True
+    elif (message == "You are already connected!"):
+        return getConnectionInfo()
     
     # Manage failed connections
-    elif messages != None and "CONNECTED" not in messages:
+    elif messages != None and "CONNECTED" not in messages and "CONNECTED_BACK" not in messages:
         askNewPseudo(message)
         
         global SOCKET
@@ -362,6 +390,24 @@ def connect():
         SOCKET.close()
         SOCKET = None
 
+    return False
+
+
+
+def getConnectionInfo():
+    max_try = 10
+    i = 0
+    
+    send("CONNECT_BACK " + USERNAME + " END")
+    message = receive()
+    
+    while i < max_try or not getConnectionInfo(message):
+        send("CONNECT_BACK " + USERNAME + " END")
+        message = receive()
+        
+        if getConnectionInfo(message):
+            return True
+    
     return False
 
 
@@ -443,7 +489,6 @@ def send(input="INPUT " + USERNAME + " . END"):
         str: the normalized answer from the server.
     """
     
-    global PING
     global SOCKET
     
     # Initialization
@@ -459,7 +504,7 @@ def send(input="INPUT " + USERNAME + " . END"):
         #     SOCKET=None
     
     # Usual behavior
-    if SOCKET != None:
+    if SOCKET != None and input != "INPUT " + USERNAME + " . END":
         # send data
         try:
             if DEBUG:
@@ -475,7 +520,10 @@ def send(input="INPUT " + USERNAME + " . END"):
                 traceback.print_exc()
             exitError("Loss connection with the remote server while sending data.")
             return
-        
+
+
+
+def receive():
         # receive answer
         try:
             if DEBUG:
@@ -654,8 +702,9 @@ def exitError(errorMessage="Sorry a problem occured..."):
     print(errorMessage)
     
     CONNECTED=False
-    SOCKET.close()
-    SOCKET = None
+    if SOCKET != None:
+        SOCKET.close()
+        SOCKET = None
 
 
 
@@ -677,12 +726,15 @@ def main():
     
     if CONNECTED:
         displayer = Thread(target=display)
-        gameUpdater = Thread(target=game)
+        gameManager = Thread(target=game_manager)
+        gameUpdater = Thread(target=game_updater)
         
         displayer.daemon = True
+        gameManager.daemon = True
         gameUpdater.daemon = True
         
         displayer.start()
+        gameManager.start()
         gameUpdater.start()
     
     while CONNECTED:
