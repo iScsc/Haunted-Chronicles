@@ -18,7 +18,7 @@ from inlight import toVisible
 
 # ----------------------- Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 SERVER_IP = ""
 SERVER_PORT = 9998
@@ -415,22 +415,30 @@ def getInputs():
         elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
             return "INPUT " + USERNAME + " READY END"
     
-    if keys[pg.K_LEFT] or keys[pg.K_q]:
-        return "INPUT " + USERNAME + " LEFT END"
-    elif keys[pg.K_RIGHT] or keys[pg.K_d]:
-        return "INPUT " + USERNAME + " RIGHT END"
-    elif keys[pg.K_UP] or keys[pg.K_z]:
-        return "INPUT " + USERNAME + " UP END"
-    elif keys[pg.K_DOWN] or keys[pg.K_s]:
-        return "INPUT " + USERNAME + " DOWN END"
-    elif keys[pg.K_r]:
-        return "INPUT " + USERNAME + " RED END"
-    elif keys[pg.K_b]:
-        return "INPUT " + USERNAME + " BLUE END"
-    elif keys[pg.K_n]:
-        return "INPUT " + USERNAME + " NEUTRAL END"
+    res=""
     
-    return "INPUT " + USERNAME + " . END"
+    if keys[pg.K_LEFT] or keys[pg.K_q]:
+        res+= "INPUT " + USERNAME + " LEFT "
+    elif keys[pg.K_RIGHT] or keys[pg.K_d]:
+        res+= "INPUT " + USERNAME + " RIGHT "
+    if keys[pg.K_UP] or keys[pg.K_z]:
+        res+= "INPUT " + USERNAME + " UP "
+    elif keys[pg.K_DOWN] or keys[pg.K_s]:
+        res+= "INPUT " + USERNAME + " DOWN "
+    
+    if keys[pg.K_r]:
+        res+= "INPUT " + USERNAME + " RED "
+    elif keys[pg.K_b]:
+        res+= "INPUT " + USERNAME + " BLUE "
+    elif keys[pg.K_n]:
+        res+= "INPUT " + USERNAME + " NEUTRAL "
+    
+    res+="END"
+    
+    if res != "END":
+        return res
+    else:
+        return "INPUT " + USERNAME + " . END"
 
 
 

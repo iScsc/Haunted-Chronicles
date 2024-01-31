@@ -27,7 +27,7 @@ def extractingIP():
 
 # ----------------------- Constants and Global Variables -----------------------
 
-DEBUG=False
+DEBUG=True
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -108,6 +108,37 @@ STATIC_SHADOW = None
 LIST_STATIC_SHADOW = []
 
 # -------------------- Processing a Request -----------------------
+def getRequests(s:str):
+    """splits a string of concatenated messages
+
+    Args:
+        s (str): a string of concatenated messages
+
+    Returns:
+        list[str]: the list of messages
+    """
+    keyWords=["CONNECT","INPUT","DISCONNECTION","PING"]
+    ssplit=s.split(' ')
+    msgs=[]
+    msg=""
+    for x in ssplit:
+        if x in keyWords:
+            msg+="END"
+            msgs.append(msg)
+            msg=""
+            msg+=x
+            msg+=" "
+        elif x=="END":
+            msg+=x
+            msgs.append(msg)
+            msg=""
+        else:
+            msg+=x
+            msg+=" "
+    msgs.remove("END")
+    return msgs
+    
+
 def processRequest(addr:int, s:str):
     """Calls the right function according to process a request
 
@@ -734,7 +765,13 @@ def manage_game_state():
                                     print("{} wrote to MAINSOCKET:".format(addr))
                                     print(in_data)
                                 
-                                out = processRequest(addr, in_data)
+                                msgs=getRequests(in_data)
+                                print(msgs)
+                                out=""
+                                for msg in msgs:
+                                    out += processRequest(addr, msg)
+                                    out=out[:-3]
+                                out+="END"
                                 message = out.split(" ")
                                 username = message[1]
                                 
@@ -797,7 +834,12 @@ def manage_game_state():
                                 print("{} wrote to sock with port {}:".format(addr, port))
                                 print(in_data)
                             
-                            out = processRequest(addr, in_data)
+                            msgs=getRequests(in_data)
+                            out=""
+                            for msg in msgs:
+                                out += processRequest(addr, msg)
+                                out=out[:-3]
+                            out+="END"
                             message = out.split(" ")
                             
                             if addr in dicoSocket and dicoSocket[addr][0] == sock:
