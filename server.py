@@ -35,8 +35,8 @@ SIZE_Y = int(1080 * .9)
 SIZE = (SIZE_X,SIZE_Y)
 
 # Movements speeds differ depending on the player's team
-STEP_X = [10, 4, 3]
-STEP_Y = [10, 4, 3]
+STEP_X = [4, 2, 1]
+STEP_Y = [4, 2, 1]
 STEP_PRECISION = 1
 
 # Server
@@ -123,6 +123,8 @@ def processRequest(addr:int, s:str):
     type = typeOfRequest(s)
     if type == "CONNECT":
         return(processConnect(addr, s))
+    if type == "CONNECT_BACK":
+        return (processReconnection(addr, s))
     elif type == "INPUT":
         return(processInput(addr, s))
     elif type == "DISCONNECTION":
@@ -151,19 +153,9 @@ def processConnect(addr:int, s:str):
     pseudo = extractPseudo(s)
     
     if doPseudoExist(pseudo):
-        # # same ip, socket may have been lost so send connection message back
-        # if pseudo in dicoSocket:
-        #     addr = dicoSocket[pseudo][1]
-            
-        #     if addr[0] == ip:
-        #         return firstConnection(pseudo)
-        #     else:
-        #         # error somewhere
-        #         return("This pseudo already exists.")
-        # else:
-        #     return("This pseudo already exists.")
-        
-        # bad idea because the socket will be created several times
+        # same ip, socket may have been lost so send connection message back
+        if pseudo in dicoSocket and dicoSocket[addr][1] == pseudo:
+            return("You are already connected!")
         
         return("This pseudo already exists.")
     elif len(pseudo)>SIZE_MAX_PSEUDO:
@@ -173,6 +165,19 @@ def processConnect(addr:int, s:str):
     else :
         initNewPlayer(pseudo)
         return(firstConnection(pseudo))
+
+
+def processReconnection(addr:int, s:str):
+    pseudo = extractPseudo(s)
+    
+    if doPseudoExist(pseudo):
+        # same ip, socket may have been lost so send connection message back
+        if pseudo in dicoSocket and dicoSocket[addr][1] == pseudo:
+            out = "CONNECTED_BACK " + pseudo + " " + (str(SIZE)).replace(" ","") + " " + walls().replace("END","") + states(pseudo)
+            return(out)
+        
+        else:
+            return("You are not connected.")
     
     
 def processInput(addr:int, s:str):
