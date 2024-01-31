@@ -27,7 +27,11 @@ def extractingIP():
 
 # ----------------------- Constants and Global Variables -----------------------
 
-DEBUG=False
+DEBUG_M_IN=False
+DEBUG_M_OUT=False
+DEBUG_S_IN=False
+DEBUG_S_OUT=False
+DEBUG_CO=False
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -661,6 +665,12 @@ def manage_server():
     global LISTENING
     global MANAGING
     
+    global DEBUG_M_IN
+    global DEBUG_M_OUT
+    global DEBUG_S_IN
+    global DEBUG_S_OUT
+    global DEBUG_CO
+    
     global MAINSOCKET
     
     while not STOP:
@@ -691,8 +701,88 @@ def manage_server():
             case "manage":
                 MANAGING = True
                 print("MANAGING = ", MANAGING)
+            case "debug":
+                DEBUG_M_IN=True
+                DEBUG_M_OUT=True
+                DEBUG_S_IN=True
+                DEBUG_S_OUT=True
+                DEBUG_CO=True
+                print("All debugging parameters have been set to True")
+                print("To avoid too much debug printing use : debug_msg, debug_socket, debug_in, debug_out or debug_connect")
+                print("To stop use no_debug")
+            case "debug_all":
+                DEBUG_M_IN=True
+                DEBUG_M_OUT=True
+                DEBUG_S_IN=True
+                DEBUG_S_OUT=True
+                DEBUG_CO=True
+                print("All debugging parameters have been set to True")
+                print("To stop use no_debug")
+            case "debug_msg":
+                DEBUG_M_IN=True
+                DEBUG_M_OUT=True
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                print("To stop use no_debug_msg")
+                print("You may use : debug_all, debug_socket, debug_in, debug_out or debug_connect")
+            case "debug_socket":
+                DEBUG_S_IN=True
+                DEBUG_S_OUT=True
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+                print("To stop use no_debug_socket")
+                print("You may use : debug_all, debug_msg, debug_in, debug_out or debug_connect")
+            case "debug_in":
+                DEBUG_M_IN=True
+                DEBUG_S_IN=True
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+                print("To stop use no_debug_in")
+                print("You may use : debug_all, debug_msg, debug_socket, debug_out or debug_connect")
+            case "debug_out":
+                DEBUG_M_OUT=True
+                DEBUG_S_OUT=True
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+                print("To stop use no_debug_out")
+                print("You may use : debug_all, debug_msg, debug_in, debug_socket or debug_connect")
+            case "debug_connect":
+                DEBUG_CO=True
+                print("DEBUG_CO=", DEBUG_CO)
+                print("To stop use no_debug_connect")
+                print("You may use : debug_all, debug_msg, debug_in, debug_socket or debug_out")
+            case "no_debug":
+                DEBUG_M_IN=False
+                DEBUG_M_OUT=False
+                DEBUG_S_IN=False
+                DEBUG_S_OUT=False
+                DEBUG_CO=False
+                print("All debugging parameters have been set to False")
+            case "no_debug_msg":
+                DEBUG_M_IN=False
+                DEBUG_M_OUT=False
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+            case "no_debug_socket":
+                DEBUG_S_IN=False
+                DEBUG_S_OUT=False
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+            case "no_debug_in":
+                DEBUG_M_IN=False
+                DEBUG_S_IN=False
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+            case "no_debug_out":
+                DEBUG_M_OUT=False
+                DEBUG_S_OUT=False
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+            case "no_debug_connect":
+                DEBUG_CO=False
+                print("DEBUG_CO=", DEBUG_CO)
             case _:
-                print("Wrong command : use either stop, deaf, listen, ignore, manage")
+                print("Wrong command : use either stop, deaf, listen, ignore, manage or debug commands")
                 print("STOP = ", STOP)
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
@@ -730,7 +820,7 @@ def manage_game_state():
                                 in_data = str(data.strip(), "utf-8")
                                 in_ip = addr[0]
                                 
-                                if DEBUG:
+                                if DEBUG_M_IN:
                                     print("{} wrote to MAINSOCKET:".format(addr))
                                     print(in_data)
                                 
@@ -739,12 +829,14 @@ def manage_game_state():
                                 username = message[1]
                                 
                                 if message[0]=="CONNECTED":
+                                    if DEBUG_CO:
+                                        print("Connection attempt from ",addr," with username ",username)
                                     sock = socket(AF_INET, SOCK_DGRAM)
                                     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                                     sock.settimeout(TIMEOUT)
                                     
                                     # port attribution
-                                    if DEBUG:
+                                    if DEBUG_CO:
                                         print("available ports = ", availablePorts)
                                     
                                     port = availablePorts[0]
@@ -759,17 +851,17 @@ def manage_game_state():
                                     username = message[1]
                                     dicoSocket[addr] = (sock, username)
 
-                                if DEBUG:
+                                if DEBUG_M_OUT:
                                     print("sending to: ", addr)
                                     print(">>> ",out)
                                 
                                 try:
                                     MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
                                     
-                                    if DEBUG:
+                                    if DEBUG_S_OUT:
                                         print("answer sent!\n")
                                 except (OSError):
-                                    if DEBUG:
+                                    if DEBUG_S_OUT:
                                         traceback.print_exc()
                                     print("New connection from " + str(in_ip) + " failed!")
                                     waitingDisconnectionList.append((addr, sock, username))
@@ -777,7 +869,7 @@ def manage_game_state():
                             except (BlockingIOError, TimeoutError):
                                 pass
                             except (OSError):
-                                if DEBUG:
+                                if DEBUG_S_IN:
                                     traceback.print_exc()
                                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
                     
@@ -793,7 +885,7 @@ def manage_game_state():
                             in_data = str(data.strip(), "utf-8")
                             in_ip = addr[0]
                             
-                            if DEBUG:
+                            if DEBUG_M_IN:
                                 print("{} wrote to sock with port {}:".format(addr, port))
                                 print(in_data)
                             
@@ -807,13 +899,13 @@ def manage_game_state():
                                     username = message[1]
                                     waitingDisconnectionList.append((addr, sock, username))
                                 
-                                if DEBUG:
+                                if DEBUG_M_OUT:
                                     print("sock with port {} for player {} wrote back to {} :".format(port, username, addr))
                                     print(">>> ",out,"\n")
                                 try:
                                     sock.sendto(bytes(out,'utf-8'), addr)
                                 except (OSError):
-                                    if DEBUG:
+                                    if DEBUG_S_OUT:
                                         traceback.print_exc()
                                     print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                                     waitingDisconnectionList.append((addr, sock, username))
@@ -821,7 +913,7 @@ def manage_game_state():
                         except (BlockingIOError, TimeoutError):
                             pass
                         except (OSError):
-                            if DEBUG:
+                            if DEBUG_S_IN:
                                 traceback.print_exc()
                             print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
         
