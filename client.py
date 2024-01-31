@@ -54,7 +54,7 @@ UNVISIBLE = []
 SOCKET = None
 WAITING_TIME = 0.100 # in seconds - period of connection requests when trying to connect to the host - must be < TIMEOUT
 SOCKET_TIMEOUT = 0.500 # in seconds - 0 when set to non blocking mode - must be > waiting time
-COMM_FREQUENCY = 0.05 # in seconds - time between two communications with the server
+COMM_FREQUENCY = 0.001 # in seconds - time between two communications with the server
 EXIT_TIMEOUT = 5 # in seconds - when trying to disconnect
 
 PING = None # in milliseconds - ping with the server, None when disconnected

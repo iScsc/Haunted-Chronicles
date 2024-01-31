@@ -48,7 +48,7 @@ SIZE_MAX_PSEUDO = 10
 PLAYER_SIZE = Size(20, 20)
 
 # Maybe not mandatory
-WAITING_TIME = 0.005 # in seconds - period of connection requests when trying to connect to the host - must be < TIMEOUT
+WAITING_TIME = 0.0001 # in seconds - period for the game management loop - must be < TIMEOUT
 
 HOST = str(IP)
 PORT = 9998
@@ -94,8 +94,10 @@ transition_start_time = None
 
 # ----------------------- Variables -----------------------
 
-dicoJoueur = {} # Store players' Player structure
-dicoSocket = {} # Store clients' (sock, addr) structures where sock is the socket used for communicating, and addr = (ip, port)
+dicoJoueur = {} # Store players' Player structure using their username as keys : dicoJoueur[username] = player
+dicoSocket = {} # Store clients' (sock, username) structures where sock is the socket bound socket, using their addr = (ip, port) as keys : dicoSocket[addr] = (sock, username)
+dicoRequest = {} # Store client's current requests using player's addr as keys : dicoRequest[addr] = in_data
+dicoAnswers = {} # Store server's current answers to players using their addr as keys : dicoRequest[addr] = out_data
 waitingDisconnectionList = []
 
 availablePorts = [] # Store available ports for new players
@@ -190,7 +192,8 @@ def processInput(addr:int, s:str):
         return("You are impersonating someone else !")
     inputWord = extractWord(s)
     rules(inputWord,pseudo)
-    return(states(pseudo))
+    return "CORRECT INPUT"
+    #return(states(pseudo))
 
 
 def processDisconnection(addr, s:str):
@@ -767,6 +770,8 @@ def manage_game_state():
 
                                     username = message[1]
                                     dicoSocket[addr] = (sock, username)
+                                    dicoRequest[addr] = None
+                                    dicoAnswers[addr] = None
 
                                 if DEBUG:
                                     print("sending to: ", addr)
@@ -802,6 +807,8 @@ def manage_game_state():
                             in_data = str(data.strip(), "utf-8")
                             in_ip = addr[0]
                             
+                            dicoRequest[addr] = in_data
+                            
                             if DEBUG:
                                 print("{} wrote to sock with port {}:".format(addr, port))
                                 print(in_data)
@@ -815,7 +822,7 @@ def manage_game_state():
                                 if message[0]=="DISCONNECTED":
                                     username = message[1]
                                     waitingDisconnectionList.append((addr, sock, username))
-                                
+                                    
                                 if DEBUG:
                                     print("sock with port {} for player {} wrote back to {} :".format(port, username, addr))
                                     print(">>> ",out,"\n")
@@ -871,6 +878,18 @@ def manage_game_state():
             
             if CURRENT_TRANSITION_TIME <= 0:
                 switchGameState()
+        
+        # Send back to each client the actual state of the game
+        for addr, (sock, username) in dicoSocket.items():
+            out = states(username)
+            
+            try:
+                sock.sendto(bytes(out,'utf-8'), addr)
+            except (OSError):
+                if DEBUG:
+                    traceback.print_exc()
+                print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
+                waitingDisconnectionList.append((addr, sock, username))
         
         time.sleep(WAITING_TIME)
 
