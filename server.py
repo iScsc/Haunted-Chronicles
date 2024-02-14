@@ -530,6 +530,9 @@ def launchGame():
 
     CURRENT_INGAME_TIME = SEEKING_TIME
     game_start_time = time.time()
+    
+    DATE=datetime.now()
+    LOG.write(DATE.strftime("%H:%M - ")+"Game started")
 
 
 def resetGameState():
@@ -973,6 +976,8 @@ def manage_game_state():
             # game finished
             if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
                 FINISHED = True
+                DATE=datetime.now()
+                LOG.write(DATE.strftime("%H:%M - ")+"Game ended")
                 waitForTransition()
         
         # In a transition state
