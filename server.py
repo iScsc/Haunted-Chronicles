@@ -896,6 +896,8 @@ def manage_game_state():
                             except (OSError):
                                 if DEBUG_S_IN:
                                     traceback.print_exc()
+                                DATE=datetime.now()
+                                LOG.write(DATE.strftime("%H:%M - ")+"Error in main socket\n")
                                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
                     
                         else:
@@ -932,6 +934,8 @@ def manage_game_state():
                                 except (OSError):
                                     if DEBUG_S_OUT:
                                         traceback.print_exc()
+                                    DATE=datetime.now()
+                                    LOG.write(DATE.strftime("%H:%M - ")+"Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")\n")
                                     print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                                     waitingDisconnectionList.append((addr, sock, username))
                         
@@ -940,6 +944,8 @@ def manage_game_state():
                         except (OSError):
                             if DEBUG_S_IN:
                                 traceback.print_exc()
+                            DATE=datetime.now()
+                            LOG.write(DATE.strftime("%H:%M - ")+"Error in main socket\n")
                             print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
         
         # process disconnections
