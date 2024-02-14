@@ -180,6 +180,8 @@ def processConnect(addr:int, s:str):
         return("Don't use ' ' or ',' or '(' or ')' in your pseudo !")
     else :
         initNewPlayer(pseudo)
+        DATE=datetime.now()
+        LOG.write(DATE.strftime("%H:%M - ")+"Connected: "+addr+" - "+pseudo+"\n")
         return(firstConnection(pseudo))
     
     
@@ -215,6 +217,8 @@ def processDisconnection(addr, s:str):
     pseudo = extractPseudo(s)
     if not(validAddress(addr, pseudo)):
         return("You are impersonating someone else !")
+    DATE=datetime.now()
+    LOG.write(DATE.strftime("%H:%M - ")+"Disconnected: "+addr+" - "+pseudo+"\n")
     return("DISCONNECTED " + pseudo + " END")
 
 def processPing(s:str):
@@ -882,6 +886,8 @@ def manage_game_state():
                                 except (OSError):
                                     if DEBUG_S_OUT:
                                         traceback.print_exc()
+                                    DATE=datetime.now()
+                                    LOG.write(DATE.strftime("%H:%M - ")+"New connection from " + str(in_ip) + " failed!\n")
                                     print("New connection from " + str(in_ip) + " failed!")
                                     waitingDisconnectionList.append((addr, sock, username))
                                     
