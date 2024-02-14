@@ -696,6 +696,7 @@ def manage_server():
                 print("Client sockets closed !")
                 
                 print("Every sockets have been successfully closed!")
+                LOG.close()
             case "deaf":
                 LISTENING = False
                 print("LISTENING = ", LISTENING)
