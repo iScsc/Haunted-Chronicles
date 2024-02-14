@@ -141,7 +141,7 @@ def processRequest(addr:int, s:str):
         return("Invalid Request")
 
 
-def processConnect(addr:int, s:str):
+def processConnect(addr:tuple, s:str):
     """Process a connection request
 
     Args:
@@ -181,7 +181,7 @@ def processConnect(addr:int, s:str):
     else :
         initNewPlayer(pseudo)
         DATE=datetime.now()
-        LOG.write(DATE.strftime("%H:%M - ")+"Connected: "+addr+" - "+pseudo+"\n")
+        LOG.write(DATE.strftime("%H:%M - ")+"Connected: "+addr[0]+" - "+pseudo+"\n")
         return(firstConnection(pseudo))
     
     
@@ -205,7 +205,7 @@ def processInput(addr:int, s:str):
     return(states(pseudo))
 
 
-def processDisconnection(addr, s:str):
+def processDisconnection(addr:tuple, s:str):
     """Process a disconnection request
 
     Args:
@@ -218,7 +218,7 @@ def processDisconnection(addr, s:str):
     if not(validAddress(addr, pseudo)):
         return("You are impersonating someone else !")
     DATE=datetime.now()
-    LOG.write(DATE.strftime("%H:%M - ")+"Disconnected: "+addr+" - "+pseudo+"\n")
+    LOG.write(DATE.strftime("%H:%M - ")+"Disconnected: "+addr[0]+" - "+pseudo+"\n")
     return("DISCONNECTED " + pseudo + " END")
 
 def processPing(s:str):
@@ -896,8 +896,6 @@ def manage_game_state():
                             except (OSError):
                                 if DEBUG_S_IN:
                                     traceback.print_exc()
-                                DATE=datetime.now()
-                                LOG.write(DATE.strftime("%H:%M - ")+"Error in main socket\n")
                                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
                     
                         else:
@@ -944,8 +942,6 @@ def manage_game_state():
                         except (OSError):
                             if DEBUG_S_IN:
                                 traceback.print_exc()
-                            DATE=datetime.now()
-                            LOG.write(DATE.strftime("%H:%M - ")+"Error in main socket\n")
                             print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
         
         # process disconnections
