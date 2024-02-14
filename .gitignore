@@ -11,6 +11,9 @@ BACKUPS
 *Test.py
 *test.py
 
+# Logs
+*log.txt
+
 # C extensions
 *.so
 

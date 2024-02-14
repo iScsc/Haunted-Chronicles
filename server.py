@@ -8,6 +8,7 @@ import select
 from threading import *
 import time
 import traceback
+from datetime import datetime
 
 from player import Player
 from wall import Wall
@@ -27,11 +28,16 @@ def extractingIP():
 
 # ----------------------- Constants and Global Variables -----------------------
 
+#logs and debugs
 DEBUG_M_IN=False
 DEBUG_M_OUT=False
 DEBUG_S_IN=False
 DEBUG_S_OUT=False
 DEBUG_CO=False
+
+DATE=datetime.now()
+
+LOG=None
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -675,6 +681,7 @@ def manage_server():
     
     while not STOP:
         command = input()
+        LOG.write("Command: "+command+'\n\t')
         match command:
             case "stop":
                 STOP = True
@@ -688,7 +695,7 @@ def manage_server():
                 
                 print("Client sockets closed !")
                 
-                print("Every sockets has been successfully closed!")
+                print("Every sockets have been successfully closed!")
             case "deaf":
                 LISTENING = False
                 print("LISTENING = ", LISTENING)
@@ -787,6 +794,10 @@ def manage_server():
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
                 print("LOBBY = ", LOBBY)
+        LOG.write("STOP = "+ str(STOP)+'\n\t')
+        LOG.write("LISTENING = "+ str(LISTENING)+'\n\t')
+        LOG.write("MANAGING = "+ str(MANAGING)+'\n\t')
+        LOG.write("LOBBY = "+ str(LOBBY)+'\n')
     
     return
 
@@ -1039,10 +1050,20 @@ def main():
     """
     global MAINSOCKET
     global LOCK
+    global DATE
+    global LOG
     
     # Initialization
     baseMapInit()
     baseSocketInit()
+    
+    DATE=datetime.now()
+    
+    logString=DATE.strftime("%Y-%m-%d_%Hh%M")+"_log.txt"
+    
+    LOG=open(logString,'w') #if an error occure the program should fail
+        
+    LOG.write("Server started: "+DATE.strftime("%Y-%m-%d %Hh%M")+"\n\n")
     
     if LOCK == None:
         LOCK = Lock()
