@@ -681,7 +681,8 @@ def manage_server():
     
     while not STOP:
         command = input()
-        LOG.write("Command: "+command+'\n\t')
+        DATE=datetime.now()
+        LOG.write(DATE.strftime("%H:%M - ")+"Command: "+command+'\n\t')
         match command:
             case "stop":
                 STOP = True
@@ -696,7 +697,6 @@ def manage_server():
                 print("Client sockets closed !")
                 
                 print("Every sockets have been successfully closed!")
-                LOG.close()
             case "deaf":
                 LISTENING = False
                 print("LISTENING = ", LISTENING)
@@ -716,6 +716,7 @@ def manage_server():
                 DEBUG_S_OUT=True
                 DEBUG_CO=True
                 print("All debugging parameters have been set to True")
+                LOG.write("All debugging parameters have been set to True\n\t")
                 print("To avoid too much debug printing use : debug_msg, debug_socket, debug_in, debug_out or debug_connect")
                 print("To stop use no_debug")
             case "debug_all":
@@ -725,12 +726,14 @@ def manage_server():
                 DEBUG_S_OUT=True
                 DEBUG_CO=True
                 print("All debugging parameters have been set to True")
+                LOG.write("All debugging parameters have been set to True\n\t")
                 print("To stop use no_debug")
             case "debug_msg":
                 DEBUG_M_IN=True
                 DEBUG_M_OUT=True
                 print("DEBUG_M_IN=", DEBUG_M_IN)
                 print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                LOG.write("DEBUG_M_IN="+DEBUG_M_IN+"\n\tDEBUG_M_OUT="+DEBUG_M_OUT+"\n\t")
                 print("To stop use no_debug_msg")
                 print("You may use : debug_all, debug_socket, debug_in, debug_out or debug_connect")
             case "debug_socket":
@@ -738,6 +741,7 @@ def manage_server():
                 DEBUG_S_OUT=True
                 print("DEBUG_S_IN=", DEBUG_S_IN)
                 print("DEBUG_S_OUT=", DEBUG_S_OUT)
+                LOG.write("DEBUG_S_IN="+DEBUG_S_IN+"\n\tDEBUG_S_OUT="+DEBUG_S_OUT+"\n\t")
                 print("To stop use no_debug_socket")
                 print("You may use : debug_all, debug_msg, debug_in, debug_out or debug_connect")
             case "debug_in":
@@ -745,6 +749,7 @@ def manage_server():
                 DEBUG_S_IN=True
                 print("DEBUG_M_IN=", DEBUG_M_IN)
                 print("DEBUG_S_IN=", DEBUG_S_IN)
+                LOG.write("DEBUG_M_IN="+DEBUG_M_IN+"\n\tDEBUG_S_IN="+DEBUG_S_IN+"\n\t")
                 print("To stop use no_debug_in")
                 print("You may use : debug_all, debug_msg, debug_socket, debug_out or debug_connect")
             case "debug_out":
@@ -752,11 +757,13 @@ def manage_server():
                 DEBUG_S_OUT=True
                 print("DEBUG_M_OUT=", DEBUG_M_OUT)
                 print("DEBUG_S_OUT=", DEBUG_S_OUT)
+                LOG.write("DEBUG_M_OUT="+DEBUG_M_OUT+"\n\tDEBUG_S_OUT="+DEBUG_S_OUT+"\n\t")
                 print("To stop use no_debug_out")
                 print("You may use : debug_all, debug_msg, debug_in, debug_socket or debug_connect")
             case "debug_connect":
                 DEBUG_CO=True
                 print("DEBUG_CO=", DEBUG_CO)
+                LOG.write("DEBUG_CO="+DEBUG_CO+"\n\t")
                 print("To stop use no_debug_connect")
                 print("You may use : debug_all, debug_msg, debug_in, debug_socket or debug_out")
             case "no_debug":
@@ -1082,6 +1089,10 @@ def main():
     
     while not STOP:
         time.sleep(1)
+        
+    DATE=datetime.now()
+    LOG.write("\nServer ended: "+DATE.strftime("%Y-%m-%d %Hh%M"))        
+    LOG.close()
 
 if __name__ == "__main__":
     main()
