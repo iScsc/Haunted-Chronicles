@@ -1,4 +1,4 @@
-# Haunted Chrnociles
+# Haunted Chronicles
 A small project to discover online multiplayer games.
 
 ## Future Updates
