@@ -29,11 +29,11 @@ def extractingIP():
 # ----------------------- Constants and Global Variables -----------------------
 
 #logs and debugs
-DEBUG_M_IN=False
-DEBUG_M_OUT=False
-DEBUG_S_IN=False
-DEBUG_S_OUT=False
-DEBUG_CO=False
+DEBUG_M_IN=False #debug prints on received msgs
+DEBUG_M_OUT=False #debug prints on sent msgs
+DEBUG_S_IN=False #debug prints on receiving socket
+DEBUG_S_OUT=False #debug prints on sending sockets
+DEBUG_CO=False #debug prints for problems during connection attempts
 
 DATE=datetime.now()
 
