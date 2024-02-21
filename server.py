@@ -8,6 +8,7 @@ import select
 from threading import *
 import time
 import traceback
+from datetime import datetime
 
 from player import Player
 from wall import Wall
@@ -27,7 +28,16 @@ def extractingIP():
 
 # ----------------------- Constants and Global Variables -----------------------
 
-DEBUG=False
+#logs and debugs
+DEBUG_M_IN=False #debug prints on received msgs
+DEBUG_M_OUT=False #debug prints on sent msgs
+DEBUG_S_IN=False #debug prints on receiving socket
+DEBUG_S_OUT=False #debug prints on sending sockets
+DEBUG_CO=False #debug prints for problems during connection attempts
+
+DATE=datetime.now()
+
+LOG=None
 
 # Game map
 SIZE_X = int(1920 * .9)
@@ -131,7 +141,7 @@ def processRequest(addr:int, s:str):
         return("Invalid Request")
 
 
-def processConnect(addr:int, s:str):
+def processConnect(addr:tuple, s:str):
     """Process a connection request
 
     Args:
@@ -170,6 +180,8 @@ def processConnect(addr:int, s:str):
         return("Don't use ' ' or ',' or '(' or ')' in your pseudo !")
     else :
         initNewPlayer(pseudo)
+        DATE=datetime.now()
+        LOG.write(DATE.strftime("%H:%M - ")+"Connected: "+addr[0]+" - "+pseudo+"\n")
         return(firstConnection(pseudo))
     
     
@@ -193,7 +205,7 @@ def processInput(addr:int, s:str):
     return(states(pseudo))
 
 
-def processDisconnection(addr, s:str):
+def processDisconnection(addr:tuple, s:str):
     """Process a disconnection request
 
     Args:
@@ -205,6 +217,8 @@ def processDisconnection(addr, s:str):
     pseudo = extractPseudo(s)
     if not(validAddress(addr, pseudo)):
         return("You are impersonating someone else !")
+    DATE=datetime.now()
+    LOG.write(DATE.strftime("%H:%M - ")+"Disconnected: "+addr[0]+" - "+pseudo+"\n")
     return("DISCONNECTED " + pseudo + " END")
 
 def processPing(s:str):
@@ -525,6 +539,9 @@ def launchGame():
         dicoJoueur[pseudo].update(position=randomValidPosition(pseudo, size.w, size.h))
     
     game_start_time = time.time()
+    
+    DATE=datetime.now()
+    LOG.write(DATE.strftime("%H:%M - ")+"Game started")
 
 
 def resetGameState():
@@ -670,10 +687,18 @@ def manage_server():
     global LISTENING
     global MANAGING
     
+    global DEBUG_M_IN
+    global DEBUG_M_OUT
+    global DEBUG_S_IN
+    global DEBUG_S_OUT
+    global DEBUG_CO
+    
     global MAINSOCKET
     
     while not STOP:
         command = input()
+        DATE=datetime.now()
+        LOG.write(DATE.strftime("%H:%M - ")+"Command: "+command+'\n\t')
         match command:
             case "stop":
                 STOP = True
@@ -687,7 +712,7 @@ def manage_server():
                 
                 print("Client sockets closed !")
                 
-                print("Every sockets has been successfully closed!")
+                print("Every sockets have been successfully closed!")
             case "deaf":
                 LISTENING = False
                 print("LISTENING = ", LISTENING)
@@ -700,12 +725,103 @@ def manage_server():
             case "manage":
                 MANAGING = True
                 print("MANAGING = ", MANAGING)
+            case "debug":
+                DEBUG_M_IN=True
+                DEBUG_M_OUT=True
+                DEBUG_S_IN=True
+                DEBUG_S_OUT=True
+                DEBUG_CO=True
+                print("All debugging parameters have been set to True")
+                LOG.write("All debugging parameters have been set to True\n\t")
+                print("To avoid too much debug printing use : debug_msg, debug_socket, debug_in, debug_out or debug_connect")
+                print("To stop use no_debug")
+            case "debug_all":
+                DEBUG_M_IN=True
+                DEBUG_M_OUT=True
+                DEBUG_S_IN=True
+                DEBUG_S_OUT=True
+                DEBUG_CO=True
+                print("All debugging parameters have been set to True")
+                LOG.write("All debugging parameters have been set to True\n\t")
+                print("To stop use no_debug")
+            case "debug_msg":
+                DEBUG_M_IN=True
+                DEBUG_M_OUT=True
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                LOG.write("DEBUG_M_IN="+DEBUG_M_IN+"\n\tDEBUG_M_OUT="+DEBUG_M_OUT+"\n\t")
+                print("To stop use no_debug_msg")
+                print("You may use : debug_all, debug_socket, debug_in, debug_out or debug_connect")
+            case "debug_socket":
+                DEBUG_S_IN=True
+                DEBUG_S_OUT=True
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+                LOG.write("DEBUG_S_IN="+DEBUG_S_IN+"\n\tDEBUG_S_OUT="+DEBUG_S_OUT+"\n\t")
+                print("To stop use no_debug_socket")
+                print("You may use : debug_all, debug_msg, debug_in, debug_out or debug_connect")
+            case "debug_in":
+                DEBUG_M_IN=True
+                DEBUG_S_IN=True
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+                LOG.write("DEBUG_M_IN="+DEBUG_M_IN+"\n\tDEBUG_S_IN="+DEBUG_S_IN+"\n\t")
+                print("To stop use no_debug_in")
+                print("You may use : debug_all, debug_msg, debug_socket, debug_out or debug_connect")
+            case "debug_out":
+                DEBUG_M_OUT=True
+                DEBUG_S_OUT=True
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+                LOG.write("DEBUG_M_OUT="+DEBUG_M_OUT+"\n\tDEBUG_S_OUT="+DEBUG_S_OUT+"\n\t")
+                print("To stop use no_debug_out")
+                print("You may use : debug_all, debug_msg, debug_in, debug_socket or debug_connect")
+            case "debug_connect":
+                DEBUG_CO=True
+                print("DEBUG_CO=", DEBUG_CO)
+                LOG.write("DEBUG_CO="+DEBUG_CO+"\n\t")
+                print("To stop use no_debug_connect")
+                print("You may use : debug_all, debug_msg, debug_in, debug_socket or debug_out")
+            case "no_debug":
+                DEBUG_M_IN=False
+                DEBUG_M_OUT=False
+                DEBUG_S_IN=False
+                DEBUG_S_OUT=False
+                DEBUG_CO=False
+                print("All debugging parameters have been set to False")
+            case "no_debug_msg":
+                DEBUG_M_IN=False
+                DEBUG_M_OUT=False
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+            case "no_debug_socket":
+                DEBUG_S_IN=False
+                DEBUG_S_OUT=False
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+            case "no_debug_in":
+                DEBUG_M_IN=False
+                DEBUG_S_IN=False
+                print("DEBUG_M_IN=", DEBUG_M_IN)
+                print("DEBUG_S_IN=", DEBUG_S_IN)
+            case "no_debug_out":
+                DEBUG_M_OUT=False
+                DEBUG_S_OUT=False
+                print("DEBUG_M_OUT=", DEBUG_M_OUT)
+                print("DEBUG_S_OUT=", DEBUG_S_OUT)
+            case "no_debug_connect":
+                DEBUG_CO=False
+                print("DEBUG_CO=", DEBUG_CO)
             case _:
-                print("Wrong command : use either stop, deaf, listen, ignore, manage")
+                print("Wrong command : use either stop, deaf, listen, ignore, manage or debug commands")
                 print("STOP = ", STOP)
                 print("LISTENING = ", LISTENING)
                 print("MANAGING = ", MANAGING)
                 print("LOBBY = ", LOBBY)
+        LOG.write("STOP = "+ str(STOP)+'\n\t')
+        LOG.write("LISTENING = "+ str(LISTENING)+'\n\t')
+        LOG.write("MANAGING = "+ str(MANAGING)+'\n\t')
+        LOG.write("LOBBY = "+ str(LOBBY)+'\n')
     
     return
 
@@ -739,7 +855,7 @@ def manage_game_state():
                                 in_data = str(data.strip(), "utf-8")
                                 in_ip = addr[0]
                                 
-                                if DEBUG:
+                                if DEBUG_M_IN:
                                     print("{} wrote to MAINSOCKET:".format(addr))
                                     print(in_data)
                                 
@@ -748,12 +864,14 @@ def manage_game_state():
                                 username = message[1]
                                 
                                 if message[0]=="CONNECTED":
+                                    if DEBUG_CO:
+                                        print("Connection attempt from ",addr," with username ",username)
                                     sock = socket(AF_INET, SOCK_DGRAM)
                                     sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
                                     sock.settimeout(TIMEOUT)
                                     
                                     # port attribution
-                                    if DEBUG:
+                                    if DEBUG_CO:
                                         print("available ports = ", availablePorts)
                                     
                                     port = availablePorts[0]
@@ -768,25 +886,27 @@ def manage_game_state():
                                     username = message[1]
                                     dicoSocket[addr] = (sock, username)
 
-                                if DEBUG:
+                                if DEBUG_M_OUT:
                                     print("sending to: ", addr)
                                     print(">>> ",out)
                                 
                                 try:
                                     MAINSOCKET.sendto(bytes(out,'utf-8'), addr)
                                     
-                                    if DEBUG:
+                                    if DEBUG_S_OUT:
                                         print("answer sent!\n")
                                 except (OSError):
-                                    if DEBUG:
+                                    if DEBUG_S_OUT:
                                         traceback.print_exc()
+                                    DATE=datetime.now()
+                                    LOG.write(DATE.strftime("%H:%M - ")+"New connection from " + str(in_ip) + " failed!\n")
                                     print("New connection from " + str(in_ip) + " failed!")
                                     waitingDisconnectionList.append((addr, sock, username))
                                     
                             except (BlockingIOError, TimeoutError):
                                 pass
                             except (OSError):
-                                if DEBUG:
+                                if DEBUG_S_IN:
                                     traceback.print_exc()
                                 print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
                     
@@ -802,7 +922,7 @@ def manage_game_state():
                             in_data = str(data.strip(), "utf-8")
                             in_ip = addr[0]
                             
-                            if DEBUG:
+                            if DEBUG_M_IN:
                                 print("{} wrote to sock with port {}:".format(addr, port))
                                 print(in_data)
                             
@@ -816,21 +936,23 @@ def manage_game_state():
                                     username = message[1]
                                     waitingDisconnectionList.append((addr, sock, username))
                                 
-                                if DEBUG:
+                                if DEBUG_M_OUT:
                                     print("sock with port {} for player {} wrote back to {} :".format(port, username, addr))
                                     print(">>> ",out,"\n")
                                 try:
                                     sock.sendto(bytes(out,'utf-8'), addr)
                                 except (OSError):
-                                    if DEBUG:
+                                    if DEBUG_S_OUT:
                                         traceback.print_exc()
+                                    DATE=datetime.now()
+                                    LOG.write(DATE.strftime("%H:%M - ")+"Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")\n")
                                     print("Loss connection while sending data with player " + username + " (ip = " + str(addr[0]) + ")")
                                     waitingDisconnectionList.append((addr, sock, username))
                         
                         except (BlockingIOError, TimeoutError):
                             pass
                         except (OSError):
-                            if DEBUG:
+                            if DEBUG_S_IN:
                                 traceback.print_exc()
                             print("The main socket was closed. LISTENING = " + str(LISTENING) + " and STOP = " + str(STOP))
         
@@ -863,6 +985,8 @@ def manage_game_state():
             # game finished
             if not LOBBY and (len(dicoSocket.keys())==0 or not "None" in checkForWin()):
                 FINISHED = True
+                DATE=datetime.now()
+                LOG.write(DATE.strftime("%H:%M - ")+"Game ended")
                 waitForTransition()
         
         # In a transition state
@@ -956,10 +1080,20 @@ def main():
     """
     global MAINSOCKET
     global LOCK
+    global DATE
+    global LOG
     
     # Initialization
     baseMapInit()
     baseSocketInit()
+    
+    DATE=datetime.now()
+    
+    logString=DATE.strftime("%Y-%m-%d_%Hh%M")+"_log.txt"
+    
+    LOG=open(logString,'w') #if an error occure the program should fail
+        
+    LOG.write("Server started: "+DATE.strftime("%Y-%m-%d %Hh%M")+"\n\n")
     
     if LOCK == None:
         LOCK = Lock()
@@ -977,6 +1111,10 @@ def main():
     
     while not STOP:
         time.sleep(1)
+        
+    DATE=datetime.now()
+    LOG.write("\nServer ended: "+DATE.strftime("%Y-%m-%d %Hh%M"))        
+    LOG.close()
 
 if __name__ == "__main__":
     main()
