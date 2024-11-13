@@ -9,6 +9,7 @@ A small project to discover online multiplayer games.
 ## GAME :
 
 Here is how it looks like:
+
 ![](example.gif)
 
 ### Python Module Dependencies
